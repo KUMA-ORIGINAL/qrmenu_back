@@ -1,7 +1,7 @@
 from django.db import models
 from mptt.models import MPTTModel, TreeForeignKey
 
-from account.models import Venue
+from app.account.models import Venue
 
 
 class Category(MPTTModel):

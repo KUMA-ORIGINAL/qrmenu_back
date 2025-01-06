@@ -1,6 +1,6 @@
 from django.db import models
 
-from account.models import Venue
+from app.account.models import Venue
 from . import Category
 
 
