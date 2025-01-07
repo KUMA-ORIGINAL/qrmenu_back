@@ -1,0 +1,12 @@
+{% extends "admin/change_form.html" %}
+
+{% block content %}
+    {{ block.super }}
+    {% if original.id %}
+        <form method="POST" action="{% url 'admin:get_categories' original.id %}">
+            {% csrf_token %}
+            <button type="submit" class="button">Получить данные из POS-системы</button>
+        </form>
+    {% else %}
+    {% endif %}
+{% endblock %}
