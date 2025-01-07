@@ -137,7 +137,7 @@ CSRF_TRUSTED_ORIGINS = [f"https://{DOMAIN}", f"http://{DOMAIN}"]
 AUTH_USER_MODEL = 'account.User'
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'BilimTrack',
+    'TITLE': 'QR menu',
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

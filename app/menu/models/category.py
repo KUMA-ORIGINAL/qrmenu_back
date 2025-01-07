@@ -8,9 +8,6 @@ class Category(MPTTModel):
     category_name = models.CharField(max_length=255, verbose_name="Название категории")
     category_photo = models.ImageField(upload_to='menu/category/', verbose_name="Фото категории",
                                        null=True, blank=True)
-    category_photo_origin = models.ImageField(upload_to='menu/category/',
-                                              verbose_name="Оригинальное фото категории", null=True,
-                                              blank=True)
     parent = TreeForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL,
                                      related_name='subcategories',
                                      verbose_name="Родительская категория")

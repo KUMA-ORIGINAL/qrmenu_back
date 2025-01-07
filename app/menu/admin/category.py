@@ -19,7 +19,7 @@ class CategoryAdmin(MPTTModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('category_name', 'category_photo', 'category_photo_origin', 'parent', 'venue')
+            'fields': ('category_name', 'category_photo', 'parent', 'venue')
         }),
         ('Дополнительная информация', {
             'fields': ('category_hidden', 'level', 'visible',),
@@ -57,7 +57,6 @@ class CategoryAdmin(MPTTModelAdmin):
                         category_id=poster_category['category_id'],
                         category_name=poster_category['category_name'],
                         category_photo=poster_url+poster_category['category_photo'],
-                        category_photo_origin=poster_url+poster_category['category_photo_origin'],
                         category_hidden=poster_category['category_hidden'],
                         venue=queryset.first().venue,
                         # Используем первое заведение из выбранных, или определите логику по-другому
