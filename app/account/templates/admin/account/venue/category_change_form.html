@@ -3,9 +3,13 @@
 {% block content %}
     {{ block.super }}
     {% if original.id %}
-        <form method="POST" action="{% url 'admin:get_categories' original.id %}">
+        <form method="POST" action="{% url 'admin:update_categories' original.id %}">
             {% csrf_token %}
-            <button type="submit" class="button">Получить данные из POS-системы</button>
+            <button type="submit" class="button">Получить категории из POS-системы</button>
+        </form>
+        <form method="POST" action="{% url 'admin:update_products' original.id %}">
+            {% csrf_token %}
+            <button type="submit" class="button">Получить товары из POS-системы</button>
         </form>
     {% else %}
     {% endif %}

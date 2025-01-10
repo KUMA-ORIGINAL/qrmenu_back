@@ -1,2 +1,1 @@
-from .user import *
-from .achievement_and_rarity import *
+from .poster_auth import *

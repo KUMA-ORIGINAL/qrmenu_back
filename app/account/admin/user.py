@@ -1,10 +1,17 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+
 from ..models import User
 
 @admin.register(User)
-class UserAdmin(UserAdmin):
+class UserAdmin(UserAdmin, UnfoldModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
+
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (

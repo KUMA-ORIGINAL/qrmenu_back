@@ -20,4 +20,10 @@ COPY --from=builder /app/requirements.txt .
 
 RUN pip install --no-cache /wheels/*
 
+COPY ./app_entrypoint.dev.sh .
+RUN sed -i 's/\r$//g' $PROJECT_DIR/app_entrypoint.dev.sh
+RUN chmod +x $PROJECT_DIR/app_entrypoint.dev.sh
+
 COPY . .
+
+CMD ["sh", "/app/app_entrypoint.dev.sh"]

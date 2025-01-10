@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from mptt.admin import MPTTModelAdmin
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
 from ..models import Category
 
 
 @admin.register(Category)
-class CategoryAdmin(MPTTModelAdmin):
+class CategoryAdmin(UnfoldModelAdmin):
     list_display = ('category_name', 'venue', 'category_hidden', 'category_photo_preview')
     list_filter = ('venue', 'category_hidden', 'level')
     search_fields = ('category_name',)
@@ -20,7 +20,7 @@ class CategoryAdmin(MPTTModelAdmin):
         (None, {
             'fields': ('category_name',
                        'category_photo_preview',
-                       'category_photo', 'parent', 'venue')
+                       'category_photo', 'venue', 'pos_system')
         }),
         ('Дополнительная информация', {
             'fields': ('category_hidden', 'level', 'visible',),

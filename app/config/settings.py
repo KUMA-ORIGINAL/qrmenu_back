@@ -33,6 +33,7 @@ else:
 
 
 INSTALLED_APPS = [
+    'unfold',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -129,8 +130,12 @@ STATIC_ROOT = BASE_DIR / 'static'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
+POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
+POSTER_REDIRECT_URI = env('POSTER_REDIRECT_URI')
 
 CSRF_TRUSTED_ORIGINS = [f"https://{DOMAIN}", f"http://{DOMAIN}"]
 
@@ -176,4 +181,27 @@ DJOSER = {
     #     'user': 'account.serializers.UserSerializer',
     #     'current_user': 'account.serializers.UserSerializer',
     # },
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Можно изменить на 'DEBUG' для более подробного вывода
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',  # Логи с уровнем DEBUG и выше будут записываться в файл
+            'class': 'logging.FileHandler',
+            'filename': 'django_app.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }
