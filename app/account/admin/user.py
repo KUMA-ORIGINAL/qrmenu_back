@@ -13,7 +13,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
     change_password_form = AdminPasswordChangeForm
 
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
+        (None, {"fields": ("email", "password")}),
         (
             "Permissions",
             {
@@ -28,7 +28,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         ),
         ("Dates", {"fields": ("last_login", "date_joined")}),
         ('required', {
-                 'fields': ('email', 'first_name', 'last_name')}),
+                 'fields': ('phone', 'full_name')}),
     )
     add_fieldsets = (
         (
@@ -36,7 +36,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             {
                 "classes": ("wide",),
                 "fields": (
-                    "username",
+                    "email",
                     "password1",
                     "password2",
                 ),
@@ -48,5 +48,5 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
 
     ordering = ['date_joined']
 
-    list_display = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active')
-    list_display_links = ('id', 'username')
+    list_display = ('id', 'email', 'full_name', 'is_active')
+    list_display_links = ('id', 'email')

@@ -14,10 +14,10 @@ class POSSystem(models.Model):
 class Venue(models.Model):
     account_number = models.CharField(max_length=100, unique=True)
     access_token = models.CharField(max_length=255)
-    user_id = models.PositiveIntegerField()
-    user_name = models.CharField(max_length=100)
-    user_email = models.EmailField()
-    user_phone = models.CharField(max_length=20, blank=True, null=True)
+    owner_id = models.PositiveIntegerField()
+    owner_name = models.CharField(max_length=100)
+    owner_email = models.EmailField()
+    owner_phone = models.CharField(max_length=20, blank=True, null=True)
 
     city = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100)
@@ -28,7 +28,7 @@ class Venue(models.Model):
     next_pay_date = models.DateTimeField(blank=True, null=True)
 
     pos_system = models.ForeignKey(POSSystem, on_delete=models.CASCADE, blank=True, null=True)
-
+    user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
-        return f'{self.company_name} - {self.user_name}'
+        return f'{self.company_name} - {self.owner_name}'

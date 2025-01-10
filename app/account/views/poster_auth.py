@@ -1,6 +1,7 @@
 import logging
 
 import requests
+from django.contrib.auth import get_user_model
 from rest_framework.views import APIView
 from django.conf import settings
 from rest_framework.response import Response
@@ -10,6 +11,8 @@ from ..models import Venue, POSSystem
 from ..serializers import OAuthCallbackSerializer
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 class PosterAuthorizeView(APIView):
     def get(self, request, *args, **kwargs):
@@ -60,10 +63,10 @@ class PosterCallbackView(APIView):
                 Venue.objects.create(
                     access_token=access_token,
                     account_number=account_number,
-                    user_id=user_data.get('id'),
-                    user_name=user_data.get('name'),
-                    user_email=user_data.get('email'),
-                    user_phone=owner_data.get('phone'),
+                    owner_id=user_data.get('id'),
+                    owner_name=user_data.get('name'),
+                    owner_email=user_data.get('email'),
+                    owner_phone=owner_data.get('phone'),
                     city=owner_data.get('city'),
                     country=owner_data.get('country'),
                     company_name=owner_data.get('company_name'),
