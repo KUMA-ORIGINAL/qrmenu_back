@@ -55,7 +55,6 @@ class User(AbstractUser):
         max_length=15,
         validators=[
             RegexValidator(regex=r'^\+?1?\d{9,15}$', message=_("Enter a valid phone number."))],
-        unique=True
     )
     full_name = models.CharField(max_length=100, blank=False)
     role = models.CharField(
@@ -76,4 +75,5 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.email} - {self.full_name}"
+
 

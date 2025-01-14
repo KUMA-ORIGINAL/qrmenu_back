@@ -13,7 +13,6 @@ class Product(models.Model):
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products', verbose_name="Категория")
     venue = models.ForeignKey('account.Venue', on_delete=models.CASCADE, related_name='products', verbose_name="Заведение")
     pos_system = models.ForeignKey('account.POSSystem', on_delete=models.CASCADE, verbose_name="POS система")
-    modificators = models.ManyToManyField('Modificator', blank=True, related_name='products', verbose_name="Модификаторы")
 
     class Meta:
         verbose_name = "Продукт"

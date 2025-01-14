@@ -106,6 +106,21 @@ class VenueAdmin(UnfoldModelAdmin):
     def has_products_actions_detail_permission(self, request, object_id):
         return True
 
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        # Если пользователь — owner, делаем поле pos_system только для чтения
+        if request.user.role == 'owner':
+            # Убираем поле из редактируемых
+            return [field for field in fields if field != 'pos_system']
+        return fields
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        elif request.user.role == 'owner':
+            return qs.filter(user=request.user)
+
     # def get_urls(self):
     #     urls = super().get_urls()
     #     custom_urls = [
