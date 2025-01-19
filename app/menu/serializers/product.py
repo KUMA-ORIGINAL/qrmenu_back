@@ -4,7 +4,7 @@ from ..models import Product, Modificator, Category
 class ModificatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modificator
-        fields = ['id', 'external_id', 'modificator_name', 'modificator_selfprice']
+        fields = ['id', 'external_id', 'name', 'price']
 
 class CategoryShortSerializer(serializers.ModelSerializer):
     class Meta:

@@ -27,7 +27,9 @@ urlpatterns = [
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
     path('api/', include('account.urls')),
+    path('api/', include('venues.urls')),
     path('api/', include('menu.urls')),
+    path('api/', include('orders.urls')),
 ]
 
 if settings.DEBUG:

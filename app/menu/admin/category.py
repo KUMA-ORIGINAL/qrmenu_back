@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
-from account.models import Venue
+from venues.models import Venue
 from ..models import Category
 
 

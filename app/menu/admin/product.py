@@ -1,24 +1,22 @@
 from django.contrib import admin
-from django.db import models
 from django.http import HttpRequest
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin as UnfoldModelAdmin, TabularInline
-from unfold.contrib.forms.widgets import WysiwygWidget
 from unfold.typing import FieldsetsType
 
-from account.models import Venue
+from venues.models import Venue
 from ..models import Product, Category, Modificator
 
 
 class ModificatorInline(TabularInline):
     model = Modificator
     extra = 1
-    fields = ('modificator_name', 'modificator_selfprice')
+    fields = ('name', 'price')
 
 
 @admin.register(Product)
 class ProductAdmin(UnfoldModelAdmin):
-    list_display = ('product_name', 'category', 'venue', 'product_price', 'photo_preview')
+    list_display = ('id', 'product_name', 'category', 'venue', 'product_price', 'photo_preview')
     readonly_fields = ('photo_preview',)
     inlines = [ModificatorInline]
 

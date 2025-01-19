@@ -7,9 +7,9 @@ class Category(models.Model):
     category_photo = models.ImageField(upload_to='menu/category/', verbose_name="Фото категории",
                                        null=True, blank=True)
     category_hidden = models.BooleanField(default=False, verbose_name="Скрыта ли категория",)
-    venue = models.ForeignKey('account.Venue', on_delete=models.CASCADE, related_name='categories',
+    venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='categories',
                               verbose_name="Заведение")
-    pos_system = models.ForeignKey('account.POSSystem', on_delete=models.CASCADE,
+    pos_system = models.ForeignKey('venues.POSSystem', on_delete=models.CASCADE,
                                    verbose_name="POS система")
 
 
