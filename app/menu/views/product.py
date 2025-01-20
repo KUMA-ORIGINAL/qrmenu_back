@@ -4,7 +4,8 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets
 
 from ..models import Product
-from ..serializers import ProductSerializer
+from ..serializers import ProductSerializer, ProductListSerializer
+
 
 @extend_schema(
     tags=['Product',],
@@ -21,6 +22,11 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProductSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category',)
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ProductSerializer
+        return ProductListSerializer
 
     def get_queryset(self):
         queryset = Product.objects.select_related('category')
