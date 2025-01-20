@@ -10,7 +10,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'category_name', 'category_photo']
 
-    def get_product_photo(self, obj):
+    def get_category_photo(self, obj):
         if obj.category_photo and str(obj.category_photo).startswith('http'):
             return str(obj.category_photo)
         return f"{self.context['request'].build_absolute_uri('/')}{obj.category_photo}"
