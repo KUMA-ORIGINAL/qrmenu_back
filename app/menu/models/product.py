@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Product(models.Model):
-    external_id = models.CharField(max_length=100, verbose_name="Внешний ID товара")
+    external_id = models.CharField(max_length=100, blank=True, verbose_name="Внешний ID товара")
     product_name = models.CharField(max_length=255, verbose_name="Название товара")
     product_description = models.TextField(blank=True, null=True, verbose_name="Описание товара")
     product_photo = models.ImageField(upload_to='menu/products/%Y/%m', blank=True, null=True,
@@ -15,8 +15,8 @@ class Product(models.Model):
     pos_system = models.ForeignKey('venues.POSSystem', on_delete=models.CASCADE, verbose_name="POS система")
 
     class Meta:
-        verbose_name = "Продукт"
-        verbose_name_plural = "Продукты"
+        verbose_name = "Товар"
+        verbose_name_plural = "Товары"
         ordering = ['product_name']
 
     def __str__(self):

@@ -4,6 +4,7 @@ import requests
 import logging
 
 from menu.models import Category, Product, Modificator
+from orders.models import Client
 from venues.models import Spot, Table
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class PosterService:
         try:
             response = requests.post(f"{self.API_URL}{endpoint}", params=params, json=data)
             response.raise_for_status()
-            return response.json()
+            return response.json().get('response', [])
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при отправке данных в Poster: {e}", exc_info=True)
             return None
@@ -72,9 +73,7 @@ class PosterService:
         )
         return new_category
 
-    def create_new_product(self, venue, product_data):
-        category = (Category.objects.filter(venue=venue)
-                    .get(external_id=product_data.get('menu_category_id')))
+    def create_new_product(self, product_data, venue, category):
         modificators_data = product_data.get('modifications', [])
 
         if not modificators_data:
@@ -115,27 +114,27 @@ class PosterService:
         )
         return new_spot
 
-    def create_new_table(self, venue, table_data):
+    def create_new_table(self, table_data, venue, spot):
         new_table = Table.objects.create(
             external_id=table_data['table_id'],
             table_num=table_data.get('table_num'),
             table_title=table_data.get('table_title'),
-            spot_id=table_data.get('spot_id'),
             table_shape=table_data.get('table_shape'),
+            spot=spot,
             venue=venue
         )
         return new_table
 
-    def send_order_to_pos(self, order_data):
+    def send_order_to_pos(self, poster_order_data):
         incoming_order_data = {
             'spot_id': 1,
-            'phone': order_data.get('phone'),
-            'comment': order_data.get('comment'),
-            'service_mode': order_data.get('service_mode'),
+            'phone': poster_order_data.get('phone'),
+            'comment': poster_order_data.get('comment'),
+            'service_mode': poster_order_data.get('service_mode'),
         }
 
         products = []
-        for order_product in order_data.get('order_products'):
+        for order_product in poster_order_data.get('order_products'):
             product= order_product.get('product')
             modificator = order_product.get('modificator')
             modificator_id = modificator.external_id if modificator else None
@@ -151,6 +150,7 @@ class PosterService:
             incoming_order_data=incoming_order_data,
             products=products
         )
+
         return response
 
     def create_incoming_order(self, incoming_order_data, products):
@@ -160,6 +160,34 @@ class PosterService:
         }
         response = self.post("incomingOrders.createIncomingOrder", incoming_order)
         return response
+
+    def get_or_create_client(self, venue, poster_client_id):
+        client = Client.objects.filter(
+            venue=venue,
+            external_id=poster_client_id
+        ).first()
+        if client:
+            return client
+        poster_client_data = self.get_client_by_id(poster_client_id)[0]
+        new_client = Client.objects.create(
+            external_id=poster_client_data.get('client_id'),
+            firstname=poster_client_data.get('firstname', ''),
+            lastname=poster_client_data.get('lastname', ''),
+            patronymic=poster_client_data.get('patronymic', ''),
+            phone=poster_client_data.get('phone'),
+            phone_number=poster_client_data.get('phone_number'),
+            email=poster_client_data.get('email', None),
+            birthday=poster_client_data.get('birthday')
+                     if poster_client_data.get('birthday') != '0000-00-00' else None,
+            client_sex=int(poster_client_data.get('client_sex', 0)),  # Преобразование значения из строки в число
+            bonus=Decimal(poster_client_data.get('bonus', 0)),
+            total_payed_sum=Decimal(poster_client_data.get('total_payed_sum', 0)),
+            country=poster_client_data.get('country', ''),
+            city=poster_client_data.get('city', ''),
+            address=poster_client_data.get('address', ''),
+            venue=venue  # предположительно, venue уже определена в контексте
+        )
+        return new_client
 
     def get_categories(self):
         """Метод для получения категорий меню из Poster."""
@@ -182,3 +210,9 @@ class PosterService:
             'incoming_order_id': order_id
         }
         return self.get("incomingOrders.getIncomingOrder", params=params)
+
+    def get_client_by_id(self, client_id):
+        params = {
+            'client_id': client_id
+        }
+        return self.get("clients.getClient", params=params)

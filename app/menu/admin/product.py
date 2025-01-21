@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.http import HttpRequest
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin as UnfoldModelAdmin, TabularInline
+from unfold.contrib.filters.admin import RangeNumericFilter
 from unfold.typing import FieldsetsType
 
 from venues.models import Venue
@@ -16,8 +17,12 @@ class ModificatorInline(TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(UnfoldModelAdmin):
+    compressed_fields = True
     list_display = ('id', 'product_name', 'category', 'venue', 'product_price', 'photo_preview')
+    list_display_links = ('id', 'product_name')
     readonly_fields = ('photo_preview',)
+    search_fields = ('product_name',)
+    list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter),)
     inlines = [ModificatorInline]
 
     def photo_preview(self, obj):
@@ -37,11 +42,13 @@ class ProductAdmin(UnfoldModelAdmin):
         fieldsets = (
             (None, {
                 'fields': (
-                    'product_name', 'product_description', 'product_price', 'category', 'venue',
+                    'external_id',
+                    'product_name',
+                    'product_description', 'product_price', 'category', 'venue',
                     'pos_system')
             }),
             ('Photo', {
-                'fields': ('product_photo', 'photo_preview'),
+                'fields': ('photo_preview', 'product_photo',),
             }),
             ('Дополнительная информация', {
                 'fields': ('hidden', 'external_id'),

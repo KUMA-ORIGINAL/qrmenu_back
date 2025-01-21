@@ -33,15 +33,21 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         try:
             order_data = serializer.validated_data
-            venue = Venue.objects.filter(id=1).first()
+            venue = Venue.objects.filter(id=3).first()
             api_token = venue.access_token
             pos_system_name = venue.pos_system.name.lower()
             pos_service = POSServiceFactory.get_service(pos_system_name, api_token)
             pos_response = pos_service.send_order_to_pos(order_data)
+
             if not pos_response:
                 return Response('error', status=status.HTTP_400_BAD_REQUEST)
-            order_data['venue_id'] = venue.id
-            order_data['external_id'] = pos_response.get('response').get('incoming_order_id')
+
+            client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
+
+            order_data['client'] = client
+            order_data['venue'] = venue
+            order_data['external_id'] = pos_response.get('incoming_order_id')
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -128,3 +134,5 @@ class PosterWebhookViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             logger.info(f"Order {order.id} status updated to {order.status}")
         else:
             logger.warning(f"Failed to get status from POS system for order {order.id}")
+
+

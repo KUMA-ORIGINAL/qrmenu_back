@@ -2,7 +2,9 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.templatetags.static import static
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,6 +37,7 @@ else:
 
 INSTALLED_APPS = [
     'unfold',
+    "unfold.contrib.filters",
     "unfold.contrib.forms",
     'django.contrib.admin',
     'django.contrib.auth',
@@ -74,7 +77,10 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'orders/templates',
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -248,18 +254,18 @@ UNFOLD = {
     "SHOW_HISTORY": True, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": True, # show/hide "View on site" button, default: True
     # "ENVIRONMENT": "sample_app.environment_callback",
-    # "DASHBOARD_CALLBACK": "sample_app.dashboard_callback",
-    "THEME": "dark", # Force theme: "dark" or "light". Will disable theme switcher
+    "DASHBOARD_CALLBACK": "orders.dashboard.dashboard_callback",
+    # "THEME": "dark", # Force theme: "dark" or "light". Will disable theme switcher
     # "LOGIN": {
     #     "image": lambda request: static("sample/login-bg.jpg"),
     #     "redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
     # },
-    # "STYLES": [
-    #     lambda request: static("css/style.css"),
-    # ],
-    # "SCRIPTS": [
-    #     lambda request: static("js/script.js"),
-    # ],
+    "STYLES": [
+        lambda request: static("admin_dashboard/css/styles.css"),
+    ],
+    "SCRIPTS": [
+        lambda request: static("js/script.js"),
+    ],
     "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {
@@ -308,28 +314,92 @@ UNFOLD = {
     },
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
-        # "show_all_applications": False,  # Dropdown with all applications and models
-        # "navigation": [
-        #     {
-        #         "title": _("Navigation"),
-        #         "separator": True,  # Top border
-        #         "collapsible": True,  # Collapsible group of links
-        #         "items": [
-        #             {
-        #                 "title": _("Dashboard"),
-        #                 "icon": "dashboard",  # Supported icon set: https://fonts.google.com/icons
-        #                 "link": reverse_lazy("admin:index"),
-        #                 "badge": "sample_app.badge_callback",
-        #                 "permission": lambda request: request.user.is_superuser,
-        #             },
-        #             {
-        #                 "title": _("Users"),
-        #                 "icon": "people",
-        #                 "link": reverse_lazy("admin:users_user_changelist"),
-        #             },
-        #         ],
-        #     },
-        # ],
+        "show_all_applications": False,  # Dropdown with all applications and models
+        "navigation": [
+            {
+                "title": _("Навигация"),
+                "items": [
+                    {
+                        "title": _("Dashboard"),
+                        "icon": "dashboard",  # Supported icon set: https://fonts.google.com/icons
+                        "link": reverse_lazy("admin:index"),
+                    },
+                    {
+                        "title": _("POS системы"),
+                        "icon": "Contactless",
+                        "link": reverse_lazy("admin:venues_possystem_changelist"),
+                        "permission": "account.utils.permission_callback",
+                    },
+                ],
+            },
+            {
+                "title": _("Главная"),
+                "items": [
+                    {
+                        "title": _("Заведение"),
+                        "icon": "store",
+                        "link": reverse_lazy("admin:venues_venue_changelist"),
+                    },
+                    {
+                        "title": _("Точки заведения"),
+                        "icon": "explore_nearby",
+                        "link": reverse_lazy("admin:venues_spot_changelist"),
+                    },
+                    {
+                        "title": _("Столы"),
+                        "icon": "table_restaurant",
+                        "link": reverse_lazy("admin:venues_table_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": _("Меню"),
+                "items": [
+                    {
+                        "title": _("Категории"),
+                        "icon": "category",
+                        "link": reverse_lazy("admin:menu_category_changelist"),
+                    },
+                    {
+                        "title": _("Товары"),
+                        "icon": "menu_book",
+                        "link": reverse_lazy("admin:menu_product_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": _("Заказы & Клиенты"),
+                "items": [
+                    {
+                        "title": _("Заказы"),
+                        "icon": "shopping_bag",
+                        "link": reverse_lazy("admin:orders_order_changelist"),
+                    },
+                    {
+                        "title": _("Клиенты"),
+                        "icon": "groups",
+                        "link": reverse_lazy("admin:orders_client_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": _("Пользователи & Группы"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Пользователи"),
+                        "icon": "person",
+                        "link": reverse_lazy("admin:account_user_changelist"),
+                    },
+                    {
+                        "title": _("Группы"),
+                        "icon": "group",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                        "permission": "account.utils.permission_callback",
+                    },
+                ],
+            },
+        ],
     },
     "TABS": [
         {

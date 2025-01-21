@@ -12,22 +12,53 @@ class Status(models.IntegerChoices):
 
 
 class Order(models.Model):
-    external_id = models.CharField(max_length=100, verbose_name="Внешний ID онлайн-заказа")
-    phone = models.CharField(max_length=20)
-    comment = models.TextField(blank=True, null=True)
-    service_mode = models.PositiveSmallIntegerField(choices=ServiceMode.choices,
-                                                    default=ServiceMode.ON_SITE)
-    status = models.PositiveSmallIntegerField(choices=Status.choices,
-                                              default=Status.NEW)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='orders',
-                              verbose_name="Заведение")
-    table = models.ForeignKey('venues.Table', on_delete=models.SET_NULL,
-                              null=True, blank=True, related_name='orders')
-    # client = models.ForeignKey('Client', on_delete=models.CASCADE, related_name='orders'
+    external_id = models.CharField(
+        max_length=100, verbose_name="Внешний ID онлайн-заказа"
+    )
+    phone = models.CharField(
+        max_length=20, verbose_name="Телефон клиента"
+    )
+    comment = models.TextField(
+        blank=True, null=True, verbose_name="Комментарий"
+    )
+    service_mode = models.PositiveSmallIntegerField(
+        choices=ServiceMode.choices,
+        default=ServiceMode.ON_SITE,
+        verbose_name="Режим обслуживания"
+    )
+    status = models.PositiveSmallIntegerField(
+        choices=Status.choices,
+        default=Status.NEW,
+        verbose_name="Статус заказа"
+    )
+    total_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, verbose_name="Итоговая цена"
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    venue = models.ForeignKey(
+        'venues.Venue', on_delete=models.CASCADE, related_name='orders',
+        verbose_name="Заведение"
+    )
+    table = models.ForeignKey(
+        'venues.Table', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='orders',
+        verbose_name="Стол"
+    )
+    client = models.ForeignKey(
+        'Client', on_delete=models.CASCADE, related_name='orders', null=True,
+        verbose_name="Клиент"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата создания"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, verbose_name="Дата обновления"
+    )
+
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
 
     def __str__(self):
         return f'Order {self.id} for {self.phone}'

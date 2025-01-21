@@ -8,6 +8,7 @@ from ..models import Category
 
 @admin.register(Category)
 class CategoryAdmin(UnfoldModelAdmin):
+    compressed_fields = True
     list_display = ('category_name', 'venue', 'category_hidden', 'category_photo_preview')
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
@@ -21,10 +22,10 @@ class CategoryAdmin(UnfoldModelAdmin):
         if obj.category_photo:
             if (str(obj.category_photo).startswith('http') or
                 str(obj.category_photo).startswith('https')):
-                return format_html('<img src="{}" style="width: 100px; height: auto;" />',
+                return format_html('<img src="{}" style="width: 150px; height: auto;" />',
                                    obj.category_photo)
             else:
-                return format_html('<img src="{}" style="width: 100px; height: auto;" />',
+                return format_html('<img src="{}" style="width: 150px; height: auto;" />',
                                    obj.category_photo.url)
         return "No Image"
 
@@ -33,9 +34,11 @@ class CategoryAdmin(UnfoldModelAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = (
             (None, {
-                'fields': ('category_name',
-                           'category_photo_preview',
-                           'category_photo', 'venue', 'pos_system')
+                'fields': (
+                    'external_id',
+                    'category_name',
+                    'category_photo_preview',
+                    'category_photo', 'venue', 'pos_system')
             }),
             ('Дополнительная информация', {
                 'fields': ('category_hidden',),

@@ -3,11 +3,11 @@
 {% block content %}
 <div class="container_qr">
     <div class="qr-generator">
-        <h1 class="qr_title">QR Code Generator</h1>
-        <input type="text" id="qrText" placeholder="Enter text or URL">
-        <button id="generateBtn">Generate QR Code</button>
+        <h1 class="qr_title">Генератор QR-кодов</h1>
+        <input type="text" id="qrText" placeholder="Введите текст или URL">
+        <button id="generateBtn">Сгенерировать QR-код</button>
         <br><br>
-        <a id="downloadLink" style="display:none;">Download QR Code</a>
+        <a id="downloadLink" style="display:none;"></a>
 
         <div id="qrcode" class="qr-code"></div>
     </div>
@@ -88,7 +88,7 @@
 
             downloadLink.href = qrImage;
             downloadLink.download = 'qrcode.png';
-            downloadLink.textContent = 'Download QR Code';
+            downloadLink.textContent = 'Скачать QR-код';
             downloadLink.style.display = 'inline';
         }, 300);
     });
