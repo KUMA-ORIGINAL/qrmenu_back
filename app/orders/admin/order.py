@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from unfold.admin import ModelAdmin as UnfoldModelAdmin, TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter, RangeDateTimeFilter
+from unfold.decorators import display
 
 from venues.models import Venue, Table
 from ..models import Order, OrderProduct, Client
@@ -17,13 +18,42 @@ class OrderProductInline(TabularInline):
 @admin.register(Order)
 class OrderAdmin(UnfoldModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'phone', 'status', 'service_mode', 'total_price', 'created_at')
+    list_display = ('id', 'phone', 'display_status', 'display_service_mode', 'total_price', 'created_at')
     list_display_links = ('id', 'phone')
     search_fields = ('phone',)
     list_filter = ('venue', 'status', 'service_mode',
                    ("total_price", RangeNumericFilter),
                    ("created_at", RangeDateTimeFilter),)
     inlines = [OrderProductInline]
+
+    @display(
+        description=("Статус заказа"),
+        ordering="status",
+        label={
+            'Принят': "success",  # green
+            'Новый': "info",  # blue
+            'Отменён': "danger",  # red
+        },
+    )
+    def display_status(self, obj):
+        if obj.status == 0:
+            return 'Новый'
+        elif obj.status == 1:
+            return 'Принят'
+        elif obj.status == 7:
+            return 'Отменён'
+
+    @display(
+        description=("Режим обслуживания"),
+        label=True
+    )
+    def display_service_mode(self, obj):
+        if obj.service_mode == 1:
+            return 'На месте'
+        elif obj.service_mode == 2:
+            return 'Самовывоз'
+        elif obj.service_mode == 3:
+            return 'Доставка'
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
@@ -51,3 +81,4 @@ class OrderAdmin(UnfoldModelAdmin):
             return qs
         elif request.user.role == 'owner':
             return qs.filter(venue__user=request.user)
+

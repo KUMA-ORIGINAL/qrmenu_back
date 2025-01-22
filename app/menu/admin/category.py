@@ -13,6 +13,7 @@ class CategoryAdmin(UnfoldModelAdmin):
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
     readonly_fields = ('category_photo_preview',)
+    list_editable = ('category_hidden', )
     list_per_page = 20
 
     mptt_level_indent = 20

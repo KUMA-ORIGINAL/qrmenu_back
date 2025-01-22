@@ -18,12 +18,26 @@ class ModificatorInline(TabularInline):
 @admin.register(Product)
 class ProductAdmin(UnfoldModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'product_name', 'category', 'venue', 'product_price', 'photo_preview')
+    list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
+                    'product_price',
+                    'photo_preview')
     list_display_links = ('id', 'product_name')
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
     list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter),)
+    list_editable = ('hidden', 'is_recommended',)
     inlines = [ModificatorInline]
+
+    def get_list_display(self, request):
+        list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
+                        'product_price',
+                        'photo_preview')
+        if request.user.is_superuser:
+            return list_display
+        elif request.user.role == 'owner':
+            list_display = (item for item in list_display if item not in ('venue',))
+            return list_display
+        return list_display
 
     def photo_preview(self, obj):
         if obj.product_photo:
@@ -44,23 +58,24 @@ class ProductAdmin(UnfoldModelAdmin):
                 'fields': (
                     'external_id',
                     'product_name',
-                    'product_description', 'product_price', 'category', 'venue',
+                    'product_description', 'product_price', 'weight',
+                    'category',
+                    'venue',
                     'pos_system')
             }),
             ('Photo', {
                 'fields': ('photo_preview', 'product_photo',),
             }),
             ('Дополнительная информация', {
-                'fields': ('hidden', 'external_id'),
+                'fields': ('hidden', 'is_recommended'),
             }),
         )
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
             fieldsets[0][1]['fields'] = (
-                'product_name', 'product_description', 'product_price', 'category'
+                'product_name', 'product_description', 'product_price', 'weight', 'category'
             )
-            fieldsets[-1][1]['fields'] = ('hidden',)
         return fieldsets
 
     def save_model(self, request, obj, form, change):

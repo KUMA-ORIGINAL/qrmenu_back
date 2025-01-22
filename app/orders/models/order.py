@@ -5,7 +5,7 @@ class ServiceMode(models.IntegerChoices):
     PICKUP = 2, 'Самовывоз'
     DELIVERY = 3, 'Доставка'
 
-class Status(models.IntegerChoices):
+class OrderStatus(models.IntegerChoices):
     NEW = 0, 'Новый'  # Новый заказ
     ACCEPTED = 1, 'Принят'  # Принят
     CANCELLED = 7, 'Отменён'  # Отменён
@@ -27,8 +27,8 @@ class Order(models.Model):
         verbose_name="Режим обслуживания"
     )
     status = models.PositiveSmallIntegerField(
-        choices=Status.choices,
-        default=Status.NEW,
+        choices=OrderStatus.choices,
+        default=OrderStatus.NEW,
         verbose_name="Статус заказа"
     )
     total_price = models.DecimalField(

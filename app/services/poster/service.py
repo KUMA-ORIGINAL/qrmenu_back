@@ -86,6 +86,7 @@ class PosterService:
             product_name=product_data.get('product_name'),
             product_photo=self.BASE_URL + str(product_data.get('photo')),
             product_price=product_price,
+            weight=product_data.get('out'),
             hidden=product_data.get('hidden'),
             venue=venue,
             pos_system=venue.pos_system,
