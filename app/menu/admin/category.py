@@ -1,15 +1,15 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
+from services.admin import BaseModelAdmin
 from venues.models import Venue
 from ..models import Category
 
 
 @admin.register(Category)
-class CategoryAdmin(UnfoldModelAdmin):
+class CategoryAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('category_name', 'venue', 'category_hidden', 'category_photo_preview')
+    list_display = ('category_name', 'venue', 'category_hidden', 'category_photo_preview', 'detail_link')
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
     readonly_fields = ('category_photo_preview',)

@@ -1,13 +1,12 @@
 from django.contrib import admin
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
-
+from services.admin import BaseModelAdmin
 from ..models import Spot, Venue
 
 
 @admin.register(Spot)
-class SpotAdmin(UnfoldModelAdmin):
-    list_display = ('name', 'address', 'venue')
+class SpotAdmin(BaseModelAdmin):
+    list_display = ('name', 'address', 'venue', 'detail_link')
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)

@@ -16,6 +16,8 @@
 
    ```bash
    docker-compose up
+   postgres(CREATE EXTENSION IF NOT EXISTS pg_trgm;)
+
 
 3. **Остановка и удаление контейнеров**
 

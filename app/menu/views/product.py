@@ -1,10 +1,10 @@
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
 
 from ..models import Product
-from ..serializers import ProductSerializer, ProductListSerializer
+from ..serializers import ProductSerializer
 
 
 @extend_schema(
@@ -18,15 +18,11 @@ from ..serializers import ProductSerializer, ProductListSerializer
         )
     ]
 )
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+class ProductViewSet(viewsets.GenericViewSet,
+                     mixins.ListModelMixin):
     serializer_class = ProductSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ('category',)
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return ProductSerializer
-        return ProductListSerializer
 
     def get_queryset(self):
         queryset = Product.objects.select_related('category')

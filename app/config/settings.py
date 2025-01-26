@@ -36,9 +36,11 @@ else:
 
 
 INSTALLED_APPS = [
+    'daphne',
     'unfold',
     "unfold.contrib.filters",
     "unfold.contrib.forms",
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +53,8 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_filters',
     'corsheaders',
+    'cachalot',
+    'channels',
 
     'menu',
     'account',
@@ -95,7 +99,7 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
+ASGI_APPLICATION = 'config.asgi.application'
 
 DATABASES = {
     'default': {
@@ -136,6 +140,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
+STATICFILES_DIRS = [
+    BASE_DIR / 'site_icons/'
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -150,6 +157,32 @@ POSTER_REDIRECT_URI = env('POSTER_REDIRECT_URI')
 CSRF_TRUSTED_ORIGINS = [f"https://{DOMAIN}", f"http://{DOMAIN}"]
 
 AUTH_USER_MODEL = 'account.User'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
+
+CACHALOTE_ONLY_CACHABLE_MODELS = (
+    'menu.category',  # Кешировать только эти модели
+    'menu.product',  # Кешировать только эти модели
+    'menu.modificator',  # Кешировать только эти модели
+)
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": ['redis://redis:6379/2'],  # Используем другой слот Redis (например, /2)
+        },
+    },
+}
+
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'QR menu',
@@ -208,7 +241,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'INFO',  # Можно изменить на 'DEBUG' для более подробного вывода
+            'level': 'DEBUG',  # Можно изменить на 'DEBUG' для более подробного вывода
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
@@ -220,46 +253,26 @@ LOGGING = {
         },
     },
     'loggers': {
+        # 'django.db.backends': {
+        #     'level': 'DEBUG',
+        #     'handlers': ['console'],
+        # },
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     },
 }
 
 UNFOLD = {
-    "SITE_TITLE": "QR-menu",
-    "SITE_HEADER": "QR-menu",
+    "SITE_TITLE": 'iMenu.kg',
+    "SITE_HEADER": "iMenu.kg",
     "SITE_URL": "/",
-    # "SITE_ICON": lambda request: static("icon.svg"),  # both modes, optimise for 32px height
-    # "SITE_ICON": {
-    #     "light": lambda request: static("icon-light.svg"),  # light mode
-    #     "dark": lambda request: static("icon-dark.svg"),  # dark mode
-    # },
-    # # "SITE_LOGO": lambda request: static("logo.svg"),  # both modes, optimise for 32px height
-    # "SITE_LOGO": {
-    #     "light": lambda request: static("logo-light.svg"),  # light mode
-    #     "dark": lambda request: static("logo-dark.svg"),  # dark mode
-    # },
     "SITE_SYMBOL": "menu",  # symbol from icon set
-    # "SITE_FAVICONS": [
-    #     {
-    #         "rel": "icon",
-    #         "sizes": "32x32",
-    #         "type": "image/svg+xml",
-    #         "href": lambda request: static("favicon.svg"),
-    #     },
-    # ],
     "SHOW_HISTORY": True, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": True, # show/hide "View on site" button, default: True
-    # "ENVIRONMENT": "sample_app.environment_callback",
     "DASHBOARD_CALLBACK": "orders.dashboard.dashboard_callback",
-    # "THEME": "dark", # Force theme: "dark" or "light". Will disable theme switcher
-    # "LOGIN": {
-    #     "image": lambda request: static("sample/login-bg.jpg"),
-    #     "redirect_after": lambda request: reverse_lazy("admin:APP_MODEL_changelist"),
-    # },
     "STYLES": [
         lambda request: static("admin_dashboard/css/styles.css"),
     ],

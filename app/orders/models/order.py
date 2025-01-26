@@ -34,14 +34,24 @@ class Order(models.Model):
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, verbose_name="Итоговая цена"
     )
-
+    service_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, verbose_name="Цена за обслуживание"
+    )
+    tips_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0, verbose_name="Чаевые"
+    )
+    discount = models.PositiveIntegerField(
+        default=0, verbose_name="скидка в %"
+    )
+    bonus = models.PositiveIntegerField(
+        default=0, verbose_name='Бонусы'
+    )
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='orders',
         verbose_name="Заведение"
     )
     table = models.ForeignKey(
-        'venues.Table', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='orders',
+        'venues.Table', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders',
         verbose_name="Стол"
     )
     client = models.ForeignKey(

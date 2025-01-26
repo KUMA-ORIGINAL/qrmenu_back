@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.http import HttpRequest
 from django.utils.html import format_html
-from unfold.admin import ModelAdmin as UnfoldModelAdmin, TabularInline
+from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
 from unfold.typing import FieldsetsType
 
+from services.admin import BaseModelAdmin
 from venues.models import Venue
 from ..models import Product, Category, Modificator
 
@@ -16,12 +17,10 @@ class ModificatorInline(TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(UnfoldModelAdmin):
+class ProductAdmin(BaseModelAdmin):
     compressed_fields = True
     list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
-                    'product_price',
-                    'photo_preview')
-    list_display_links = ('id', 'product_name')
+                    'product_price', 'photo_preview', 'detail_link')
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
     list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter),)
@@ -30,8 +29,7 @@ class ProductAdmin(UnfoldModelAdmin):
 
     def get_list_display(self, request):
         list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
-                        'product_price',
-                        'photo_preview')
+                        'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
             return list_display
         elif request.user.role == 'owner':

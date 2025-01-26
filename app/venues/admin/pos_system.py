@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
+from services.admin import BaseModelAdmin
 from ..models import POSSystem
 
 
 @admin.register(POSSystem)
-class POSSystemAdmin(UnfoldModelAdmin):
-    list_display = ('name',)
+class POSSystemAdmin(BaseModelAdmin):
+    list_display = ('name', 'detail_link')
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)

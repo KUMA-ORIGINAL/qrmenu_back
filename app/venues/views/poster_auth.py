@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework.response import Response
 from django.shortcuts import redirect
 
+from services.pos_service_factory import POSServiceFactory
 from ..models import Venue, POSSystem
 from ..serializers import OAuthCallbackSerializer
 
@@ -59,6 +60,9 @@ class PosterCallbackView(APIView):
                     return Response({'message': 'Venue already exists'}, status=200)
 
                 pos_system = POSSystem.objects.filter(name='Poster').first()
+                pos_system_name = pos_system.name.lower()
+                pos_service = POSServiceFactory.get_service(pos_system_name, access_token)
+                pos_settings = pos_service.get_settings()
 
                 Venue.objects.create(
                     access_token=access_token,
@@ -70,6 +74,7 @@ class PosterCallbackView(APIView):
                     city=owner_data.get('city'),
                     country=owner_data.get('country'),
                     company_name=owner_data.get('company_name'),
+                    tip_amount=pos_settings.get('tip_amount'),
                     pos_system=pos_system
                 )
 

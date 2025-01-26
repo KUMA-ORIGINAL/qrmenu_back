@@ -1,15 +1,13 @@
 from django.contrib import admin
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
-
+from services.admin import BaseModelAdmin
 from ..models import Client
 
 
 @admin.register(Client)
-class ClientAdmin(UnfoldModelAdmin):
+class ClientAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'firstname', 'phone', 'created_at')
-    list_display_links = ('id', 'firstname')
+    list_display = ('id', 'firstname', 'phone', 'created_at', 'detail_link')
     search_fields = ('firstname', 'lastname')
     list_filter = ('client_sex',)
 

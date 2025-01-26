@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin, TabularInline
+from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter, RangeDateTimeFilter
 from unfold.decorators import display
 
+from services.admin import BaseModelAdmin
 from venues.models import Venue, Table
 from ..models import Order, OrderProduct, Client
 
@@ -16,10 +17,10 @@ class OrderProductInline(TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(UnfoldModelAdmin):
+class OrderAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'phone', 'display_status', 'display_service_mode', 'total_price', 'created_at')
-    list_display_links = ('id', 'phone')
+    list_display = ('id', 'phone', 'display_status', 'display_service_mode',
+                    'total_price', 'created_at', 'detail_link')
     search_fields = ('phone',)
     list_filter = ('venue', 'status', 'service_mode',
                    ("total_price", RangeNumericFilter),

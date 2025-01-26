@@ -9,8 +9,8 @@ class Product(models.Model):
                                       verbose_name="Фото товара")
     product_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, default=0, verbose_name="Цена товара")
     weight = models.PositiveSmallIntegerField(default=0, verbose_name='Вес товара')
-    is_recommended = models.BooleanField(default=False, verbose_name='в рекомендациях?')
-    hidden = models.BooleanField(default=False, verbose_name="Скрытый товар?")
+    is_recommended = models.BooleanField(default=False, verbose_name='Рекомендован?')
+    hidden = models.BooleanField(default=False, verbose_name="Скрыт?")
 
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products', verbose_name="Категория")
     venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='products', verbose_name="Заведение")

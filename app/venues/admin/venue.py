@@ -3,11 +3,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import path
 from django.views.generic import TemplateView
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from unfold.decorators import action
 from unfold.views import UnfoldModelAdminViewMixin
 
 from menu.models import Category, Product
+from services.admin import BaseModelAdmin
 from ..models import Venue, Spot, Table
 from services.pos_service_factory import POSServiceFactory
 
@@ -19,10 +19,9 @@ class MyClassBasedView(UnfoldModelAdminViewMixin, TemplateView):
 
 
 @admin.register(Venue)
-class VenueAdmin(UnfoldModelAdmin):
+class VenueAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'company_name', 'pos_system',)
-    list_display_links = ('id', 'company_name')
+    list_display = ('id', 'company_name', 'pos_system', 'detail_link')
 
     actions_detail = ['products_actions_detail',
                       'spots_and_tables_action_detail',]

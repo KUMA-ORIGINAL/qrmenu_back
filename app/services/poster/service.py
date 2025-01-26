@@ -127,10 +127,13 @@ class PosterService:
         return new_table
 
     def send_order_to_pos(self, poster_order_data):
+        comment = (f"{poster_order_data.get('comment')}\n"
+                   f"Обслуживание: {poster_order_data.get('service_price')}\n"
+                   f"Чаевые: {poster_order_data.get('tips_cash')}")
         incoming_order_data = {
             'spot_id': 1,
             'phone': poster_order_data.get('phone'),
-            'comment': poster_order_data.get('comment'),
+            'comment': comment,
             'service_mode': poster_order_data.get('service_mode'),
         }
 
@@ -167,28 +170,45 @@ class PosterService:
             venue=venue,
             external_id=poster_client_id
         ).first()
-        if client:
-            return client
         poster_client_data = self.get_client_by_id(poster_client_id)[0]
-        new_client = Client.objects.create(
-            external_id=poster_client_data.get('client_id'),
-            firstname=poster_client_data.get('firstname', ''),
-            lastname=poster_client_data.get('lastname', ''),
-            patronymic=poster_client_data.get('patronymic', ''),
-            phone=poster_client_data.get('phone'),
-            phone_number=poster_client_data.get('phone_number'),
-            email=poster_client_data.get('email', None),
-            birthday=poster_client_data.get('birthday')
-                     if poster_client_data.get('birthday') != '0000-00-00' else None,
-            client_sex=int(poster_client_data.get('client_sex', 0)),  # Преобразование значения из строки в число
-            bonus=Decimal(poster_client_data.get('bonus', 0)),
-            total_payed_sum=Decimal(poster_client_data.get('total_payed_sum', 0)),
-            country=poster_client_data.get('country', ''),
-            city=poster_client_data.get('city', ''),
-            address=poster_client_data.get('address', ''),
-            venue=venue  # предположительно, venue уже определена в контексте
-        )
-        return new_client
+        if client:
+            client.firstname = poster_client_data.get('firstname', '')
+            client.lastname = poster_client_data.get('lastname', '')
+            client.patronymic = poster_client_data.get('patronymic', '')
+            client.phone = poster_client_data.get('phone')
+            client.phone_number = poster_client_data.get('phone_number')
+            client.email = poster_client_data.get('email', None)
+            client.birthday = poster_client_data.get('birthday') \
+                if poster_client_data.get('birthday') != '0000-00-00' else None
+            client.client_sex = int(poster_client_data.get('client_sex',
+                                                           0))  # Преобразование значения из строки в число
+            client.bonus = Decimal(poster_client_data.get('bonus', 0))
+            client.total_payed_sum = Decimal(poster_client_data.get('total_payed_sum', 0)) / 100
+            client.country = poster_client_data.get('country', '')
+            client.city = poster_client_data.get('city', '')
+            client.address = poster_client_data.get('address', '')
+
+            client.save()
+        else:
+            client = Client.objects.create(
+                external_id=poster_client_data.get('client_id'),
+                firstname=poster_client_data.get('firstname', ''),
+                lastname=poster_client_data.get('lastname', ''),
+                patronymic=poster_client_data.get('patronymic', ''),
+                phone=poster_client_data.get('phone'),
+                phone_number=poster_client_data.get('phone_number'),
+                email=poster_client_data.get('email', None),
+                birthday=poster_client_data.get('birthday')
+                         if poster_client_data.get('birthday') != '0000-00-00' else None,
+                client_sex=int(poster_client_data.get('client_sex', 0)),  # Преобразование значения из строки в число
+                bonus=Decimal(poster_client_data.get('bonus', 0)),
+                total_payed_sum=Decimal(poster_client_data.get('total_payed_sum', 0)),
+                country=poster_client_data.get('country', ''),
+                city=poster_client_data.get('city', ''),
+                address=poster_client_data.get('address', ''),
+                venue=venue  # предположительно, venue уже определена в контексте
+            )
+        return client
 
     def get_categories(self):
         """Метод для получения категорий меню из Poster."""
@@ -217,3 +237,6 @@ class PosterService:
             'client_id': client_id
         }
         return self.get("clients.getClient", params=params)
+
+    def get_settings(self):
+        return self.get("settings.getAllSettings")

@@ -1,15 +1,16 @@
 from django.contrib import admin
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
 
+from services.admin import BaseModelAdmin
 from ..models import Table, Venue, Spot
 
 
 @admin.register(Table)
-class TableAdmin(UnfoldModelAdmin):
-    list_display = ('table_num', 'table_title', 'table_shape', 'spot', 'venue')
+class TableAdmin(BaseModelAdmin):
+    list_display = ('id', 'table_num', 'table_title', 'table_shape', 'spot', 'venue', 'detail_link')
     search_fields = ('table_num', 'table_title')
     list_filter = ('table_shape',)
+
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)

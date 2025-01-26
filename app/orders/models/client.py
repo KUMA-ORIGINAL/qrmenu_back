@@ -29,9 +29,7 @@ class Client(models.Model):
     client_sex = models.PositiveSmallIntegerField(
         choices=[(0, 'Мужской'), (1, 'Женский')], default=0, verbose_name="Пол"
     )
-    bonus = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Бонусы"
-    )
+    bonus = models.PositiveIntegerField(default=0, verbose_name='Бонусы')
     total_payed_sum = models.DecimalField(
         max_digits=10, decimal_places=2, default=0, verbose_name="Общая сумма платежей"
     )
@@ -44,6 +42,7 @@ class Client(models.Model):
     address = models.TextField(
         blank=True, null=True, verbose_name="Адрес"
     )
+
     created_at = models.DateTimeField(
         auto_now_add=True, verbose_name="Дата создания"
     )
