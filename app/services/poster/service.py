@@ -79,7 +79,7 @@ class PosterService:
         if not modificators_data:
             product_price = Decimal(product_data.get('price').get('1')) / 100
         else:
-            product_price = product_data.get('price')
+            product_price = Decimal(product_data.get('price'))
 
         new_product = Product.objects.create(
             external_id=product_data.get('product_id'),
