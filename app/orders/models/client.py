@@ -1,7 +1,9 @@
 from django.db import models
 
+from services.model import BaseModel
 
-class Client(models.Model):
+
+class Client(BaseModel):
     external_id = models.CharField(
         max_length=100, blank=True, verbose_name="Внешний ID клиента"
     )
@@ -41,13 +43,6 @@ class Client(models.Model):
     )
     address = models.TextField(
         blank=True, null=True, verbose_name="Адрес"
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Дата создания"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Дата обновления"
     )
 
     venue = models.ForeignKey(

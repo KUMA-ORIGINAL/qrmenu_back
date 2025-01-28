@@ -359,6 +359,11 @@ UNFOLD = {
                         "link": reverse_lazy("admin:venues_spot_changelist"),
                     },
                     {
+                        "title": _("Залы"),
+                        "icon": "hub",
+                        "link": reverse_lazy("admin:venues_hall_changelist"),
+                    },
+                    {
                         "title": _("Столы"),
                         "icon": "table_restaurant",
                         "link": reverse_lazy("admin:venues_table_changelist"),

@@ -1,7 +1,9 @@
 from django.db import models
 
+from services.model import BaseModel
 
-class OrderProduct(models.Model):
+
+class OrderProduct(BaseModel):
     order = models.ForeignKey(
         'Order', related_name='order_products', on_delete=models.CASCADE, verbose_name="Заказ"
     )

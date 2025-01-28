@@ -1,7 +1,9 @@
 from django.db import models
 
+from services.model import BaseModel
 
-class Product(models.Model):
+
+class Product(BaseModel):
     external_id = models.CharField(max_length=100, blank=True, verbose_name="Внешний ID товара")
     product_name = models.CharField(max_length=255, verbose_name="Название товара")
     product_description = models.TextField(blank=True, null=True, verbose_name="Описание товара")

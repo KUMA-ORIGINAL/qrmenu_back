@@ -1,7 +1,9 @@
 from django.db import models
 
+from services.model import BaseModel
 
-class Modificator(models.Model):
+
+class Modificator(BaseModel):
     external_id = models.CharField(
         max_length=100, verbose_name="Внешний ID модификатора"
     )

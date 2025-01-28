@@ -8,7 +8,7 @@ from unfold.views import UnfoldModelAdminViewMixin
 
 from menu.models import Category, Product
 from services.admin import BaseModelAdmin
-from ..models import Venue, Spot, Table
+from ..models import Venue, Spot, Table, Hall
 from services.pos_service_factory import POSServiceFactory
 
 
@@ -41,77 +41,33 @@ class VenueAdmin(BaseModelAdmin):
     )
     def products_actions_detail(self, request, object_id):
         venue = get_object_or_404(Venue, pk=object_id)
+
         if not venue.access_token:
-            self.message_user(request,
-                              f'Заведение {venue.company_name} не имеет API токена.',
+            self.message_user(request, f'Заведение {venue.company_name} не имеет API токена.',
                               level=messages.ERROR)
             return redirect(request.META["HTTP_REFERER"])
 
         pos_system_name = venue.pos_system.name.lower()
         pos_service = POSServiceFactory.get_service(pos_system_name, venue.access_token)
 
-        # Шаг 1: Получаем категории
-        categories_data = pos_service.get_categories()
-        if not categories_data:
-            self.message_user(request, 'Ошибка при получении категорий', level=messages.ERROR)
+        categories_data = pos_service.get_categories()[1:]
+        create_method = pos_service.create_new_category
+        if not self.process_items(request, venue, categories_data, Category,
+                                  'category_id', create_method, 'категорий'):
             return redirect(request.META["HTTP_REFERER"])
 
-        categories_data = categories_data[1:]  # Пропускаем первую строку, если она не нужна
-
-        created_category_count = 0
-        for category_data in categories_data:
-            existing_category = Category.objects.filter(
-                venue=venue,
-                external_id=category_data['category_id']
-            ).exists()
-
-            if not existing_category:
-                pos_service.create_new_category(venue, category_data)
-                created_category_count += 1
-
-        if created_category_count > 0:
-            self.message_user(request,
-                              f"{created_category_count} категорий успешно созданы.",
-                              level='success')
-        else:
-            self.message_user(request,
-                              "Категории актуальны.",
-                              level='success')
-
-        # Шаг 2: Получаем продукты
         products_data = pos_service.get_products()
-        if not products_data:
-            self.message_user(request, 'Ошибка при получении товаров', level=messages.ERROR)
+        create_method = pos_service.create_new_product
+        if not self.process_items(
+                request, venue, products_data, Product, 'product_id',
+                create_method, 'продуктов',
+                related_model_class_1=Category, related_external_id_key_1='menu_category_id'):
             return redirect(request.META["HTTP_REFERER"])
-
-        created_product_count = 0
-        for product_data in products_data:
-            existing_product = Product.objects.filter(
-                venue=venue,
-                external_id=product_data['product_id']
-            ).exists()
-            category = Category.objects.filter(
-                venue=venue,
-                external_id=product_data.get('menu_category_id')
-            ).first()
-
-            if not existing_product and category:
-                pos_service.create_new_product(product_data, venue, category)
-                created_product_count += 1
-
-        if created_product_count > 0:
-            self.message_user(request,
-                              f"{created_product_count} продуктов успешно созданы.",
-                              level='success')
-        else:
-            self.message_user(request,
-                              "Продукты актуальны.",
-                              level='success')
 
         return redirect(request.META["HTTP_REFERER"])
 
     @action(
-        description="Получить точки и столы заведения",
+        description="Получить точки, залы и столы заведения",
         url_path="spots_and_tables_action_detail-url",
     )
     def spots_and_tables_action_detail(self, request, object_id):
@@ -126,63 +82,73 @@ class VenueAdmin(BaseModelAdmin):
         pos_system_name = venue.pos_system.name.lower()
         pos_service = POSServiceFactory.get_service(pos_system_name, venue.access_token)
 
-        # Сначала получаем точки
+        # Получаем и обрабатываем точки
         spots_data = pos_service.get_spots()
-        if not spots_data:
-            self.message_user(request, 'Ошибка при получении точек заведения')
+        create_method = pos_service.create_new_spot
+        if not self.process_items(
+                request, venue, spots_data, Spot,
+                'spot_id', create_method, 'точек'):
             return redirect(request.META["HTTP_REFERER"])
 
-        created_spot_count = 0
-        for spot_data in spots_data:
-            existing_spot = Spot.objects.filter(
-                venue=venue,
-                external_id=spot_data['spot_id']
-            ).exists()
+        halls_data = pos_service.get_halls()
+        create_method = pos_service.create_new_hall
+        if not self.process_items(
+                request, venue, halls_data, Hall,
+                'hall_id', create_method, 'залов',
+                related_model_class_1=Spot, related_external_id_key_1='spot_id'):
+            return redirect(request.META["HTTP_REFERER"])
 
-            if not existing_spot:
-                pos_service.create_new_spot(venue, spot_data)
-                created_spot_count += 1
-
-        if created_spot_count > 0:
-            self.message_user(request,
-                              f"{created_spot_count} точек заведения успешно созданы.",
-                              level='success')
-        else:
-            self.message_user(request,
-                              "Точки заведения актуальны.",
-                              level='success')
-
-        # Затем получаем столы
         tables_data = pos_service.get_tables()
-        if not tables_data:
-            self.message_user(request, 'Ошибка при получении столов')
+        create_method = pos_service.create_new_table
+        if not self.process_items(
+                request, venue, tables_data, Table,
+                'table_id', create_method, 'столов',
+                related_model_class_1=Hall, related_external_id_key_1='hall_id',
+                related_model_class_2=Spot, related_external_id_key_2='spot_id',):
             return redirect(request.META["HTTP_REFERER"])
-
-        created_table_count = 0
-        for table_data in tables_data:
-            existing_table = Table.objects.filter(
-                venue=venue,
-                external_id=table_data['table_id']
-            ).exists()
-            spot = (Spot.objects.filter(
-                venue=venue,
-                external_id=table_data.get('spot_id'))
-            ).first()
-
-            if not existing_table:
-                pos_service.create_new_table(table_data, venue, spot)
-                created_table_count += 1
-
-        if created_table_count > 0:
-            self.message_user(request,
-                              f"{created_table_count} столы успешно созданы.",
-                              level='success')
-        else:
-            self.message_user(request,
-                              "Столы актуальны.",
-                              level='success')
 
         return redirect(request.META["HTTP_REFERER"])
+
+    def process_items(self, request, venue, items_data, model_class, external_id_key, create_method,
+                      item_name, related_model_class_1=None, related_external_id_key_1=None,
+                      related_model_class_2=None, related_external_id_key_2=None):
+        if not items_data:
+            self.message_user(request, f'Ошибка при получении {item_name}')
+            return False
+
+        created_item_count = 0
+        for item_data in items_data:
+            existing_item = model_class.objects.filter(
+                venue=venue,
+                external_id=item_data[external_id_key]
+            ).exists()
+
+            if not existing_item:
+                related_instance_1 = None
+                if related_model_class_1 and related_external_id_key_1:
+                    related_instance_1 = related_model_class_1.objects.filter(
+                        venue=venue,
+                        external_id=item_data.get(related_external_id_key_1)
+                    ).first()
+
+                related_instance_2 = None
+                if related_model_class_2 and related_external_id_key_2:
+                    related_instance_2 = related_model_class_2.objects.filter(
+                        venue=venue,
+                        external_id=item_data.get(related_external_id_key_2)
+                    ).first()
+                create_method(item_data, venue, related_instance_1, related_instance_2)  # Передаем связанный объект
+                created_item_count += 1
+
+        if created_item_count > 0:
+            self.message_user(request,
+                              f"{created_item_count} {item_name} успешно созданы.",
+                              level=messages.SUCCESS)
+        else:
+            self.message_user(request,
+                              f"{item_name.capitalize()} актуальны.",
+                              level=messages.SUCCESS)
+        return True
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)

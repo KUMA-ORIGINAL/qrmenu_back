@@ -1,10 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from services.model import BaseModel
+
 User = get_user_model()
 
 
-class Venue(models.Model):
+class Venue(BaseModel):
     account_number = models.CharField(
         max_length=100, unique=True, verbose_name="Номер аккаунта"
     )

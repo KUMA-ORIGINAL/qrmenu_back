@@ -1,7 +1,9 @@
 from django.db import models
 
+from services.model import BaseModel
 
-class Table(models.Model):
+
+class Table(BaseModel):
     external_id = models.CharField(
         max_length=100, blank=True, verbose_name="Внешний ID стола"
     )
@@ -22,6 +24,10 @@ class Table(models.Model):
     spot = models.ForeignKey(
         'Spot', on_delete=models.CASCADE, related_name='tables',
         blank=True, null=True, verbose_name="Точка заведения"
+    )
+    hall = models.ForeignKey(
+        'Hall', on_delete=models.CASCADE, related_name='tables',
+        blank=True, null=True, verbose_name='Зал'
     )
 
     def __str__(self):

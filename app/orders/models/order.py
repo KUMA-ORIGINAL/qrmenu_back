@@ -1,9 +1,13 @@
 from django.db import models
 
+from services.model import BaseModel
+
+
 class ServiceMode(models.IntegerChoices):
     ON_SITE = 1, 'На месте'
     PICKUP = 2, 'Самовывоз'
     DELIVERY = 3, 'Доставка'
+
 
 class OrderStatus(models.IntegerChoices):
     NEW = 0, 'Новый'  # Новый заказ
@@ -11,7 +15,7 @@ class OrderStatus(models.IntegerChoices):
     CANCELLED = 7, 'Отменён'  # Отменён
 
 
-class Order(models.Model):
+class Order(BaseModel):
     external_id = models.CharField(
         max_length=100, verbose_name="Внешний ID онлайн-заказа"
     )
@@ -57,13 +61,6 @@ class Order(models.Model):
     client = models.ForeignKey(
         'Client', on_delete=models.CASCADE, related_name='orders', null=True,
         verbose_name="Клиент"
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Дата создания"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Дата обновления"
     )
 
     class Meta:

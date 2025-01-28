@@ -5,7 +5,7 @@ import logging
 
 from menu.models import Category, Product, Modificator
 from orders.models import Client
-from venues.models import Spot, Table
+from venues.models import Spot, Table, Hall
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,6 @@ class PosterService:
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при отправке данных в Poster: {e}", exc_info=True)
             return None
-        except requests.exceptions.HTTPError as http_err:
-            logger.error(f"HTTP ошибка при отправке данных в Poster: {http_err}", exc_info=True)
-            return None
         except Exception as e:
             logger.error(f"Неизвестная ошибка при отправке данных в Poster: {e}", exc_info=True)
             return None
@@ -63,7 +60,7 @@ class PosterService:
             logger.error(f"Ошибка синхронизации сущности {entity_type} с ID {entity_id} с Poster.")
             return False
 
-    def create_new_category(self, venue, poster_category):
+    def create_new_category(self, poster_category, venue, *args):
         new_category = Category.objects.create(
             external_id=poster_category.get('category_id'),
             category_name=poster_category.get('category_name'),
@@ -73,7 +70,7 @@ class PosterService:
         )
         return new_category
 
-    def create_new_product(self, product_data, venue, category):
+    def create_new_product(self, product_data, venue, *args):
         modificators_data = product_data.get('modifications', [])
 
         if not modificators_data:
@@ -90,7 +87,7 @@ class PosterService:
             hidden=product_data.get('hidden'),
             venue=venue,
             pos_system=venue.pos_system,
-            category=category
+            category=args[0]
         )
         for modificator_data in modificators_data:
             self.create_new_modificator(modificator_data, new_product)
@@ -106,7 +103,7 @@ class PosterService:
             product=new_product
         )
 
-    def create_new_spot(self, venue, spot_data):
+    def create_new_spot(self, spot_data, venue, *args):
         new_spot = Spot.objects.create(
             external_id=spot_data['spot_id'],
             name=spot_data['name'],
@@ -115,16 +112,26 @@ class PosterService:
         )
         return new_spot
 
-    def create_new_table(self, table_data, venue, spot):
+    def create_new_table(self, table_data, venue, *args):
         new_table = Table.objects.create(
             external_id=table_data['table_id'],
             table_num=table_data.get('table_num'),
             table_title=table_data.get('table_title'),
             table_shape=table_data.get('table_shape'),
-            spot=spot,
+            hall=args[0],
+            spot=args[1],
             venue=venue
         )
         return new_table
+
+    def create_new_hall(self, hall_data, venue, *args):
+        new_hall = Hall.objects.create(
+            external_id=hall_data['hall_id'],
+            hall_name=hall_data.get('hall_name'),
+            spot=args[0],
+            venue=venue
+        )
+        return new_hall
 
     def send_order_to_pos(self, poster_order_data):
         comment = (f"{poster_order_data.get('comment')}\n"
@@ -226,6 +233,10 @@ class PosterService:
         """Метод для получения столов из Poster."""
         return self.get("spots.getTableHallTables")
 
+    def get_halls(self):
+        """Метод для получения столов из Poster."""
+        return self.get("spots.getSpotTablesHalls")
+
     def get_incoming_order_by_id(self, order_id):
         params = {
             'incoming_order_id': order_id
@@ -240,3 +251,4 @@ class PosterService:
 
     def get_settings(self):
         return self.get("settings.getAllSettings")
+

@@ -31,10 +31,10 @@ class ProductAdmin(BaseModelAdmin):
         list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
                         'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
-            return list_display
+            pass
         elif request.user.role == 'owner':
-            list_display = (item for item in list_display if item not in ('venue',))
-            return list_display
+            list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended',
+                            'product_price', 'photo_preview', 'detail_link')
         return list_display
 
     def photo_preview(self, obj):
@@ -85,7 +85,8 @@ class ProductAdmin(BaseModelAdmin):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'category' and request.user.role == 'owner':
             venue = Venue.objects.filter(user=request.user).first()
-            kwargs["queryset"] = Category.objects.filter(venue=venue)  # Ограничиваем категории
+            if venue:
+                kwargs["queryset"] = Category.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_queryset(self, request):
