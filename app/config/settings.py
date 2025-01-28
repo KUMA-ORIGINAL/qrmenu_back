@@ -173,6 +173,7 @@ CACHALOTE_ONLY_CACHABLE_MODELS = (
     'menu.product',  # Кешировать только эти модели
     'menu.modificator',  # Кешировать только эти модели
 )
+CACHALOT_TIMEOUT = 60 * 30
 
 CHANNEL_LAYERS = {
     'default': {
