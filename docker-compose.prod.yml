@@ -6,7 +6,6 @@ services:
       dockerfile: Dockerfile.prod
     env_file:
       - .env.prod
-    container_name: backend
     restart: always
     expose:
       - 8000
