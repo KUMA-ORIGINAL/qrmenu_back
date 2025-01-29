@@ -76,7 +76,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - static:/frontend_static
+      - static_volume:/frontend_static
 
 volumes:
   database-storage:
