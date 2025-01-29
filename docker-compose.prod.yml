@@ -63,6 +63,7 @@ services:
       - certs:/etc/letsencrypt
     depends_on:
       - backend
+      - frontend
 
   frontend:
     build:
