@@ -189,7 +189,7 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'QR menu',
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
-    'SCHEMA_VERSION': '3.0.0',
+    'SCHEMA_VERSION': '3.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'CAMELIZE_NAMES': True,
 
