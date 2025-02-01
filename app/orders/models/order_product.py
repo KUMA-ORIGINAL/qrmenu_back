@@ -30,7 +30,6 @@ class OrderProduct(BaseModel):
         verbose_name = "Продукт в заказе"
         verbose_name_plural = "Продукты в заказах"
 
-
     def get_total_price(self):
         if self.modificator:
             total_price = self.modificator.price * self.count

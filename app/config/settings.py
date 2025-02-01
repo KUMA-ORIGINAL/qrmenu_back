@@ -189,12 +189,16 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'QR menu',
     'DESCRIPTION': 'Your project description',
     'VERSION': '1.0.0',
+    'SCHEMA_VERSION': '3.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'CAMELIZE_NAMES': True,
 
     'POSTPROCESSING_HOOKS': [
         'drf_spectacular.contrib.djangorestframework_camel_case.camelize_serializer_fields',
     ],
+
+    'SERVE_PUBLIC': True,
+    'SERVE_HTTPS': True,
 }
 
 REST_FRAMEWORK = {
