@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 @extend_schema(tags=['Order'])
 @extend_schema_view(
-    create=extend_schema(summary='Создание заказа')
+    create=extend_schema(summary='Создание заказа'),
+    list=extend_schema(summary='Получение заказов по id заведения и id стола')
 )
 class OrderViewSet(viewsets.GenericViewSet,
                    mixins.ListModelMixin,
@@ -36,7 +37,7 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         try:
             order_data = serializer.validated_data
-            venue = Venue.objects.filter(id=4).first()
+            venue = Venue.objects.filter(id=1).first()
             table = Table.objects.filter(venue=venue, table_num='8').first()
             api_token = venue.access_token
             pos_system_name = venue.pos_system.name.lower()
