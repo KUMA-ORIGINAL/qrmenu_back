@@ -37,7 +37,7 @@ class PosterWebhookViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             self._process_webhook(post_data)
         except Exception as e:
             logger.error(f"Error processing webhook: {str(e)}")
-            return Response({"error": "Processing failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Processing failed"}, status=status.HTTP_200_OK)
 
         return Response({"status": "accepted"}, status=status.HTTP_200_OK)
 
@@ -94,6 +94,7 @@ class PosterWebhookViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             order.save()
 
             notify_order_status(order.id, order.status)
+
             logger.info(f"Order {order.id} status updated to {order.status}")
         else:
             logger.warning(f"Failed to get status from POS system for order {order.id}")
