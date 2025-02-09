@@ -37,7 +37,7 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         try:
             order_data = serializer.validated_data
-            venue = Venue.objects.filter(id=1).first()
+            venue = Venue.objects.filter(id=2).first()
             table = Table.objects.filter(venue=venue, table_num='8').first()
             api_token = venue.access_token
             pos_system_name = venue.pos_system.name.lower()
