@@ -7,13 +7,19 @@ from unfold.typing import FieldsetsType
 
 from services.admin import BaseModelAdmin
 from venues.models import Venue
-from ..models import Product, Category, Modificator
+from ..models import Product, Category, Modificator, ProductAttribute
 
 
 class ModificatorInline(TabularInline):
     model = Modificator
     extra = 1
     fields = ('name', 'price')
+
+#
+# class ProductAttributeInline(TabularInline):
+#     model = ProductAttribute
+#     extra = 1
+#     fields = ('name', 'price')
 
 
 @admin.register(Product)

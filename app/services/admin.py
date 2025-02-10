@@ -14,7 +14,6 @@ class BaseModelAdmin(UnfoldModelAdmin):
             url = reverse('admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name),
                           args=[obj.id])
             return mark_safe(
-                '<a class="button" href="{}" style="color: white;">{}</a>'.format(url,
-                                                                                  _("Подробнее"))
+                '<a class="button" href="{}">{}</a>'.format(url, _("Подробнее"))
             )
         return "-"

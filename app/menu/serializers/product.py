@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from ..models import Product, Modificator, Category
+
+from ..models import Product, Modificator, Category, ProductAttribute
 
 
 class ModificatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Modificator
-        fields = ['id', 'external_id', 'name', 'price']
+        fields = ['id', 'name', 'price']
+
+
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductAttribute
+        fields = ['id', 'name', 'price']
 
 
 class CategoryShortSerializer(serializers.ModelSerializer):
@@ -15,6 +22,7 @@ class CategoryShortSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    # product_attributes = ProductAttributeSerializer(many=True, read_only=True)
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
     product_photo = serializers.SerializerMethodField()

@@ -13,10 +13,14 @@ class OrderSerializer(serializers.ModelSerializer):
                   'created_at', 'order_products')
 
     def create(self, validated_data):
-        order_products_data = validated_data.pop('order_products')
+        order_product_data = validated_data.pop('order_products', [])
         order = Order.objects.create(**validated_data)
 
-        for order_product_data in order_products_data:
-            OrderProduct.objects.create(order=order, **order_product_data)
+        for order_product_data_item in order_product_data:
+            # product_attributes = order_product_data_item.pop('product_attributes', [])
+            order_product = OrderProduct.objects.create(order=order, **order_product_data_item)
 
+            # order_product.product_attributes.set(product_attributes)
+
+            order_product.save()
         return order

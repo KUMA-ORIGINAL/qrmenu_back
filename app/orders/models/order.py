@@ -73,5 +73,6 @@ class Order(BaseModel):
     def calculate_total_price(self):
         """Подсчитывает общую стоимость заказа и сохраняет ее."""
         total = sum(order_product.total_price for order_product in self.order_products.all())
+        total += self.service_price
         self.total_price = total
         self.save()

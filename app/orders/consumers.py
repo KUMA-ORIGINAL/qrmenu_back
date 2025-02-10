@@ -4,27 +4,35 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class OrderStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # Получаем ID заказа из параметров соединения WebSocket, если он передан
-        self.room_group_name = f'order_'
+        self.order_id = self.scope['url_route']['kwargs']['order_id']
+        self.room_group_name = f'order_{self.order_id}'
 
-        # Присоединяемся к группе, связанной с заказом
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        await self.accept()
+        try:
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.accept()
+        except Exception as e:
+            # Обрабатываем ошибки подключения
+            await self.close(code=1001)
+            print(f"Ошибка подключения: {e}")
 
     async def disconnect(self, close_code):
-        # Отключаемся от группы
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        try:
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
+        except Exception as e:
+            print(f"Ошибка отключения: {e}")
 
     # Получение сообщения из группы и отправка на WebSocket
     async def order_status_update(self, event):
-        status = event['status']
-        await self.send(text_data=json.dumps({
-            'status': status
-        }))
-
+        status = event.get('status', 'unknown')  # Подстраховка на случай, если статус не передан
+        try:
+            await self.send(text_data=json.dumps({
+                'status': status
+            }))
+        except Exception as e:
+            print(f"Ошибка отправки данных: {e}")

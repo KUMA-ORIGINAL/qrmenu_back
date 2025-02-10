@@ -12,8 +12,9 @@ from ..models import Order, OrderProduct, Client
 class OrderProductInline(TabularInline):
     model = OrderProduct
     extra = 0
-    fields = ('product', 'count', 'price', 'total_price')
-    readonly_fields = ('product', 'count', 'price', 'total_price')
+    fields = ('product', 'count', 'price', 'total_price', 'modificator',)
+    readonly_fields = ('product', 'count', 'price', 'total_price', 'modificator',)
+    # filter_horizontal = ('product_attributes',)
 
 
 @admin.register(Order)
