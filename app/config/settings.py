@@ -83,6 +83,8 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
             BASE_DIR / 'orders/templates',
+            BASE_DIR / 'account/templates',
+            BASE_DIR / 'menu/templates',
             BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
@@ -149,6 +151,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
 POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
@@ -278,6 +281,9 @@ UNFOLD = {
     "SHOW_HISTORY": True, # show/hide "History" button, default: True
     "SHOW_VIEW_ON_SITE": True, # show/hide "View on site" button, default: True
     "DASHBOARD_CALLBACK": "orders.dashboard.dashboard_callback",
+    "LOGIN": {
+        "image": lambda request: static("login-bg.jpg"),
+    },
     "STYLES": [
         lambda request: static("admin_dashboard/css/styles.css"),
     ],

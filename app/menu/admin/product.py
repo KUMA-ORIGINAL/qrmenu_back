@@ -1,12 +1,15 @@
 from django.contrib import admin
 from django.http import HttpRequest
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.utils.html import format_html
 from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
+from unfold.decorators import action
 from unfold.typing import FieldsetsType
 
 from services.admin import BaseModelAdmin
-from venues.models import Venue
+from venues.models import Venue, Spot
 from ..models import Product, Category, Modificator, ProductAttribute
 
 
@@ -29,9 +32,16 @@ class ProductAdmin(BaseModelAdmin):
                     'product_price', 'photo_preview', 'detail_link')
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
-    list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter),)
+    list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter), 'spots')
     list_editable = ('hidden', 'is_recommended',)
     inlines = [ModificatorInline]
+    filter_horizontal = ('spots',)
+    list_before_template = "menu/change_list_before.html"
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['spots'] = Spot.objects.all()
+        return super(ProductAdmin, self).changelist_view(request, extra_context=extra_context)
 
     def get_list_display(self, request):
         list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
@@ -71,7 +81,7 @@ class ProductAdmin(BaseModelAdmin):
                 'fields': ('photo_preview', 'product_photo',),
             }),
             ('Дополнительная информация', {
-                'fields': ('hidden', 'is_recommended'),
+                'fields': ('hidden', 'is_recommended', 'spots'),
             }),
         )
         if request.user.is_superuser:
@@ -97,6 +107,10 @@ class ProductAdmin(BaseModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
+        spot_id = request.GET.get('spot')
+
+        if spot_id:
+            qs = qs.filter(spots__id=spot_id)
         if request.user.is_superuser:
             return qs
         elif request.user.role == 'owner':

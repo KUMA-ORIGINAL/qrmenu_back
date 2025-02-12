@@ -87,8 +87,11 @@ class PosterService:
             hidden=product_data.get('hidden'),
             venue=venue,
             pos_system=venue.pos_system,
-            category=args[0]
+            category=args[0],
         )
+        spots = args[1]
+        new_product.spots.set(spots)
+
         for modificator_data in modificators_data:
             self.create_new_modificator(modificator_data, new_product)
         return new_product

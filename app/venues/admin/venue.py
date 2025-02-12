@@ -23,8 +23,7 @@ class VenueAdmin(BaseModelAdmin):
     compressed_fields = True
     list_display = ('id', 'company_name', 'pos_system', 'detail_link')
 
-    actions_detail = ['products_actions_detail',
-                      'spots_and_tables_action_detail',]
+    actions_detail = ['pos_action_detail',]
 
     def get_urls(self):
         return super().get_urls() + [
@@ -36,41 +35,10 @@ class VenueAdmin(BaseModelAdmin):
         ]
 
     @action(
-        description="Получить меню",
-        url_path="products_actions_detail-url",
-    )
-    def products_actions_detail(self, request, object_id):
-        venue = get_object_or_404(Venue, pk=object_id)
-
-        if not venue.access_token:
-            self.message_user(request, f'Заведение {venue.company_name} не имеет API токена.',
-                              level=messages.ERROR)
-            return redirect(request.META["HTTP_REFERER"])
-
-        pos_system_name = venue.pos_system.name.lower()
-        pos_service = POSServiceFactory.get_service(pos_system_name, venue.access_token)
-
-        categories_data = pos_service.get_categories()[1:]
-        create_method = pos_service.create_new_category
-        if not self.process_items(request, venue, categories_data, Category,
-                                  'category_id', create_method, 'категорий'):
-            return redirect(request.META["HTTP_REFERER"])
-
-        products_data = pos_service.get_products()
-        create_method = pos_service.create_new_product
-        if not self.process_items(
-                request, venue, products_data, Product, 'product_id',
-                create_method, 'продуктов',
-                related_model_class_1=Category, related_external_id_key_1='menu_category_id'):
-            return redirect(request.META["HTTP_REFERER"])
-
-        return redirect(request.META["HTTP_REFERER"])
-
-    @action(
-        description="Получить точки, залы и столы заведения",
+        description="Получить информацию из POS системы",
         url_path="spots_and_tables_action_detail-url",
     )
-    def spots_and_tables_action_detail(self, request, object_id):
+    def pos_action_detail(self, request, object_id):
         venue = get_object_or_404(Venue, pk=object_id)
 
         if not venue.access_token:
@@ -82,7 +50,6 @@ class VenueAdmin(BaseModelAdmin):
         pos_system_name = venue.pos_system.name.lower()
         pos_service = POSServiceFactory.get_service(pos_system_name, venue.access_token)
 
-        # Получаем и обрабатываем точки
         spots_data = pos_service.get_spots()
         create_method = pos_service.create_new_spot
         if not self.process_items(
@@ -106,6 +73,47 @@ class VenueAdmin(BaseModelAdmin):
                 related_model_class_1=Hall, related_external_id_key_1='hall_id',
                 related_model_class_2=Spot, related_external_id_key_2='spot_id',):
             return redirect(request.META["HTTP_REFERER"])
+
+        categories_data = pos_service.get_categories()[1:]
+        create_method = pos_service.create_new_category
+        if not self.process_items(request, venue, categories_data, Category,
+                                  'category_id', create_method, 'категорий'):
+            return redirect(request.META["HTTP_REFERER"])
+
+        products_data = pos_service.get_products()
+        create_method = pos_service.create_new_product
+
+        if not products_data:
+            self.message_user(request, 'Ошибка при получении продуктов', level=messages.ERROR)
+            return redirect(request.META["HTTP_REFERER"])
+
+        created_item_count = 0
+
+        for product_data in products_data:
+            existing_product = Product.objects.filter(
+                venue=venue,
+                external_id=product_data['product_id']
+            ).exists()
+
+            if not existing_product:
+                related_category = Category.objects.filter(
+                    venue=venue,
+                    external_id=product_data.get('menu_category_id')
+                ).first()
+
+                related_spots = Spot.objects.filter(venue=venue)
+
+                create_method(product_data, venue, related_category, related_spots)
+                created_item_count += 1
+
+        if created_item_count > 0:
+            self.message_user(request,
+                              f"{created_item_count} продуктов успешно созданы.",
+                              level=messages.SUCCESS)
+        else:
+            self.message_user(request,
+                              "Продукты актуальны.",
+                              level=messages.SUCCESS)
 
         return redirect(request.META["HTTP_REFERER"])
 
