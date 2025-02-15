@@ -21,8 +21,6 @@ class Product(BaseModel):
                                    verbose_name="Точки заведения")
     venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='products',
                               verbose_name="Заведение")
-    pos_system = models.ForeignKey('venues.POSSystem', on_delete=models.CASCADE,
-                                   verbose_name="POS система")
 
     class Meta:
         verbose_name = "Товар"

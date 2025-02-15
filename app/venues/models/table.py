@@ -11,7 +11,7 @@ class Table(BaseModel):
         max_length=255, verbose_name="Номер стола"
     )
     table_title = models.CharField(
-        max_length=255, verbose_name="Название стола"
+        max_length=255, verbose_name="Название стола", blank=True
     )
     table_shape = models.CharField(
         max_length=50, choices=[('square', 'Квадратный'), ('circle', 'Круглый')],

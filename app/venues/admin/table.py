@@ -7,7 +7,7 @@ from unfold.decorators import action
 
 from services.admin import BaseModelAdmin
 from services.qr_service import create_pdf_with_qr
-from ..models import Table, Venue, Spot
+from ..models import Table, Venue, Spot, Hall
 
 
 @admin.register(Table)
@@ -48,6 +48,15 @@ class TableAdmin(BaseModelAdmin):
 
         return response
 
+    def get_list_display(self, request):
+        list_display = ('id', 'table_num', 'table_title', 'table_shape', 'hall', 'spot', 'venue',
+                        'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            list_display = ('table_num', 'table_title', 'table_shape', 'hall', 'spot', 'detail_link')
+        return list_display
+
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
@@ -62,9 +71,13 @@ class TableAdmin(BaseModelAdmin):
         super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'spot' and request.user.role == 'owner':
+        if request.user.role == 'owner':
             venue = Venue.objects.filter(user=request.user).first()
-            kwargs["queryset"] = Spot.objects.filter(venue=venue)  # Ограничиваем категории
+            if venue:
+                if db_field.name == 'spot':
+                    kwargs["queryset"] = Spot.objects.filter(venue=venue)
+                elif db_field.name == 'hall':
+                    kwargs["queryset"] = Hall.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_queryset(self, request):

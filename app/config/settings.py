@@ -243,13 +243,13 @@ LOGGING = {
             'style': '{',
         },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} - {module} - {message}',
             'style': '{',
         },
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',  # Можно изменить на 'DEBUG' для более подробного вывода
+            'level': 'INFO',  # Можно изменить на 'DEBUG' для более подробного вывода
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
@@ -270,6 +270,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
+        'venues.admin': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        }
     },
 }
 
@@ -430,16 +435,16 @@ UNFOLD = {
             },
         ],
     },
-    "TABS": [
-        {
-            "models": ["venues.venue"],
-            "items": [
-                {
-                    "title": "Генерация qr-code",
-                    "icon": "grade",
-                    "link": reverse_lazy("admin:qr"),
-                },
-            ],
-        },
-    ],
+    # "TABS": [
+    #     {
+    #         "models": ["venues.venue"],
+    #         "items": [
+    #             {
+    #                 "title": "Генерация qr-code",
+    #                 "icon": "grade",
+    #                 "link": reverse_lazy("admin:qr"),
+    #             },
+    #         ],
+    #     },
+    # ],
 }

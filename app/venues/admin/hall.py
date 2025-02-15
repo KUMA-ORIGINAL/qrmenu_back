@@ -10,6 +10,14 @@ class HallAdmin(BaseModelAdmin):
     list_display = ('id', 'hall_name', 'spot', 'venue', 'detail_link')
     search_fields = ('hall_name',)
 
+    def get_list_display(self, request):
+        list_display = ('id', 'hall_name', 'spot', 'venue', 'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            list_display = ('hall_name', 'spot', 'detail_link')
+        return list_display
+
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:

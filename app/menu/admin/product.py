@@ -40,7 +40,8 @@ class ProductAdmin(BaseModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        extra_context['spots'] = Spot.objects.all()
+        if request.user.role == 'owner':
+            extra_context['spots'] = Spot.objects.filter(venue__user=request.user)
         return super(ProductAdmin, self).changelist_view(request, extra_context=extra_context)
 
     def get_list_display(self, request):
@@ -49,7 +50,7 @@ class ProductAdmin(BaseModelAdmin):
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
-            list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended',
+            list_display = ('product_name', 'category', 'hidden', 'is_recommended',
                             'product_price', 'photo_preview', 'detail_link')
         return list_display
 
@@ -57,10 +58,12 @@ class ProductAdmin(BaseModelAdmin):
         if obj.product_photo:
             if (str(obj.product_photo).startswith('http') or
                 str(obj.product_photo).startswith('https')):
-                return format_html('<img src="{}" style="width: 100px; height: auto;" />',
+                return format_html('<img src="{}" style="border-radius:5px; '
+                                   'width: 100px; height: auto;" />',
                                    obj.product_photo)
             else:
-                return format_html('<img src="{}" style="width: 100px; height: auto;" />',
+                return format_html('<img src="{}" style="border-radius:5px; '
+                                   'width: 100px; height: auto;" />',
                                    obj.product_photo.url)
         return "No Image"
 
@@ -74,8 +77,7 @@ class ProductAdmin(BaseModelAdmin):
                     'product_name',
                     'product_description', 'product_price', 'weight',
                     'category',
-                    'venue',
-                    'pos_system')
+                    'venue')
             }),
             ('Photo', {
                 'fields': ('photo_preview', 'product_photo',),
@@ -94,8 +96,7 @@ class ProductAdmin(BaseModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()  # Заполняем venue владельца
-            obj.pos_system = obj.venue.pos_system  # Заполняем pos_system автоматически
+            obj.venue = Venue.objects.filter(user=request.user).first()
         super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -105,13 +106,16 @@ class ProductAdmin(BaseModelAdmin):
                 kwargs["queryset"] = Category.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == 'spots' and request.user.role == 'owner':
+            venue = Venue.objects.filter(user=request.user).first()
+            if venue:
+                kwargs["queryset"] = Spot.objects.filter(venue=venue)
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        spot_id = request.GET.get('spot')
-
-        if spot_id:
-            qs = qs.filter(spots__id=spot_id)
         if request.user.is_superuser:
             return qs
         elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)  # Показываем только продукты заведения владельца
+            return qs.filter(venue__user=request.user)

@@ -8,6 +8,14 @@ from ..models import Spot, Venue
 class SpotAdmin(BaseModelAdmin):
     list_display = ('name', 'address', 'venue', 'detail_link')
 
+    def get_list_display(self, request):
+        list_display = ('id', 'name', 'address', 'venue', 'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            list_display = ('name', 'address', 'detail_link')
+        return list_display
+
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:

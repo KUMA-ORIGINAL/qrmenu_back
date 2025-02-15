@@ -1,38 +1,24 @@
+import logging
+
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import path
-from django.views.generic import TemplateView
 
 from unfold.decorators import action
-from unfold.views import UnfoldModelAdminViewMixin
 
 from menu.models import Category, Product
 from services.admin import BaseModelAdmin
 from ..models import Venue, Spot, Table, Hall
 from services.pos_service_factory import POSServiceFactory
 
-
-class MyClassBasedView(UnfoldModelAdminViewMixin, TemplateView):
-    title = "Гнерация qr-code"
-    permission_required = ()
-    template_name = 'venues/qr.html'
+logger = logging.getLogger(__name__)
 
 
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
     compressed_fields = True
     list_display = ('id', 'company_name', 'pos_system', 'detail_link')
-
+    readonly_fields = ('user',)
     actions_detail = ['pos_action_detail',]
-
-    def get_urls(self):
-        return super().get_urls() + [
-            path(
-                "qr",
-                MyClassBasedView.as_view(model_admin=self),  # IMPORTANT: model_admin is required
-                name="qr"
-            ),
-        ]
 
     @action(
         description="Получить информацию из POS системы",
@@ -53,31 +39,28 @@ class VenueAdmin(BaseModelAdmin):
         spots_data = pos_service.get_spots()
         create_method = pos_service.create_new_spot
         if not self.process_items(
-                request, venue, spots_data, Spot,
-                'spot_id', create_method, 'точек'):
+                request, venue, spots_data, Spot, 'spot_id', create_method):
             return redirect(request.META["HTTP_REFERER"])
 
         halls_data = pos_service.get_halls()
         create_method = pos_service.create_new_hall
         if not self.process_items(
-                request, venue, halls_data, Hall,
-                'hall_id', create_method, 'залов',
+                request, venue, halls_data, Hall, 'hall_id', create_method,
                 related_model_class_1=Spot, related_external_id_key_1='spot_id'):
             return redirect(request.META["HTTP_REFERER"])
 
         tables_data = pos_service.get_tables()
         create_method = pos_service.create_new_table
         if not self.process_items(
-                request, venue, tables_data, Table,
-                'table_id', create_method, 'столов',
+                request, venue, tables_data, Table, 'table_id', create_method,
                 related_model_class_1=Hall, related_external_id_key_1='hall_id',
                 related_model_class_2=Spot, related_external_id_key_2='spot_id',):
             return redirect(request.META["HTTP_REFERER"])
 
         categories_data = pos_service.get_categories()[1:]
         create_method = pos_service.create_new_category
-        if not self.process_items(request, venue, categories_data, Category,
-                                  'category_id', create_method, 'категорий'):
+        if not self.process_items(
+                request, venue, categories_data, Category, 'category_id', create_method):
             return redirect(request.META["HTTP_REFERER"])
 
         products_data = pos_service.get_products()
@@ -100,6 +83,14 @@ class VenueAdmin(BaseModelAdmin):
                     venue=venue,
                     external_id=product_data.get('menu_category_id')
                 ).first()
+                if not related_category:
+                    self.message_user(
+                        request,
+                        f"Не удалось найти связанные объекты для Продуктов "
+                        f"({Category._meta.verbose_name_plural}).",
+                        level=messages.ERROR,
+                    )
+                    return redirect(request.META["HTTP_REFERER"])
 
                 related_spots = Spot.objects.filter(venue=venue)
 
@@ -118,10 +109,11 @@ class VenueAdmin(BaseModelAdmin):
         return redirect(request.META["HTTP_REFERER"])
 
     def process_items(self, request, venue, items_data, model_class, external_id_key, create_method,
-                      item_name, related_model_class_1=None, related_external_id_key_1=None,
+                      related_model_class_1=None, related_external_id_key_1=None,
                       related_model_class_2=None, related_external_id_key_2=None):
+        item_name = model_class._meta.verbose_name_plural
         if not items_data:
-            self.message_user(request, f'Ошибка при получении {item_name}')
+            self.message_user(request, f'{item_name} не найдено!')
             return False
 
         created_item_count = 0
@@ -145,7 +137,15 @@ class VenueAdmin(BaseModelAdmin):
                         venue=venue,
                         external_id=item_data.get(related_external_id_key_2)
                     ).first()
-                create_method(item_data, venue, related_instance_1, related_instance_2)  # Передаем связанный объект
+                if not related_instance_1 or not related_instance_2:
+                    self.message_user(
+                        request,
+                        f"Не удалось найти связанные объекты для {item_name} "
+                        f"{related_instance_1}.",
+                        level=messages.ERROR,
+                    )
+                    continue
+                create_method(item_data, venue, related_instance_1, related_instance_2)
                 created_item_count += 1
 
         if created_item_count > 0:
@@ -154,16 +154,32 @@ class VenueAdmin(BaseModelAdmin):
                               level=messages.SUCCESS)
         else:
             self.message_user(request,
-                              f"{item_name.capitalize()} актуальны.",
+                              f"{item_name} актуальны.",
                               level=messages.SUCCESS)
         return True
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ()
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            readonly_fields = ('user',)
+        return readonly_fields
+
+    def get_list_display(self, request):
+        list_display = ('id', 'company_name', 'pos_system', 'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            list_display = ('company_name', 'pos_system', 'detail_link')
+        return list_display
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
         elif request.user.role == 'owner':
-            return [field for field in fields if field != 'pos_system']
+            return [field for field in fields if field not in ('pos_system',)]
         return fields
 
     def get_queryset(self, request):

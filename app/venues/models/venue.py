@@ -17,7 +17,7 @@ class Venue(BaseModel):
         verbose_name="ID владельца"
     )
     owner_name = models.CharField(
-        max_length=100, verbose_name="Имя владельца"
+        max_length=100, verbose_name="Имя владельца", blank=True
     )
     owner_email = models.EmailField(
         verbose_name="Электронная почта владельца"
@@ -51,7 +51,7 @@ class Venue(BaseModel):
         'POSSystem', on_delete=models.CASCADE, blank=True, null=True, verbose_name="POS система"
     )
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Пользователь"
+        User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Владелец"
     )
 
     def __str__(self):

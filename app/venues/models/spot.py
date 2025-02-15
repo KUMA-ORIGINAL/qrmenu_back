@@ -11,5 +11,9 @@ class Spot(BaseModel):
     venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='spots',
                               verbose_name="Заведение")
 
+    class Meta:
+        verbose_name = "Точка заведения"
+        verbose_name_plural = "Точки заведения"
+
     def __str__(self):
         return self.name

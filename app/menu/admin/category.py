@@ -19,14 +19,26 @@ class CategoryAdmin(BaseModelAdmin):
     mptt_level_indent = 20
     mptt_show_nodedata = True
 
+    def get_list_display(self, request):
+        list_display = ('id', 'category_name', 'venue', 'category_hidden', 'category_photo_preview',
+                        'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == 'owner':
+            list_display = ('category_name', 'category_hidden', 'category_photo_preview',
+                            'detail_link')
+        return list_display
+
     def category_photo_preview(self, obj):
         if obj.category_photo:
             if (str(obj.category_photo).startswith('http') or
                 str(obj.category_photo).startswith('https')):
-                return format_html('<img src="{}" style="width: 150px; height: auto;" />',
+                return format_html('<img src="{}" style="border-radius:5px;'
+                                   'width: 120px; height: auto;" />',
                                    obj.category_photo)
             else:
-                return format_html('<img src="{}" style="width: 150px; height: auto;" />',
+                return format_html('<img src="{}" style="border-radius:5px;'
+                                   'width: 120px; height: auto;" />',
                                    obj.category_photo.url)
         return "No Image"
 
@@ -39,7 +51,7 @@ class CategoryAdmin(BaseModelAdmin):
                     'external_id',
                     'category_name',
                     'category_photo_preview',
-                    'category_photo', 'venue', 'pos_system')
+                    'category_photo', 'venue')
             }),
             ('Дополнительная информация', {
                 'fields': ('category_hidden',),
@@ -56,8 +68,7 @@ class CategoryAdmin(BaseModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()  # Заполняем venue владельца
-            obj.pos_system = obj.venue.pos_system  # Заполняем pos_system автоматически
+            obj.venue = Venue.objects.filter(user=request.user).first()
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):

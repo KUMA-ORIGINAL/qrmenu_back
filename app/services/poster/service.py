@@ -65,8 +65,7 @@ class PosterService:
             external_id=poster_category.get('category_id'),
             category_name=poster_category.get('category_name'),
             category_photo=self.BASE_URL + str(poster_category.get('category_photo')),
-            venue=venue,
-            pos_system=venue.pos_system
+            venue=venue
         )
         return new_category
 
@@ -86,7 +85,6 @@ class PosterService:
             weight=product_data.get('out'),
             hidden=product_data.get('hidden'),
             venue=venue,
-            pos_system=venue.pos_system,
             category=args[0],
         )
         spots = args[1]

@@ -11,8 +11,6 @@ class Category(BaseModel):
     category_hidden = models.BooleanField(default=False, verbose_name="Скрыт?",)
     venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='categories',
                               verbose_name="Заведение")
-    pos_system = models.ForeignKey('venues.POSSystem', on_delete=models.CASCADE,
-                                   verbose_name="POS система")
 
     def __str__(self):
         return self.category_name
