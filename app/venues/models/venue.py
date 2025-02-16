@@ -46,12 +46,8 @@ class Venue(BaseModel):
     next_pay_date = models.DateTimeField(
         blank=True, null=True, verbose_name="Дата следующей оплаты"
     )
-
     pos_system = models.ForeignKey(
         'POSSystem', on_delete=models.CASCADE, blank=True, null=True, verbose_name="POS система"
-    )
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, blank=True, null=True, verbose_name="Владелец"
     )
 
     def __str__(self):

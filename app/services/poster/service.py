@@ -34,6 +34,7 @@ class PosterService:
 
         try:
             response = requests.post(f"{self.API_URL}{endpoint}", params=params, json=data)
+            logger.info(response.json())
             response.raise_for_status()
             return response.json().get('response', [])
         except requests.exceptions.RequestException as e:
@@ -137,7 +138,7 @@ class PosterService:
     def send_order_to_pos(self, poster_order_data):
         comment = (f"{poster_order_data.get('comment')}\n"
                    f"Обслуживание: {poster_order_data.get('service_price')}\n"
-                   f"Чаевые: {poster_order_data.get('tips_cash')}")
+                   f"Чаевые: {poster_order_data.get('tips_price')}")
         incoming_order_data = {
             'spot_id': 1,
             'phone': poster_order_data.get('phone'),

@@ -15,7 +15,7 @@ class ClientAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             return [field for field in fields if field not in ['venue', 'external_id']]
         return fields
 
@@ -23,5 +23,5 @@ class ClientAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)

@@ -61,19 +61,18 @@ class OrderAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             return [field for field in fields if field not in ['venue', 'external_id']]
         return fields
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        venue = Venue.objects.filter(
-            user=request.user).first() if request.user.role == 'owner' else None
-
-        if venue:
-            if db_field.name == 'client':
-                kwargs["queryset"] = Client.objects.filter(venue=venue)
-            elif db_field.name == 'table':
-                kwargs["queryset"] = Table.objects.filter(venue=venue)
+        if request.user.role == 'owner' or request.user.role == 'admin':
+            venue = request.user.venue
+            if venue:
+                if db_field.name == 'client':
+                    kwargs["queryset"] = Client.objects.filter(venue=venue)
+                elif db_field.name == 'table':
+                    kwargs["queryset"] = Table.objects.filter(venue=venue)
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -81,6 +80,5 @@ class OrderAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
-
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)

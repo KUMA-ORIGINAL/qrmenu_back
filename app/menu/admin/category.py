@@ -9,11 +9,9 @@ from ..models import Category
 @admin.register(Category)
 class CategoryAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('category_name', 'venue', 'category_hidden', 'category_photo_preview', 'detail_link')
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
     readonly_fields = ('category_photo_preview',)
-    list_editable = ('category_hidden', )
     list_per_page = 20
 
     mptt_level_indent = 20
@@ -24,7 +22,7 @@ class CategoryAdmin(BaseModelAdmin):
                         'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             list_display = ('category_name', 'category_hidden', 'category_photo_preview',
                             'detail_link')
         return list_display
@@ -60,20 +58,20 @@ class CategoryAdmin(BaseModelAdmin):
         )
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             fieldsets[0][1]['fields'] = ('category_name',
                                          'category_photo_preview',
                                          'category_photo')
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()
+        if request.user.role == 'owner' or request.user.role == 'admin' and not change:
+            obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)

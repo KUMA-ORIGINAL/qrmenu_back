@@ -19,9 +19,8 @@ def get_last_week_orders_chart(request):
     user = request.user
     if request.user.is_superuser:
         orders_queryset = Order.objects
-    elif user.role == 'owner':
-        venue = Venue.objects.filter(user=user).first()
-        orders_queryset = Order.objects.filter(venue=venue)
+    elif user.role == 'owner' or user.role == 'admin':
+        orders_queryset = Order.objects.filter(venue=user.venue)
 
     orders_per_day = (
         orders_queryset.filter(

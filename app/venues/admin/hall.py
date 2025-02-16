@@ -14,7 +14,7 @@ class HallAdmin(BaseModelAdmin):
         list_display = ('id', 'hall_name', 'spot', 'venue', 'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             list_display = ('hall_name', 'spot', 'detail_link')
         return list_display
 
@@ -22,18 +22,18 @@ class HallAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             return [field for field in fields if field not in ['venue', 'external_id']]
         return fields
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()  # Заполняем venue владельца
+        if (request.user.role == 'owner' or request.user.role == 'admin')  and not change:
+            obj.venue = request.user.venue  # Заполняем venue владельца
         super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'spot' and request.user.role == 'owner':
-            venue = Venue.objects.filter(user=request.user).first()
+        if (request.user.role == 'owner' or request.user.role == 'admin') and db_field.name == 'spot':
+            venue = request.user.venue
             kwargs["queryset"] = Spot.objects.filter(venue=venue)  # Ограничиваем категории
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -41,6 +41,6 @@ class HallAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)
         return qs

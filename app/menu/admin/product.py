@@ -28,20 +28,17 @@ class ModificatorInline(TabularInline):
 @admin.register(Product)
 class ProductAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
-                    'product_price', 'photo_preview', 'detail_link')
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
     list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter), 'spots')
-    list_editable = ('hidden', 'is_recommended',)
     inlines = [ModificatorInline]
     filter_horizontal = ('spots',)
     list_before_template = "menu/change_list_before.html"
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        if request.user.role == 'owner':
-            extra_context['spots'] = Spot.objects.filter(venue__user=request.user)
+        if request.user.role == 'owner' or request.user.role == 'admin':
+            extra_context['spots'] = Spot.objects.filter(venue=request.user.venue)
         return super(ProductAdmin, self).changelist_view(request, extra_context=extra_context)
 
     def get_list_display(self, request):
@@ -49,7 +46,7 @@ class ProductAdmin(BaseModelAdmin):
                         'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             list_display = ('product_name', 'category', 'hidden', 'is_recommended',
                             'product_price', 'photo_preview', 'detail_link')
         return list_display
@@ -66,7 +63,6 @@ class ProductAdmin(BaseModelAdmin):
                                    'width: 100px; height: auto;" />',
                                    obj.product_photo.url)
         return "No Image"
-
     photo_preview.short_description = 'Превью'
 
     def get_fieldsets(self, request: HttpRequest, obj=None) -> FieldsetsType:
@@ -88,27 +84,27 @@ class ProductAdmin(BaseModelAdmin):
         )
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             fieldsets[0][1]['fields'] = (
                 'product_name', 'product_description', 'product_price', 'weight', 'category'
             )
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()
+        if request.user.role == 'owner' or request.user.role == 'admin' and not change:
+            obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'category' and request.user.role == 'owner':
-            venue = Venue.objects.filter(user=request.user).first()
+        if request.user.role == 'owner' or request.user.role == 'admin' and db_field.name == 'category':
+            venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Category.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if db_field.name == 'spots' and request.user.role == 'owner':
-            venue = Venue.objects.filter(user=request.user).first()
+        if request.user.role == 'owner' or request.user.role == 'admin' and db_field.name == 'spots':
+            venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Spot.objects.filter(venue=venue)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
@@ -117,5 +113,5 @@ class ProductAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)

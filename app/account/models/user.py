@@ -39,9 +39,11 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     """Custom user model with email for authentication instead of username."""
 
+    ADMIN = 'admin'
     OWNER = 'owner'
     ROLE_CHOICES = (
         (OWNER, "Owner"),
+        (ADMIN, "Administrator"),  # Добавлена роль администратора
     )
 
     username = None  # Remove username field as it's no longer needed
@@ -60,7 +62,10 @@ class User(AbstractUser):
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
-        default=OWNER
+    )
+    venue = models.ForeignKey(
+        'venues.Venue', on_delete=models.CASCADE, related_name='users',
+        verbose_name="Заведение", blank=True, null=True
     )
 
     USERNAME_FIELD = "email"  # Use email as the unique identifier

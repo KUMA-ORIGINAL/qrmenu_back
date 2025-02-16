@@ -274,6 +274,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'services.poster': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
         }
     },
 }
@@ -368,6 +373,7 @@ UNFOLD = {
                         "title": _("Заведение"),
                         "icon": "store",
                         "link": reverse_lazy("admin:venues_venue_changelist"),
+                        "permission": "account.utils.permission_callback_for_admin",
                     },
                     {
                         "title": _("Точки заведения"),

@@ -12,7 +12,7 @@ class SpotAdmin(BaseModelAdmin):
         list_display = ('id', 'name', 'address', 'venue', 'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             list_display = ('name', 'address', 'detail_link')
         return list_display
 
@@ -20,19 +20,19 @@ class SpotAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner':
+        elif request.user.role == 'owner' or request.user.role == 'admin':
             return [field for field in fields if field not in ['venue', 'external_id']]
         return fields
 
     def save_model(self, request, obj, form, change):
         if request.user.role == 'owner' and not change:
-            obj.venue = Venue.objects.filter(user=request.user).first()  # Заполняем venue владельца
+            obj.venue = request.user.venue  # Заполняем venue владельца
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
-            return qs.filter(venue__user=request.user)
+        elif request.user.role == 'owner' or request.user.role == 'admin':
+            return qs.filter(venue=request.user.venue)
         return qs

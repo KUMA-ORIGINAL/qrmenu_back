@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 class VenueAdmin(BaseModelAdmin):
     compressed_fields = True
     list_display = ('id', 'company_name', 'pos_system', 'detail_link')
-    readonly_fields = ('user',)
     actions_detail = ['pos_action_detail',]
 
     @action(
@@ -137,14 +136,7 @@ class VenueAdmin(BaseModelAdmin):
                         venue=venue,
                         external_id=item_data.get(related_external_id_key_2)
                     ).first()
-                if not related_instance_1 or not related_instance_2:
-                    self.message_user(
-                        request,
-                        f"Не удалось найти связанные объекты для {item_name} "
-                        f"{related_instance_1}.",
-                        level=messages.ERROR,
-                    )
-                    continue
+
                 create_method(item_data, venue, related_instance_1, related_instance_2)
                 created_item_count += 1
 
@@ -157,14 +149,6 @@ class VenueAdmin(BaseModelAdmin):
                               f"{item_name} актуальны.",
                               level=messages.SUCCESS)
         return True
-
-    def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ()
-        if request.user.is_superuser:
-            pass
-        elif request.user.role == 'owner':
-            readonly_fields = ('user',)
-        return readonly_fields
 
     def get_list_display(self, request):
         list_display = ('id', 'company_name', 'pos_system', 'detail_link')
@@ -187,5 +171,5 @@ class VenueAdmin(BaseModelAdmin):
         if request.user.is_superuser:
             return qs
         elif request.user.role == 'owner':
-            return qs.filter(user=request.user)
+            return qs.filter(users=request.user)
         return qs
