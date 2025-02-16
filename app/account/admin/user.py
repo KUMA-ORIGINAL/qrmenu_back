@@ -89,10 +89,11 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' and not change:
-            obj.venue = request.user.venue
-            obj.is_staff = True
-            obj.role = 'admin'
+        if request.user.role == 'owner':
+            if not change:
+                obj.venue = request.user.venue
+                obj.is_staff = True
+                obj.role = 'admin'
             super().save_model(request, obj, form, change)
 
             admin_group = Group.objects.get(name='Администратор')
