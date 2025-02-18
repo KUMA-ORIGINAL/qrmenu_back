@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.utils.html import format_html
 
 from services.admin import BaseModelAdmin
-from venues.models import Venue
 from ..models import Category
 
 
@@ -65,7 +64,7 @@ class CategoryAdmin(BaseModelAdmin):
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' or request.user.role == 'admin' and not change:
+        if (request.user.role == 'owner' or request.user.role == 'admin') and not change:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
 
