@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
+from venues.models import Spot
 from ..models import User
 
 admin.site.unregister(Group)
@@ -54,7 +55,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
-            list_display = ('email', 'full_name', 'role')
+            list_display = ('email', 'full_name', 'role', 'spot')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
@@ -76,7 +77,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             ),
             ("Dates", {"fields": ("last_login", "date_joined")}),
             ('required', {
-                'fields': ('venue', 'role', 'phone', 'full_name')}),
+                'fields': ('venue', 'spot', 'role', 'phone', 'full_name')}),
         )
         if request.user.is_superuser:
             pass
@@ -84,9 +85,16 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             fieldsets = (
                 (None, {"fields": ("email", "password")}),
                 ("Dates", {"fields": ("last_login",)}),
-                ('required', {'fields': ('role', 'phone', 'full_name')}),
+                ('required', {'fields': ('role', 'spot', 'phone', 'full_name')}),
             )
         return fieldsets
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if request.user.role == 'owner' and db_field.name == 'spot':
+            venue = request.user.venue
+            if venue:
+                kwargs["queryset"] = Spot.objects.filter(venue=venue)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if request.user.role == 'owner':
@@ -105,4 +113,3 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             return qs
         elif request.user.role == 'owner':
             return qs.filter(venue=request.user.venue)
-

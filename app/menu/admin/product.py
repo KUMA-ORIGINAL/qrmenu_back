@@ -37,7 +37,7 @@ class ProductAdmin(BaseModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        if request.user.role == 'owner' or request.user.role == 'admin':
+        if request.user.role == 'owner':
             extra_context['spots'] = Spot.objects.filter(venue=request.user.venue)
         return super(ProductAdmin, self).changelist_view(request, extra_context=extra_context)
 
@@ -84,26 +84,35 @@ class ProductAdmin(BaseModelAdmin):
         )
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role == 'owner':
             fieldsets[0][1]['fields'] = (
                 'product_name', 'product_description', 'product_price', 'weight', 'category'
+            )
+        elif request.user.role == 'admin':
+            fieldsets[0][1]['fields'] = (
+                'product_name', 'product_description', 'product_price', 'weight', 'category'
+            )
+            fieldsets[2][1]['fields'] = (
+                'hidden', 'is_recommended',
             )
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner' or request.user.role == 'admin' and not change:
+        if (request.user.role == 'owner' or request.user.role == 'admin') and not change:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
+        if request.user.role == 'admin' and not change:
+            obj.spots.add(request.user.spot)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if request.user.role == 'owner' or request.user.role == 'admin' and db_field.name == 'category':
+        if (request.user.role == 'owner' or request.user.role == 'admin') and db_field.name == 'category':
             venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Category.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if request.user.role == 'owner' or request.user.role == 'admin' and db_field.name == 'spots':
+        if (request.user.role == 'owner' or request.user.role == 'admin') and db_field.name == 'spots':
             venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Spot.objects.filter(venue=venue)
@@ -113,5 +122,7 @@ class ProductAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role == 'owner':
             return qs.filter(venue=request.user.venue)
+        elif request.user.role == 'admin':
+            return qs.filter(spots=request.user.spot)

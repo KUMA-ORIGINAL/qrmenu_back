@@ -1,83 +1,83 @@
-from io import BytesIO
-
-import qrcode
-from django.conf import settings
-from django.templatetags.static import static
-from qrcode.image.styledpil import StyledPilImage
-from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
-from reportlab.lib.pagesizes import landscape, A4
-from reportlab.lib.units import mm
-from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import HexColor
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from io import BytesIO
+import qrcode
+from PyPDF2 import PdfReader, PdfWriter
 
-
-def generate_qr_with_logo(data, logo_path, box_size=10, border=4):
-    """Генерация QR-кода с улучшенным логотипом."""
-    # Создаем QR-код
+def create_qr_code_in_memory(url):
+    """Создает QR-код и возвращает его в виде BytesIO."""
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_H,
-        box_size=box_size,
-        border=border,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=2,
     )
-    qr.add_data(data)
+    qr.add_data(url)
     qr.make(fit=True)
 
-    # Генерация изображения QR-кода с уменьшенным логотипом
-    qr_img = qr.make_image(
-        image_factory=StyledPilImage,
-        embeded_image_path=logo_path,
-        module_drawer=RoundedModuleDrawer(),
-    )
+    img = qr.make_image(fill_color="black", back_color="white")
+    qr_buffer = BytesIO()
+    img.save(qr_buffer, format="PNG")
+    qr_buffer.seek(0)
+    return qr_buffer
 
-    return qr_img
+def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height, text_top):
+    """Создает PDF-слой с QR-кодами и текстом в памяти."""
+    packet = BytesIO()
+    can = canvas.Canvas(packet, pagesize=landscape(A4))
 
+    pdfmetrics.registerFont(TTFont('Inter', 'static/Inter_18pt-Bold.ttf'))
+    can.setFont('Inter', 40)
+    can.setFillColor(HexColor("#FFFFFF"))
 
-def pil_image_to_bytes(image):
-    """Convert PIL Image to BytesIO buffer for use in ReportLab."""
-    img_byte_arr = BytesIO()
-    image.save(img_byte_arr, format='PNG')
-    img_byte_arr.seek(0)
-    return img_byte_arr
+    # Добавляем текст над QR-кодами
+    can.drawString(x1 + 30, y1 + height + 20, text_top)
+    can.drawString(x2 + 30, y2 + height + 20, text_top)
 
+    # Конвертируем BytesIO в ImageReader
+    qr_image = ImageReader(qr_image_buffer)
 
-def create_pdf_with_qr(output_pdf_path, data1, data2, logo_path, text_top1, text_bottom1, text_top2, text_bottom2):
-    width, height = landscape(A4)
+    # Добавляем QR-коды
+    can.drawImage(qr_image, x1, y1, width=width, height=height)
+    can.drawImage(qr_image, x2, y2, width=width, height=height)
+    can.save()
 
-    c = canvas.Canvas(output_pdf_path, pagesize=landscape(A4))
+    packet.seek(0)
+    return PdfReader(packet)
 
-    pdfmetrics.registerFont(TTFont('Roboto', 'static/Roboto.ttf'))
+def merge_pdf_with_overlay(input_pdf_stream, overlay_pdf):
+    """Объединяет существующий PDF с наложением и возвращает итоговый PDF в виде BytesIO."""
+    reader = PdfReader(input_pdf_stream)
+    writer = PdfWriter()
 
-    qr_size = 300  # Размер QR-кода
-    qr1_img = generate_qr_with_logo(data1, logo_path, box_size=10)
-    qr2_img = generate_qr_with_logo(data2, logo_path, box_size=10)
+    # Добавляем QR-код и текст на каждую страницу существующего PDF
+    for page_number in range(len(reader.pages)):
+        page = reader.pages[page_number]
+        page.merge_page(overlay_pdf.pages[0])
+        writer.add_page(page)
 
-    # Преобразуем изображения в буфер BytesIO для использования в ReportLab
-    qr1_img_buffer = pil_image_to_bytes(qr1_img)
-    qr2_img_buffer = pil_image_to_bytes(qr2_img)
+    output_pdf_stream = BytesIO()
+    writer.write(output_pdf_stream)
+    output_pdf_stream.seek(0)
+    return output_pdf_stream
 
-    margin = ((width / 2 - 330) / 4) * mm
-    qr_y = height / 2 - qr_size / 2
-    line_x = width / 2
-    qr1_x = margin
-    qr2_x = width - qr_size - margin
+def add_qr_and_text_to_pdf_in_memory(qr_url, text_top):
+    """Добавляет QR-коды и текст в PDF, используя миллиметры для координат."""
+    qr_image_path = create_qr_code_in_memory(qr_url)
+    input_pdf = "static/input_pdf_for_qr.pdf"
 
-    c.setFont("Roboto", 20)
+    qr_width = 70 * mm
+    qr_height = 70 * mm
+    x1 = 39 * mm
+    y1 = 100 * mm
+    x2 = x1 * 3 + qr_height + 1 * mm
+    y2 = 100 * mm
 
-    c.drawString(qr1_x + 60, qr_y + qr_size + 20, text_top1)
-    c.drawString(qr1_x + 60, qr_y - 30, text_bottom1)
-    c.drawString(qr2_x + 60, qr_y + qr_size + 20, text_top2)
-    c.drawString(qr2_x + 60, qr_y - 30, text_bottom2)
+    overlay_pdf = create_overlay_pdf(qr_image_path, x1, y1, x2, y2, qr_width, qr_height, text_top)
+    return merge_pdf_with_overlay(input_pdf, overlay_pdf)
 
-    # Используем ImageReader для рендеринга изображений в PDF
-    c.drawImage(ImageReader(qr1_img_buffer), qr1_x, qr_y, width=qr_size, height=qr_size)
-    c.drawImage(ImageReader(qr2_img_buffer), qr2_x, qr_y, width=qr_size, height=qr_size)
-
-    c.setStrokeColorRGB(0, 0, 0)
-    c.setLineWidth(1)
-    c.line(line_x, 0, line_x, height)
-
-    c.showPage()
-    c.save()

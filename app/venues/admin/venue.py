@@ -1,9 +1,11 @@
 import logging
 
+from django import forms
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
 
 from unfold.decorators import action
+from unfold.widgets import UnfoldAdminColorInputWidget
 
 from menu.models import Category, Product
 from services.admin import BaseModelAdmin
@@ -12,9 +14,18 @@ from services.pos_service_factory import POSServiceFactory
 
 logger = logging.getLogger(__name__)
 
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = '__all__'
+        # widgets = {
+        #     'color_theme': forms.Select(attrs={'class': 'color-select'}),
+        # }
+
 
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
+    form = VenueForm
     compressed_fields = True
     list_display = ('id', 'company_name', 'pos_system', 'detail_link')
     actions_detail = ['pos_action_detail',]
@@ -149,6 +160,11 @@ class VenueAdmin(BaseModelAdmin):
                               f"{item_name} актуальны.",
                               level=messages.SUCCESS)
         return True
+
+    # def get_form(self, request, obj=None, change=False, **kwargs):
+    #     form = super().get_form(request, obj, change, **kwargs)
+    #     form.base_fields["color_theme"].widget = UnfoldAdminColorInputWidget()
+    #     return form
 
     def get_list_display(self, request):
         list_display = ('id', 'company_name', 'pos_system', 'detail_link')

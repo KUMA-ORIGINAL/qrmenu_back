@@ -22,13 +22,18 @@ class HallAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role == 'owner':
             return [field for field in fields if field not in ['venue', 'external_id']]
+        elif request.user.role == 'admin':
+            return [field for field in fields if field not in ['venue', 'spot', 'external_id']]
         return fields
 
     def save_model(self, request, obj, form, change):
-        if (request.user.role == 'owner' or request.user.role == 'admin')  and not change:
-            obj.venue = request.user.venue  # Заполняем venue владельца
+        if request.user.role == 'owner' and not change:
+            obj.venue = request.user.venue
+        elif request.user.role == 'admin' and not change:
+            obj.venue = request.user.venue
+            obj.spot = request.user.spot
         super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -41,6 +46,8 @@ class HallAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role == 'owner':
             return qs.filter(venue=request.user.venue)
+        elif request.user.role == 'admin':
+            return qs.filter(spot=request.user.spot)
         return qs

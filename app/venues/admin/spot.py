@@ -33,6 +33,8 @@ class SpotAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role == 'owner':
             return qs.filter(venue=request.user.venue)
+        elif request.user.role == 'admin':
+            return qs.filter(users=request.user)
         return qs

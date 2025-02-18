@@ -7,6 +7,28 @@ User = get_user_model()
 
 
 class Venue(BaseModel):
+    COLOR_CHOICES = [
+        ('#008B68', 'Темно-зеленый'),
+        ('#FFB200', 'Янтарный'),
+        ('#F80101', 'Алый'),
+        ('#FF4800', 'Оранжевый'),
+        ('#00BBFF', 'Голубой'),
+        ('#0717FF', 'Синий'),
+        ('#AF00A3', 'Розовый'),
+    ]
+    color_theme = models.CharField(
+        max_length=7,
+        choices=COLOR_CHOICES,
+        default='#008B68'
+    )
+    logo = models.ImageField(
+        upload_to='venue_logo', null=True, blank=True, verbose_name='Логотип')
+    schedule = models.CharField(
+        max_length=255, verbose_name='График работы',
+        help_text="Введите график работы, например: 09:00-18:00",
+        default='09:00-18:00'
+    )
+
     account_number = models.CharField(
         max_length=100, unique=True, verbose_name="Номер аккаунта"
     )

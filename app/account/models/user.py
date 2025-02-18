@@ -57,6 +57,7 @@ class User(AbstractUser):
         max_length=15,
         validators=[
             RegexValidator(regex=r'^\+?1?\d{9,15}$', message=_("Enter a valid phone number."))],
+        blank=True
     )
     full_name = models.CharField(max_length=100, blank=False)
     role = models.CharField(
@@ -66,6 +67,10 @@ class User(AbstractUser):
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='users',
         verbose_name="Заведение", blank=True, null=True
+    )
+    spot = models.ForeignKey(
+        'venues.Spot', on_delete=models.CASCADE, related_name='users',
+        blank=True, null=True, verbose_name="Точка заведения"
     )
 
     USERNAME_FIELD = "email"  # Use email as the unique identifier

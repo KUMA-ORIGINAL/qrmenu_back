@@ -430,6 +430,7 @@ UNFOLD = {
                         "title": _("Пользователи"),
                         "icon": "person",
                         "link": reverse_lazy("admin:account_user_changelist"),
+                        "permission": "account.utils.permission_callback_for_admin",
                     },
                     {
                         "title": _("Группы"),
