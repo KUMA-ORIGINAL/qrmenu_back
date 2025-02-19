@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from config.settings import MEDIA_URL
 from ..models import Product, Modificator, Category, ProductAttribute
 
 
