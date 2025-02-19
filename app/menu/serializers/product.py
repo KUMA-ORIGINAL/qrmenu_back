@@ -37,5 +37,5 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_product_photo(self, obj):
         if obj.product_photo  and str(obj.product_photo).startswith('http'):
             return str(obj.product_photo)
-        return f"{self.context['request'].build_absolute_uri('/')}{obj.product_photo}"
+        return f"{self.context['request'].build_absolute_uri('/')}{MEDIA_URL[1:]}{obj.product_photo}"
 

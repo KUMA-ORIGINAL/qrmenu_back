@@ -6,6 +6,7 @@ from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
 from unfold.typing import FieldsetsType
 
+from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from venues.models import Spot
 from ..models import Product, Category, Modificator
@@ -29,7 +30,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        if request.user.role == 'owner':
+        if request.user.role == ROLE_OWNER:
             extra_context['spots'] = Spot.objects.filter(venue=request.user.venue)
         return super(ProductAdmin, self).changelist_view(request, extra_context=extra_context)
 
@@ -38,7 +39,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
                         'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             list_display = ('product_name', 'category', 'hidden', 'is_recommended',
                             'product_price', 'photo_preview', 'detail_link')
         return list_display
@@ -81,11 +82,11 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         )
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == ROLE_OWNER:
             fieldsets[0][1]['fields'] = (
                 'product_name', 'product_description', 'product_price', 'weight', 'category'
             )
-        elif request.user.role == 'admin':
+        elif request.user.role == ROLE_ADMIN:
             fieldsets[0][1]['fields'] = (
                 'product_name', 'product_description', 'product_price', 'weight', 'category'
             )
@@ -95,21 +96,21 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if (request.user.role == 'owner' or request.user.role == 'admin') and not change:
+        if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and not change:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
-        if request.user.role == 'admin' and not change:
+        if request.user.role == ROLE_ADMIN and not change:
             obj.spots.add(request.user.spot)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if (request.user.role == 'owner' or request.user.role == 'admin') and db_field.name == 'category':
+        if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and db_field.name == 'category':
             venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Category.objects.filter(venue=venue)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
-        if (request.user.role == 'owner' or request.user.role == 'admin') and db_field.name == 'spots':
+        if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and db_field.name == 'spots':
             venue = request.user.venue
             if venue:
                 kwargs["queryset"] = Spot.objects.filter(venue=venue)
@@ -119,7 +120,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
+        elif request.user.role == ROLE_OWNER:
             return qs.filter(venue=request.user.venue)
-        elif request.user.role == 'admin':
+        elif request.user.role == ROLE_ADMIN:
             return qs.filter(spots=request.user.spot)

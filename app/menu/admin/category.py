@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 
+from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from ..models import Category
 
@@ -22,7 +23,7 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
                         'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             list_display = ('category_name', 'category_hidden', 'category_photo_preview',
                             'detail_link')
         return list_display
@@ -60,14 +61,14 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         )
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             fieldsets[0][1]['fields'] = ('category_name',
                                          'category_photo_preview',
                                          'category_photo')
         return fieldsets
 
     def save_model(self, request, obj, form, change):
-        if (request.user.role == 'owner' or request.user.role == 'admin') and not change:
+        if request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
 
@@ -75,5 +76,5 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             return qs.filter(venue=request.user.venue)
