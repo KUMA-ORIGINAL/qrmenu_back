@@ -1,32 +1,24 @@
 from django.contrib import admin
 from django.http import HttpRequest
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
 from django.utils.html import format_html
+from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
 from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
-from unfold.decorators import action
 from unfold.typing import FieldsetsType
 
 from services.admin import BaseModelAdmin
-from venues.models import Venue, Spot
-from ..models import Product, Category, Modificator, ProductAttribute
+from venues.models import Spot
+from ..models import Product, Category, Modificator
 
 
-class ModificatorInline(TabularInline):
+class ModificatorInline(TabularInline, TranslationTabularInline):
     model = Modificator
     extra = 1
     fields = ('name', 'price')
 
-#
-# class ProductAttributeInline(TabularInline):
-#     model = ProductAttribute
-#     extra = 1
-#     fields = ('name', 'price')
-
 
 @admin.register(Product)
-class ProductAdmin(BaseModelAdmin):
+class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     compressed_fields = True
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
@@ -70,8 +62,13 @@ class ProductAdmin(BaseModelAdmin):
             (None, {
                 'fields': (
                     'external_id',
-                    'product_name',
-                    'product_description', 'product_price', 'weight',
+                    'product_name_ru',
+                    'product_name_ky',
+                    'product_name_en',
+                    'product_description_ru',
+                    'product_description_ky',
+                    'product_description_en',
+                    'product_price', 'weight',
                     'category',
                     'venue')
             }),

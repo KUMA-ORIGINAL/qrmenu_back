@@ -36,6 +36,7 @@ else:
 
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'daphne',
     'unfold',
     "unfold.contrib.filters",
@@ -68,6 +69,7 @@ MIDDLEWARE = [
 
     'corsheaders.middleware.CorsMiddleware',
     'djangorestframework_camel_case.middleware.CamelCaseMiddleWare',
+    'config.middleware.LanguageMiddleware',
 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -150,6 +152,23 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LANGUAGES = (
+    ('ru', 'Russian'),
+    ('en', 'English'),
+    ('ky', 'Kyrgyz'),
+)
+
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'ru'
+MODELTRANSLATION_LANGUAGES = ('ru', 'en', 'ky')
+MODELTRANSLATION_FALLBACK_LANGUAGES = {
+    'default': ('ru',),
+    'en': ('ru', 'ky'),  # Для английского fallback на русский и кыргызский
+    'ky': ('ru',),  # Для кыргызского fallback на русский
+}
+MODELTRANSLATION_AUTO_POPULATE = True
+
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -335,15 +354,6 @@ UNFOLD = {
             "default-dark": "var(--color-base-300)",  # text-base-300
             "important-light": "var(--color-base-900)",  # text-base-900
             "important-dark": "var(--color-base-100)",  # text-base-100
-        },
-    },
-    "EXTENSIONS": {
-        "modeltranslation": {
-            "flags": {
-                "en": "🇬🇧",
-                "fr": "🇫🇷",
-                "nl": "🇧🇪",
-            },
         },
     },
     "SIDEBAR": {

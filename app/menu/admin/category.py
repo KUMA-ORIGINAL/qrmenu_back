@@ -1,12 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from modeltranslation.admin import TabbedTranslationAdmin
 
 from services.admin import BaseModelAdmin
 from ..models import Category
 
 
 @admin.register(Category)
-class CategoryAdmin(BaseModelAdmin):
+class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     compressed_fields = True
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
@@ -46,7 +47,9 @@ class CategoryAdmin(BaseModelAdmin):
             (None, {
                 'fields': (
                     'external_id',
-                    'category_name',
+                    'category_name_ru',
+                    'category_name_ky',
+                    'category_name_en',
                     'category_photo_preview',
                     'category_photo', 'venue')
             }),
