@@ -140,7 +140,7 @@ class PosterService:
                    f"Обслуживание: {poster_order_data.get('service_price')}\n"
                    f"Чаевые: {poster_order_data.get('tips_price')}")
         incoming_order_data = {
-            'spot_id': 1,
+            'spot_id': poster_order_data.get('spot').external_id,
             'phone': poster_order_data.get('phone'),
             'comment': comment,
             'service_mode': poster_order_data.get('service_mode'),

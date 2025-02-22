@@ -18,6 +18,14 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     mptt_level_indent = 20
     mptt_show_nodedata = True
 
+    def get_list_filter(self, request):
+        list_filter = ()
+        if request.user.is_superuser:
+            list_filter = ('venue', 'category_hidden',)
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
+            list_filter = ('category_hidden',)
+        return list_filter
+
     def get_list_display(self, request):
         list_display = ('id', 'category_name', 'venue', 'category_hidden', 'category_photo_preview',
                         'detail_link')

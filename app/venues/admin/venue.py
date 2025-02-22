@@ -1,31 +1,22 @@
 import logging
 
-from django import forms
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
 
 from unfold.decorators import action
-from unfold.widgets import UnfoldAdminColorInputWidget
 
+from account.models import ROLE_OWNER
 from menu.models import Category, Product
-from services.admin import BaseModelAdmin
-from ..models import Venue, Spot, Table, Hall
 from services.pos_service_factory import POSServiceFactory
+from services.admin import BaseModelAdmin
+
+from ..models import Venue, Spot, Table, Hall
 
 logger = logging.getLogger(__name__)
-
-class VenueForm(forms.ModelForm):
-    class Meta:
-        model = Venue
-        fields = '__all__'
-        # widgets = {
-        #     'color_theme': forms.Select(attrs={'class': 'color-select'}),
-        # }
 
 
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
-    form = VenueForm
     compressed_fields = True
     list_display = ('id', 'company_name', 'pos_system', 'detail_link')
     actions_detail = ['pos_action_detail',]
@@ -161,16 +152,12 @@ class VenueAdmin(BaseModelAdmin):
                               level=messages.SUCCESS)
         return True
 
-    # def get_form(self, request, obj=None, change=False, **kwargs):
-    #     form = super().get_form(request, obj, change, **kwargs)
-    #     form.base_fields["color_theme"].widget = UnfoldAdminColorInputWidget()
-    #     return form
 
     def get_list_display(self, request):
         list_display = ('id', 'company_name', 'pos_system', 'detail_link')
         if request.user.is_superuser:
             pass
-        elif request.user.role == 'owner':
+        elif request.user.role == ROLE_OWNER:
             list_display = ('company_name', 'pos_system', 'detail_link')
         return list_display
 
@@ -178,7 +165,7 @@ class VenueAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner':
+        elif request.user.role == ROLE_OWNER:
             return [field for field in fields if field not in ('pos_system',)]
         return fields
 
@@ -186,6 +173,6 @@ class VenueAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner':
+        elif request.user.role == ROLE_OWNER:
             return qs.filter(users=request.user)
         return qs

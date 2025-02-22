@@ -2,13 +2,13 @@
 
 <ul class="changelist-filter ml-1 mb-2 mt-2 flex gap-x-8 pl-0">
   <li>
-    <a href="{% url 'admin:menu_product_changelist' %}" class="text-blue-600 hover:text-blue-800 text-lg font-medium rounded-lg">
+    <a href="{% url changelist_url %}" class="text-blue-600 hover:text-blue-800 text-lg font-medium rounded-lg">
       {% trans "Все" %}
     </a>
   </li>
   {% for spot in spots %}
     <li>
-      <a href="{% url 'admin:menu_product_changelist' %}?spots__id__exact={{ spot.id }}"
+      <a href="{% url changelist_url %}?{{ filter_key }}={{ spot.id }}"
          class="text-lg font-medium hover:bg-blue-100 hover:text-blue-600 rounded-lg">
         {{ spot.name }}
       </a>

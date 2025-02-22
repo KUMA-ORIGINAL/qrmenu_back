@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from services.pos_service_factory import POSServiceFactory
-from venues.models import Venue, Table
+from venues.models import Venue, Table, Spot
 from ..models import Order
 from ..serializers import OrderSerializer
 
@@ -72,23 +72,33 @@ class OrderViewSet(viewsets.GenericViewSet,
             order_data = serializer.validated_data
 
             venue_name = request.data.get('venue_name')
+            spot_name = request.data.get('spot_name')
             table_num = request.data.get('table_num')
 
-            if not venue_name or not table_num:
-                return Response({'error': 'Venue name and table number are required.'},
+            if not venue_name or not spot_name or not table_num:
+                return Response({'error': 'Venue name, Spot name and table number are required.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
             venue = Venue.objects.filter(company_name__icontains=venue_name).first()
             if not venue:
                 return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+            spot = Spot.objects.filter(venue=venue, name__icontains=spot_name).first()
+            if not spot:
+                return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
+
             table = Table.objects.filter(venue=venue, table_num=table_num).first()
             if not table:
                 return Response({'error': 'Table not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+            order_data['table'] = table
+            order_data['venue'] = venue
+            order_data['spot'] = spot
+
             api_token = venue.access_token
             pos_system_name = venue.pos_system.name.lower()
             pos_service = POSServiceFactory.get_service(pos_system_name, api_token)
+            order_data['spot'] = spot
 
             pos_response = pos_service.send_order_to_pos(order_data)
             if not pos_response:
@@ -97,9 +107,7 @@ class OrderViewSet(viewsets.GenericViewSet,
 
             client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
 
-            order_data['table'] = table
             order_data['client'] = client
-            order_data['venue'] = venue
             order_data['external_id'] = pos_response.get('incoming_order_id')
 
             serializer.save()

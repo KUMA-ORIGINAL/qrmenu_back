@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from ..models import Client
 
@@ -15,7 +16,7 @@ class ClientAdmin(BaseModelAdmin):
         fields = super().get_fields(request, obj)
         if request.user.is_superuser:
             return fields
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             return [field for field in fields if field not in ['venue', 'external_id']]
         return fields
 
@@ -23,5 +24,5 @@ class ClientAdmin(BaseModelAdmin):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
-        elif request.user.role == 'owner' or request.user.role == 'admin':
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             return qs.filter(venue=request.user.venue)

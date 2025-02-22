@@ -50,6 +50,9 @@ class Order(BaseModel):
     bonus = models.PositiveIntegerField(
         default=0, verbose_name='Бонусы'
     )
+    spot = models.ForeignKey(
+        'venues.Spot', on_delete=models.CASCADE, related_name='orders',
+        verbose_name="Точка заведения")
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='orders',
         verbose_name="Заведение"
