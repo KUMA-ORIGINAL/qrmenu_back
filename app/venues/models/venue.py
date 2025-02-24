@@ -21,7 +21,7 @@ class Venue(BaseModel):
     company_name = models.CharField(
         max_length=100, verbose_name="Название компании"
     )
-    slug = models.SlugField(verbose_name='Название ссылки', blank=True)
+    slug = models.SlugField(unique=True, verbose_name='Название ссылки', blank=True)
     color_theme = models.CharField(
         max_length=7,
         choices=COLOR_CHOICES,
