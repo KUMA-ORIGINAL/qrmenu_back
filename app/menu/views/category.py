@@ -7,8 +7,8 @@ from ..serializers import CategorySerializer
     tags=['Сategory',],
     parameters=[
         OpenApiParameter(
-            name='venue_name',  # Имя параметра
-            description='Фильтр по имени заведения',  # Описание параметра
+            name='venue_slug',  # Имя параметра
+            description='Фильтр по слагу заведения',  # Описание параметра
             required=False,  # Параметр необязательный
             type=str  # Тип данных
         ),
@@ -22,10 +22,10 @@ class CategoryViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = Category.objects.select_related('venue')
-        venue_name = self.request.GET.get("venue_name")
+        venue_slug = self.request.GET.get("venue_slug")
 
-        if venue_name:
-            queryset = queryset.filter(venue__company_name__icontains=venue_name)
+        if venue_slug:
+            queryset = queryset.filter(venue__slug=venue_slug)
 
         queryset = queryset.distinct()
         return queryset

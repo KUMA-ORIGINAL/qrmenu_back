@@ -7,4 +7,4 @@ class VenueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'logo', 'schedule')
+        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule')

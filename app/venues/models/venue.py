@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.utils.text import slugify
+from unidecode import unidecode
 
 from services.model import BaseModel
 
@@ -16,6 +18,10 @@ class Venue(BaseModel):
         ('#0717FF', 'Синий'),
         ('#AF00A3', 'Розовый'),
     ]
+    company_name = models.CharField(
+        max_length=100, verbose_name="Название компании"
+    )
+    slug = models.SlugField(verbose_name='Название ссылки', blank=True)
     color_theme = models.CharField(
         max_length=7,
         choices=COLOR_CHOICES,
@@ -28,7 +34,6 @@ class Venue(BaseModel):
         help_text="Введите график работы, например: 09:00-18:00",
         default='09:00-18:00'
     )
-
     account_number = models.CharField(
         max_length=100, unique=True, verbose_name="Номер аккаунта"
     )
@@ -54,9 +59,6 @@ class Venue(BaseModel):
     country = models.CharField(
         max_length=100, verbose_name="Страна"
     )
-    company_name = models.CharField(
-        max_length=100, verbose_name="Название компании"
-    )
     tip_amount = models.PositiveIntegerField(default=0, verbose_name="Процент за обслуживание")
 
     tariff_key = models.CharField(
@@ -79,3 +81,7 @@ class Venue(BaseModel):
         verbose_name = "Заведение"
         verbose_name_plural = "Заведения"
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(unidecode(self.company_name))
+        super().save(*args, **kwargs)

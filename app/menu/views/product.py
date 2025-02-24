@@ -12,14 +12,14 @@ from ..serializers import ProductSerializer
     tags=['Product',],
     parameters=[
         OpenApiParameter(
-            name='venue_name',  # Имя параметра
-            description='Фильтр по имени заведения',  # Описание параметра
+            name='venue_slug',  # Имя параметра
+            description='Фильтр по slug заведения',  # Описание параметра
             required=False,  # Параметр необязательный
             type=str  # Тип данных
         ),
         OpenApiParameter(
-            name='spot_name',  # Имя параметра
-            description='Фильтр по номеру зоны',  # Описание параметра
+            name='spot_slug',  # Имя параметра
+            description='Фильтр по slug точки',  # Описание параметра
             required=False,  # Параметр необязательный
             type=str  # Тип данных
         ),
@@ -40,14 +40,14 @@ class ProductViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         queryset = Product.objects.select_related('category', 'venue').prefetch_related('spots')
         search_query = self.request.GET.get("search")
-        venue_name = self.request.GET.get("venue_name")
-        spot_name = self.request.GET.get("spot_name")
+        venue_slug = self.request.GET.get("venue_slug")
+        spot_slug = self.request.GET.get("spot_slug")
 
-        if venue_name:
-            queryset = queryset.filter(venue__company_name__icontains=venue_name)
+        if venue_slug:
+            queryset = queryset.filter(venue__slug=venue_slug)
 
-        if spot_name:
-            queryset = queryset.filter(spots__name__icontains=spot_name)
+        if spot_slug:
+            queryset = queryset.filter(spots__slug=spot_slug)
 
         queryset = queryset.distinct()
 
@@ -55,6 +55,5 @@ class ProductViewSet(viewsets.GenericViewSet,
             queryset = queryset.annotate(
                 similarity=TrigramSimilarity(Lower('product_name'), search_query.lower()),
             ).filter(similarity__gt=0.1).order_by('-similarity')
-
 
         return queryset

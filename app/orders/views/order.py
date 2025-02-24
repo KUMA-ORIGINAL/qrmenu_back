@@ -25,8 +25,14 @@ logger = logging.getLogger(__name__)
         summary='Получение заказов по названию заведения и номеру стола',
         parameters=[
             OpenApiParameter(
-                name='venue_name',  # Имя параметра
+                name='venue_slug',  # Имя параметра
                 description='Фильтр по имени заведения',  # Описание параметра
+                required=False,  # Параметр необязательный
+                type=str  # Тип данных
+            ),
+            OpenApiParameter(
+                name='spot_slug',  # Имя параметра
+                description='Фильтр по slug точки',  # Описание параметра
                 required=False,  # Параметр необязательный
                 type=str  # Тип данных
             ),
@@ -49,12 +55,14 @@ class OrderViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        venue_name = self.request.GET.get('venue_name', None)
+        venue_slug = self.request.GET.get('venue_slug', None)
+        spot_slug = self.request.GET.get("spot_slug")
         table_num = self.request.GET.get('table_num', None)
 
-        if venue_name:
-            queryset = queryset.filter(venue__company_name__icontains=venue_name)
-
+        if venue_slug:
+            queryset = queryset.filter(venue__slug=venue_slug)
+        if spot_slug:
+            queryset = queryset.filter(spots__slug=spot_slug)
         if table_num:
             queryset = queryset.filter(table__table_num=table_num)
 
@@ -71,19 +79,19 @@ class OrderViewSet(viewsets.GenericViewSet,
         try:
             order_data = serializer.validated_data
 
-            venue_name = request.data.get('venue_name')
-            spot_name = request.data.get('spot_name')
+            venue_slug = request.data.get('venue_slug')
+            spot_slug = request.data.get('spot_slug')
             table_num = request.data.get('table_num')
 
-            if not venue_name or not spot_name or not table_num:
-                return Response({'error': 'Venue name, Spot name and table number are required.'},
+            if not venue_slug or not spot_slug or not table_num:
+                return Response({'error': 'Venue slug, Spot slug and table number are required.'},
                                 status=status.HTTP_400_BAD_REQUEST)
 
-            venue = Venue.objects.filter(company_name__icontains=venue_name).first()
+            venue = Venue.objects.filter(slug=venue_slug).first()
             if not venue:
                 return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            spot = Spot.objects.filter(venue=venue, name__icontains=spot_name).first()
+            spot = Spot.objects.filter(venue=venue, slug=spot_slug).first()
             if not spot:
                 return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
 

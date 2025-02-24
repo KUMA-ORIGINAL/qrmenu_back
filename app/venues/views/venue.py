@@ -8,4 +8,4 @@ class VenueViewSet(viewsets.GenericViewSet,
                    mixins.RetrieveModelMixin):
     queryset = Venue.objects.all()
     serializer_class = VenueSerializer
-    lookup_field = 'company_name'
+    lookup_field = 'slug'
