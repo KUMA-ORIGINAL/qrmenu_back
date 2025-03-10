@@ -34,7 +34,7 @@ class TableAdmin(BaseModelAdmin):
         venue = table.venue
         spot = table.spot
 
-        qr_url = f"https://imenu.kg/{venue.slug.lower()}/{spot.slug.lower()}/{table.table_num}/"
+        qr_url = f"https://imenu.kg/{venue.slug}/{spot.slug}/{table.table_num}/"
         text_top = f"{table.table_num} стол"
 
         output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)
