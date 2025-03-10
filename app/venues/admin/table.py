@@ -33,9 +33,8 @@ class TableAdmin(BaseModelAdmin):
         table = get_object_or_404(Table, pk=object_id)
         venue = table.venue
         spot = table.spot
-        hall = table.hall
 
-        qr_url = f"https://imenu.kg/{venue.slug}/{spot.slug}/{table.table_num}/"
+        qr_url = f"https://imenu.kg/{venue.slug.lower()}/{spot.slug.lower()}/{table.table_num}/"
         text_top = f"{table.table_num} стол"
 
         output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)

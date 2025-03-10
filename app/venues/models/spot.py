@@ -23,5 +23,5 @@ class Spot(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.name))
+            self.slug = slugify(unidecode(self.name)).upper()
         super().save(*args, **kwargs)

@@ -83,5 +83,5 @@ class Venue(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.company_name))
+            self.slug = slugify(unidecode(self.company_name)).upper()
         super().save(*args, **kwargs)
