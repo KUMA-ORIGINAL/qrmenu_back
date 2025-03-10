@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
+from account.models import ROLE_OWNER, ROLE_ADMIN
 from orders.models import Order
 from venues.models import Venue
 
@@ -19,7 +20,7 @@ def get_last_week_orders_chart(request):
     user = request.user
     if request.user.is_superuser:
         orders_queryset = Order.objects
-    elif user.role == 'owner' or user.role == 'admin':
+    elif user.role in (ROLE_OWNER, ROLE_ADMIN):
         orders_queryset = Order.objects.filter(venue=user.venue)
 
     orders_per_day = (
