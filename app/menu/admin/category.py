@@ -70,9 +70,9 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            fieldsets[0][1]['fields'] = ('category_name',
-                                         'category_photo_preview',
-                                         'category_photo')
+            fieldsets[0][1]['fields'] = (
+                'category_name_ru', 'category_name_ky', 'category_name_en',
+                'category_photo_preview', 'category_photo')
         return fieldsets
 
     def save_model(self, request, obj, form, change):
