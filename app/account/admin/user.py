@@ -106,6 +106,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
 
             admin_group = Group.objects.get(name='Администратор')
             obj.groups.add(admin_group)
+        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
