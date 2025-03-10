@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 
 from services.pos_service_factory import POSServiceFactory
+from services.send_receipt_to_printer import send_receipt_to_webhook
 from venues.models import Venue, Table, Spot
 from ..models import Order
 from ..serializers import OrderSerializer
@@ -118,7 +119,11 @@ class OrderViewSet(viewsets.GenericViewSet,
             order_data['client'] = client
             order_data['external_id'] = pos_response.get('incoming_order_id')
 
-            serializer.save()
+            order = serializer.save()
+
+            # if not send_receipt_to_webhook(order, venue, spot):
+            #     logger.warning("Failed to send receipt to webhook.")
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             logger.error(f"Order creation failed due to an error: {str(e)}", exc_info=True)

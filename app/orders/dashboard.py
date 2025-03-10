@@ -18,6 +18,7 @@ def get_last_week_orders_chart(request):
     start_date = end_date - timedelta(days=5)  # Берем последние 7 дней включая сегодняшний
 
     user = request.user
+    orders_queryset = None
     if request.user.is_superuser:
         orders_queryset = Order.objects
     elif user.role in (ROLE_OWNER, ROLE_ADMIN):

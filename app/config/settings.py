@@ -141,7 +141,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
@@ -167,8 +166,6 @@ MODELTRANSLATION_FALLBACK_LANGUAGES = {
     'ky': ('ru',),  # Для кыргызского fallback на русский
 }
 MODELTRANSLATION_AUTO_POPULATE = True
-
-
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
@@ -356,6 +353,25 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
     },
+    "TABS": [
+        {
+            'page': 'Заведение',
+            "models": ["venues.venue", 'venues.receiptprinter'],
+            "items": [
+                {
+                    "title": _("Заведение"),
+                    "icon": "store",
+                    "link": reverse_lazy("admin:venues_venue_changelist"),
+                    "permission": "account.utils.permission_callback_for_admin",
+                },
+                {
+                    "title": _("Принтеры для чека"),
+                    "icon": "grade",
+                    "link": reverse_lazy("admin:venues_receiptprinter_changelist"),
+                },
+            ],
+        },
+    ],
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
         "show_all_applications": False,  # Dropdown with all applications and models
@@ -452,16 +468,4 @@ UNFOLD = {
             },
         ],
     },
-    # "TABS": [
-    #     {
-    #         "models": ["venues.venue"],
-    #         "items": [
-    #             {
-    #                 "title": "Генерация qr-code",
-    #                 "icon": "grade",
-    #                 "link": reverse_lazy("admin:qr"),
-    #             },
-    #         ],
-    #     },
-    # ],
 }

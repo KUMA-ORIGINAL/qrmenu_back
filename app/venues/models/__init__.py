@@ -3,3 +3,4 @@ from .venue import *
 from .spot import *
 from .table import *
 from .hall import *
+from .receipt_printer import *

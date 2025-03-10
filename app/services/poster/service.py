@@ -148,7 +148,7 @@ class PosterService:
 
         products = []
         for order_product in poster_order_data.get('order_products'):
-            product= order_product.get('product')
+            product = order_product.get('product')
             modificator = order_product.get('modificator')
             modificator_id = modificator.external_id if modificator else None
             products.append(
