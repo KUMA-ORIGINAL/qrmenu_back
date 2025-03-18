@@ -4,13 +4,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
+from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
 from services.send_receipt_to_printer import send_receipt_to_webhook
+from tg_bot.utils import send_order_notification
 from venues.models import Venue, Table, Spot
 from ..models import Order
 from ..serializers import OrderSerializer
+from ..utils import format_order_details
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +71,6 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         return queryset
 
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
@@ -77,37 +78,48 @@ class OrderViewSet(viewsets.GenericViewSet,
             logger.warning(f"Order creation failed due to validation error: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            order_data = serializer.validated_data
+        order_data = serializer.validated_data
+        venue_slug = request.data.get('venue_slug')
+        spot_slug = request.data.get('spot_slug')
+        table_num = request.data.get('table_num')
 
-            venue_slug = request.data.get('venue_slug')
-            spot_slug = request.data.get('spot_slug')
-            table_num = request.data.get('table_num')
+        if not all([venue_slug, spot_slug, table_num]):
+            return Response({'error': 'Venue slug, spot slug, and table number are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-            if not venue_slug or not spot_slug or not table_num:
-                return Response({'error': 'Venue slug, Spot slug and table number are required.'},
-                                status=status.HTTP_400_BAD_REQUEST)
+        venue = Venue.objects.filter(slug=venue_slug).first()
+        if not venue:
+            return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            venue = Venue.objects.filter(slug=venue_slug).first()
-            if not venue:
-                return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
+        spot = Spot.objects.filter(venue=venue, slug=spot_slug).first()
+        if not spot:
+            return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            spot = Spot.objects.filter(venue=venue, slug=spot_slug).first()
-            if not spot:
-                return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
+        table = Table.objects.filter(venue=venue, table_num=table_num).first()
+        if not table:
+            return Response({'error': 'Table not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-            table = Table.objects.filter(venue=venue, table_num=table_num).first()
-            if not table:
-                return Response({'error': 'Table not found.'}, status=status.HTTP_404_NOT_FOUND)
+        order_data.update({'table': table, 'venue': venue, 'spot': spot})
 
-            order_data['table'] = table
-            order_data['venue'] = venue
-            order_data['spot'] = spot
+        pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
 
+        if pos_system_name is None:
+            try:
+                order = serializer.save()
+            except Exception as e:
+                logger.error(f"Failed to save order: {str(e)}", exc_info=True)
+                return Response({'error': 'Failed to save order due to internal error.'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            user_owner = venue.users.filter(role=ROLE_OWNER).first()
+            if user_owner and user_owner.tg_chat_id:
+                order_info = format_order_details(order)
+                logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
+                send_order_notification(user_owner.tg_chat_id, order_info)
+            else:
+                logger.info("No valid Telegram chat ID found or owner does not exist.")
+        else:
             api_token = venue.access_token
-            pos_system_name = venue.pos_system.name.lower()
             pos_service = POSServiceFactory.get_service(pos_system_name, api_token)
-            order_data['spot'] = spot
 
             pos_response = pos_service.send_order_to_pos(order_data)
             if not pos_response:
@@ -115,16 +127,28 @@ class OrderViewSet(viewsets.GenericViewSet,
                                 status=status.HTTP_400_BAD_REQUEST)
 
             client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
+            if not client:
+                return Response({'error': 'Failed to create or retrieve client from POS.'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             order_data['client'] = client
-            order_data['external_id'] = pos_response.get('incoming_order_id')
+            external_id = pos_response.get('incoming_order_id')
+            if not external_id:
+                return Response({'error': 'Failed to receive external ID from POS.'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            order = serializer.save()
+            order_data['external_id'] = external_id
 
-            # if not send_receipt_to_webhook(order, venue, spot):
-            #     logger.warning("Failed to send receipt to webhook.")
+            try:
+                order = serializer.save()
+            except Exception as e:
+                logger.error(f"Failed to save order: {str(e)}", exc_info=True)
+                return Response({'error': 'Failed to save order due to internal error.'},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except Exception as e:
-            logger.error(f"Order creation failed due to an error: {str(e)}", exc_info=True)
-            raise ValidationError({'detail': 'Order creation failed due to an internal error.'})
+        # Optionally handle webhook here
+        # if not send_receipt_to_webhook(order, venue, spot):
+        #     logger.warning("Failed to send receipt to webhook.")
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+

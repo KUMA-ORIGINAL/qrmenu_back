@@ -2,6 +2,7 @@
 services:
   application:
     build: app
+    command: /app/app_entrypoint.dev.sh
     env_file:
       - .env.dev
     restart: unless-stopped
@@ -14,6 +15,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  bot:
+    build: app
+    command: python /app/run_bot.py
+    env_file:
+      - .env.dev
+    restart: always
+    volumes:
+      - ./app:/app
+    depends_on:
+      application:
+        condition: service_started
 
   database:
     image: postgres:16.2-alpine3.18

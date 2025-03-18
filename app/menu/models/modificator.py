@@ -10,8 +10,8 @@ class Modificator(BaseModel):
     name = models.CharField(
         max_length=255, verbose_name="Название модификатора"
     )
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2, verbose_name="Цена"
+    price = models.BigIntegerField(
+        default=0, verbose_name="Цена"
     )
     product = models.ForeignKey(
         'Product', on_delete=models.CASCADE, related_name='modificators',

@@ -9,7 +9,7 @@ class Product(BaseModel):
     product_description = models.TextField(blank=True, null=True, verbose_name="Описание товара")
     product_photo = models.ImageField(upload_to='menu/products/%Y/%m', blank=True, null=True,
                                       verbose_name="Фото товара")
-    product_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, default=0,
+    product_price = models.BigIntegerField( blank=True, default=0,
                                         verbose_name="Цена товара")
     weight = models.PositiveSmallIntegerField(default=0, verbose_name='Вес товара')
     is_recommended = models.BooleanField(default=False, verbose_name='Рекомендован?')

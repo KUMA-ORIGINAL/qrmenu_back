@@ -38,7 +38,7 @@ class Venue(BaseModel):
         max_length=100, unique=True, verbose_name="Номер аккаунта"
     )
     access_token = models.CharField(
-        max_length=255, verbose_name="Токен доступа"
+        max_length=255, verbose_name="Токен доступа для POS-системы"
     )
     owner_id = models.PositiveIntegerField(
         verbose_name="ID владельца"

@@ -1,0 +1,40 @@
+{% if original %}
+    {% with site_url="https://imenu.kg/"|add:original.venue.slug|add:"/"|add:original.slug|add:"/" %}
+
+        <ul class="flex flex-col md:flex-row mb-4">
+            <li class="md:first:rounded-l hover:text-primary-600 max-md:first:rounded-t md:last:rounded-r border-base-200 max-md:last:rounded-b dark:border-base-700 border -ml-px">
+                <button type="button" onclick="copyToClipboard(this, '{{ site_url }}')"
+                    class="cursor-pointer flex items-center gap-2 px-3 py-2 text-left whitespace-nowrap w-full">
+                    🔗 Поделиться
+                </button>
+            </li>
+
+            <li class="md:first:rounded-l hover:text-primary-600 max-md:first:rounded-t md:last:rounded-r border-base-200 max-md:last:rounded-b dark:border-base-700 border -ml-px">
+                <button type="button" onclick="openSite('{{ site_url }}')"
+                    class="cursor-pointer flex items-center gap-2 px-3 py-2 text-left whitespace-nowrap w-full">
+                    🌍 Открыть сайт
+                </button>
+            </li>
+        </ul>
+
+        <!-- JavaScript -->
+        <script>
+            function copyToClipboard(button, text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.innerHTML = "✅ Ссылка скопирована!";
+
+                    setTimeout(() => {
+                        button.innerHTML = "🔗 Поделиться";
+                    }, 2000);
+                }).catch((err) => {
+                    console.error("Ошибка копирования:", err);
+                });
+            }
+
+            function openSite(url) {
+                window.open(url, "_blank");
+            }
+        </script>
+
+    {% endwith %}
+{% endif %}

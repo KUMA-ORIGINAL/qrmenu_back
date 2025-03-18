@@ -4,14 +4,12 @@ import requests
 import json
 import logging
 
-from channels.auth import login
+from django.conf import settings
 from django.utils import timezone
 
 from venues.models import ReceiptPrinter
 
 logger = logging.getLogger(__name__)
-
-WEBHOOK_URL = "https://emirtest.app.n8n.cloud/webhook/5023d6db-b753-455b-a469-030655ffa106"
 
 
 def send_receipt_to_webhook(order, venue, spot):
@@ -47,7 +45,7 @@ def send_receipt_to_webhook(order, venue, spot):
             "order_items": full_order_details
         }
 
-        response = requests.post(WEBHOOK_URL, data=json.dumps(receipt_data), headers={"Content-Type": "application/json"})
+        response = requests.post(settings.RECEIPT_WEBHOOK_URL, data=json.dumps(receipt_data), headers={"Content-Type": "application/json"})
 
         if response.status_code == 200:
             logger.info(f"Receipt sent successfully: {response.content}")

@@ -77,7 +77,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             ),
             ("Dates", {"fields": ("last_login", "date_joined")}),
             ('required', {
-                'fields': ('venue', 'spot', 'role', 'phone', 'full_name')}),
+                'fields': ('venue', 'spot', 'role', 'phone_number', 'full_name', 'tg_chat_id')}),
         )
         if request.user.is_superuser:
             pass
@@ -85,7 +85,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             fieldsets = (
                 (None, {"fields": ("email", "password")}),
                 ("Dates", {"fields": ("last_login",)}),
-                ('required', {'fields': ('role', 'spot', 'phone', 'full_name')}),
+                ('required', {'fields': ('role', 'spot', 'phone_number', 'full_name', 'tg_chat_id')}),
             )
         return fieldsets
 

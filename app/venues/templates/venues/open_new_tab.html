@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Открытие сайта...</title>
+</head>
+<body>
+    <h2>Перенаправление...</h2>
+    <p>Если страница не открылась, <a id="open_link" href="{{ site_url }}" target="_blank">нажмите здесь</a>.</p>
+
+    <script>
+        document.getElementById("open_link").click();
+
+        // Вернуть пользователя в Django Admin через 1 секунду
+        setTimeout(() => {
+            window.history.back();
+        }, 2000);
+    </script>
+</body>
+</html>

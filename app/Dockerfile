@@ -26,4 +26,4 @@ RUN chmod +x $PROJECT_DIR/app_entrypoint.dev.sh
 
 COPY . .
 
-CMD ["sh", "/app/app_entrypoint.dev.sh"]
+#CMD ["sh", "/app/app_entrypoint.dev.sh"]

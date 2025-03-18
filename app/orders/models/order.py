@@ -35,14 +35,14 @@ class Order(BaseModel):
         default=OrderStatus.NEW,
         verbose_name="Статус заказа"
     )
-    total_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Итоговая цена"
+    total_price = models.BigIntegerField(
+        default=0, verbose_name="Итоговая цена"
     )
-    service_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Цена за обслуживание"
+    service_price = models.BigIntegerField(
+        default=0, verbose_name="Цена за обслуживание"
     )
-    tips_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Чаевые"
+    tips_price = models.BigIntegerField(
+        default=0, verbose_name="Чаевые"
     )
     discount = models.PositiveIntegerField(
         default=0, verbose_name="скидка в %"

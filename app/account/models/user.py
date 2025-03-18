@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import RegexValidator
 from django.core.validators import EmailValidator
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
@@ -53,19 +54,14 @@ class User(AbstractUser):
         validators=[EmailValidator(_("Enter a valid email address."))],
         unique=True
     )
-    phone = models.CharField(
-        _("phone number"),
-        max_length=15,
-        validators=[
-            RegexValidator(regex=r'^\+?1?\d{9,15}$', message=_("Enter a valid phone number."))],
-        blank=True
-    )
+    phone_number = PhoneNumberField(_("phone number"), blank=True)
     full_name = models.CharField(max_length=100, blank=False)
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
         blank=True
     )
+    tg_chat_id = models.BigIntegerField(unique=True, blank=True, null=True)
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='users',
         verbose_name="Заведение", blank=True, null=True

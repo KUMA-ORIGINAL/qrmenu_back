@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'unfold',
     "unfold.contrib.filters",
     "unfold.contrib.forms",
+    "unfold.contrib.import_export",
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,11 +57,13 @@ INSTALLED_APPS = [
     'corsheaders',
     'cachalot',
     'channels',
+    "phonenumber_field",
 
     'menu',
     'account',
     'venues',
-    'orders'
+    'orders',
+    'transactions',
 ]
 
 MIDDLEWARE = [
@@ -152,12 +155,21 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+TG_BOT_TOKEN = env('TG_BOT_TOKEN')
+
+RECEIPT_WEBHOOK_URL = env('RECEIPT_WEBHOOK_URL')
+
+POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
+POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
+POSTER_REDIRECT_URI = env('POSTER_REDIRECT_URI')
+
+PHONENUMBER_DEFAULT_REGION = 'KG'
+
 LANGUAGES = (
     ('ru', 'Russian'),
     ('en', 'English'),
     ('ky', 'Kyrgyz'),
 )
-
 MODELTRANSLATION_DEFAULT_LANGUAGE = 'ru'
 MODELTRANSLATION_LANGUAGES = ('ru', 'en', 'ky')
 MODELTRANSLATION_FALLBACK_LANGUAGES = {
@@ -168,10 +180,6 @@ MODELTRANSLATION_FALLBACK_LANGUAGES = {
 MODELTRANSLATION_AUTO_POPULATE = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
-POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
-POSTER_REDIRECT_URI = env('POSTER_REDIRECT_URI')
 
 CSRF_TRUSTED_ORIGINS = [f"https://{DOMAIN}", f"http://{DOMAIN}"]
 
@@ -432,6 +440,16 @@ UNFOLD = {
                         "link": reverse_lazy("admin:menu_product_changelist"),
                     },
                 ]
+            },
+            {
+                "title": _("Транзакции"),
+                "items": [
+                    {
+                        "title": _("Транзакции"),
+                        "icon": "account_balance_wallet",
+                        "link": reverse_lazy("admin:transactions_transaction_changelist"),
+                    },
+                ],
             },
             {
                 "title": _("Заказы & Клиенты"),
