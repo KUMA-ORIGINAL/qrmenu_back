@@ -4,7 +4,7 @@ services:
     build:
       context: app
       dockerfile: Dockerfile.prod
-    command: /app/app_entrypoint.prod.sh
+    command: app_entrypoint.prod.sh
     env_file:
       - .env.prod
     restart: always
