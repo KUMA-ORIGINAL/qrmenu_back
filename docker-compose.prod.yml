@@ -33,7 +33,7 @@ services:
       - static_volume:/app/static
       - media_volume:/app/media
     depends_on:
-      application:
+      backend:
         condition: service_started
 
   database:
