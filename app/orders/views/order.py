@@ -7,11 +7,11 @@ from rest_framework.response import Response
 
 from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
-from services.send_receipt_to_printer import send_receipt_to_webhook
+from ..services import send_receipt_to_webhook, generate_payment_link
 from tg_bot.utils import send_order_notification
 from venues.models import Venue, Table, Spot
 from ..models import Order
-from ..serializers import OrderSerializer
+from ..serializers import OrderListSerializer, OrderCreateSerializer
 from ..utils import format_order_details
 
 logger = logging.getLogger(__name__)
@@ -34,16 +34,16 @@ logger = logging.getLogger(__name__)
                 type=str  # Тип данных
             ),
             OpenApiParameter(
-                name='spot_slug',  # Имя параметра
+                name='spot_id',  # Имя параметра
                 description='Фильтр по slug точки',  # Описание параметра
                 required=False,  # Параметр необязательный
-                type=str  # Тип данных
+                type=int  # Тип данных
             ),
             OpenApiParameter(
-                name='table_num',  # Имя параметра
+                name='table_id',  # Имя параметра
                 description='Фильтр по номеру стола',  # Описание параметра
                 required=False,  # Параметр необязательный
-                type=str  # Тип данных
+                type=int  # Тип данных
             )
         ]
     )
@@ -52,22 +52,26 @@ class OrderViewSet(viewsets.GenericViewSet,
                    mixins.ListModelMixin,
                    mixins.CreateModelMixin):
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
     filter_backends = [DjangoFilterBackend]
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return OrderCreateSerializer
+        return OrderListSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
         venue_slug = self.request.GET.get('venue_slug', None)
-        spot_slug = self.request.GET.get("spot_slug")
-        table_num = self.request.GET.get('table_num', None)
+        spot_id = self.request.GET.get("spot_id")
+        table_id = self.request.GET.get('table_id', None)
 
         if venue_slug:
             queryset = queryset.filter(venue__slug=venue_slug)
-        if spot_slug:
-            queryset = queryset.filter(spots__slug=spot_slug)
-        if table_num:
-            queryset = queryset.filter(table__table_num=table_num)
+        if spot_id:
+            queryset = queryset.filter(spots__id=spot_id)
+        if table_id:
+            queryset = queryset.filter(table__id=table_id)
 
         return queryset
 
@@ -80,22 +84,22 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         order_data = serializer.validated_data
         venue_slug = request.data.get('venue_slug')
-        spot_slug = request.data.get('spot_slug')
-        table_num = request.data.get('table_num')
+        spot_id = request.data.get('spot_id')
+        table_id = request.data.get('table_id')
 
-        if not all([venue_slug, spot_slug, table_num]):
-            return Response({'error': 'Venue slug, spot slug, and table number are required.'},
+        if not all([venue_slug, spot_id, table_id]):
+            return Response({'error': 'venue_slug, spot_id, and table_id are required.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         venue = Venue.objects.filter(slug=venue_slug).first()
         if not venue:
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        spot = Spot.objects.filter(venue=venue, slug=spot_slug).first()
+        spot = Spot.objects.filter(venue=venue, id=spot_id).first()
         if not spot:
             return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        table = Table.objects.filter(venue=venue, table_num=table_num).first()
+        table = Table.objects.filter(venue=venue, id=table_id).first()
         if not table:
             return Response({'error': 'Table not found.'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -146,9 +150,15 @@ class OrderViewSet(viewsets.GenericViewSet,
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        # payment_url = generate_payment_link(order)
+        # if not payment_url:
+        #     logger.warning(f"Не удалось создать ссылку на оплату для заказа #{order.id}")
+        #     return Response({'error': 'Не удалось создать ссылку на оплату'},
+        #                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # o = payment_url
+
         # Optionally handle webhook here
         # if not send_receipt_to_webhook(order, venue, spot):
         #     logger.warning("Failed to send receipt to webhook.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-

@@ -63,11 +63,11 @@ class OrderAdmin(BaseModelAdmin):
             return 'Доставка'
 
     def get_list_filter(self, request):
-        list_filter = ()
+        list_filter = ('venue', 'status', 'service_mode',
+                       ("total_price", RangeNumericFilter),
+                       ("created_at", RangeDateTimeFilter),)
         if request.user.is_superuser:
-            list_filter = ('venue', 'status', 'service_mode',
-                           ("total_price", RangeNumericFilter),
-                           ("created_at", RangeDateTimeFilter),)
+            pass
         elif request.user.role == ROLE_OWNER:
             list_filter = ('status', 'service_mode',
                            ("total_price", RangeNumericFilter),

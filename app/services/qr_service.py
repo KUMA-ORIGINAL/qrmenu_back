@@ -9,6 +9,7 @@ from io import BytesIO
 import qrcode
 from PyPDF2 import PdfReader, PdfWriter
 
+
 def create_qr_code_in_memory(url):
     """Создает QR-код и возвращает его в виде BytesIO."""
     qr = qrcode.QRCode(

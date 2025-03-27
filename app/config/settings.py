@@ -36,11 +36,12 @@ else:
 
 
 INSTALLED_APPS = [
-    'modeltranslation',
     'daphne',
+    'modeltranslation',
     'unfold',
-    "unfold.contrib.filters",
-    "unfold.contrib.forms",
+    "unfold.contrib.filters",  # optional, if special filters are needed
+    "unfold.contrib.forms",  # optional, if special form elements are needed
+    "unfold.contrib.inlines",  # optional, if special inlines are needed
     "unfold.contrib.import_export",
 
     'django.contrib.admin',
@@ -158,6 +159,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TG_BOT_TOKEN = env('TG_BOT_TOKEN')
 
 RECEIPT_WEBHOOK_URL = env('RECEIPT_WEBHOOK_URL')
+
+PAYMENT_API_TOKEN = env('PAYMENT_API_TOKEN')
 
 POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
 POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
@@ -318,12 +321,6 @@ UNFOLD = {
     "LOGIN": {
         "image": lambda request: static("login-bg.jpg"),
     },
-    "STYLES": [
-        lambda request: static("admin_dashboard/css/styles.css"),
-    ],
-    "SCRIPTS": [
-        lambda request: static("js/script.js"),
-    ],
     "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {
@@ -363,19 +360,23 @@ UNFOLD = {
     },
     "TABS": [
         {
-            'page': 'Заведение',
-            "models": ["venues.venue", 'venues.receiptprinter'],
+            'page': 'Заказы',
+            "models": ["orders.order", 'orders.receiptprinter', 'orders.receipt'],
             "items": [
                 {
-                    "title": _("Заведение"),
-                    "icon": "store",
-                    "link": reverse_lazy("admin:venues_venue_changelist"),
-                    "permission": "account.utils.permission_callback_for_admin",
+                    "title": _("Заказы"),
+                    "icon": "shopping_bag",
+                    "link": reverse_lazy("admin:orders_order_changelist"),
+                },
+                {
+                    "title": _("Чеки"),
+                    "icon": "grade",
+                    "link": reverse_lazy("admin:orders_receipt_changelist"),
                 },
                 {
                     "title": _("Принтеры для чека"),
                     "icon": "grade",
-                    "link": reverse_lazy("admin:venues_receiptprinter_changelist"),
+                    "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
                 },
             ],
         },
