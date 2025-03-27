@@ -24,4 +24,4 @@ COPY ./app_entrypoint.prod.sh .
 RUN sed -i 's/\r$//g' $PROJECT_DIR/app_entrypoint.prod.sh
 RUN chmod +x $PROJECT_DIR/app_entrypoint.prod.sh
 
-COPY . .
+COPY . $PROJECT_DIR
