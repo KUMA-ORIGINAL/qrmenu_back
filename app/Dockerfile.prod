@@ -21,6 +21,7 @@ COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache /wheels/*
 
 COPY ./app_entrypoint.prod.sh .
+RUN sed -i 's/\r$//g' ./app_entrypoint.prod.sh
 RUN chmod +x ./app_entrypoint.prod.sh
 
 COPY . .
