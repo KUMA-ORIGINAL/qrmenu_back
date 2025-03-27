@@ -4,6 +4,7 @@ services:
     build:
       context: app
       dockerfile: Dockerfile.prod
+    command: /app/app_entrypoint.prod.sh
     env_file:
       - .env.prod
     restart: always
@@ -18,6 +19,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  bot:
+    build:
+      context: app
+      dockerfile: Dockerfile.prod
+    command: python /app/run_bot.py
+    env_file:
+      - .env.prod
+    restart: always
+    volumes:
+      - ./app:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    depends_on:
+      application:
+        condition: service_started
 
   database:
     image: postgres:16.2-alpine3.18

@@ -24,5 +24,3 @@ COPY ./app_entrypoint.prod.sh .
 RUN chmod +x ./app_entrypoint.prod.sh
 
 COPY . .
-
-CMD ["sh", "/app/app_entrypoint.prod.sh"]
