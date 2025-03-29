@@ -10,12 +10,12 @@ PAYMENT_API_TOKEN = settings.PAYMENT_API_TOKEN
 logger = logging.getLogger(__name__)
 
 
-def generate_payment_link(order):
+def generate_payment_link(transaction):
     payload = {
-        "amount": str(order.total_price),  # Итоговая сумма заказа
-        "transactionID": str(order.id),  # ID заказа
-        "comment": f"Оплата заказа #{order.id}",  # Комментарий
-        "redirectURL": f"https://yourwebsite.com/payment_success/{order.id}"  # URL после успешной оплаты
+        "amount": str(transaction.total_price),  # Итоговая сумма заказа
+        "transactionID": str(transaction.id),  # ID заказа
+        "comment": f"Оплата заказа #{transaction.id}",  # Комментарий
+        "redirectURL": f"https://yourwebsite.com/payment_success/{transaction.id}"  # URL после успешной оплаты
     }
 
     headers = {

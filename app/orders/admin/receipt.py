@@ -7,7 +7,6 @@ from orders.models import Receipt  # Модель чеков
 
 @admin.register(Receipt)
 class ReceiptAdmin(BaseModelAdmin):
-
     search_fields = ('order__id', 'printer_name')
 
     def get_list_filter(self, request):
