@@ -25,7 +25,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
     inlines = [ModificatorInline]
-    filter_horizontal = ('spots',)
+    autocomplete_fields = ('spots',)
     list_before_template = "menu/change_list_before.html"
 
     def changelist_view(self, request, extra_context=None):

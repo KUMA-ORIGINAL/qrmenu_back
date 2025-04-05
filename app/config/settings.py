@@ -389,7 +389,7 @@ UNFOLD = {
                 "title": _("Навигация"),
                 "items": [
                     {
-                        "title": _("Dashboard"),
+                        "title": _("Панель"),
                         "icon": "dashboard",  # Supported icon set: https://fonts.google.com/icons
                         "link": reverse_lazy("admin:index"),
                     },
