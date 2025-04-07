@@ -2,7 +2,8 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.db.models.functions import Lower
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.response import Response
 
 from ..models import Product
 from ..serializers import ProductSerializer
@@ -18,7 +19,7 @@ from ..serializers import ProductSerializer
             type=str  # Тип данных
         ),
         OpenApiParameter(
-            name='spot_slug',  # Имя параметра
+            name='spot_id',  # Имя параметра
             description='Фильтр по slug точки',  # Описание параметра
             required=False,  # Параметр необязательный
             type=str  # Тип данных
@@ -41,14 +42,13 @@ class ProductViewSet(viewsets.GenericViewSet,
         queryset = Product.objects.select_related('category', 'venue').prefetch_related('spots')
         search_query = self.request.GET.get("search")
         venue_slug = self.request.GET.get("venue_slug")
-        spot_slug = self.request.GET.get("spot_slug")
+        spot_id = self.request.GET.get("spot_id")
 
-        if venue_slug:
-            queryset = queryset.filter(venue__slug=venue_slug)
+        if not all([venue_slug, spot_id]):
+            return Response({'error': 'venue_slug, spot_id are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        if spot_slug:
-            queryset = queryset.filter(spots__slug=spot_slug)
-
+        queryset = queryset.filter(venue__slug=venue_slug, spots__id=spot_id)
         queryset = queryset.distinct()
 
         if search_query:
