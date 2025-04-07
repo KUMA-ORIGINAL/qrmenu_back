@@ -158,7 +158,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         # o = payment_url
 
         # Optionally handle webhook here
-        if not send_receipt_to_webhook(order, venue, spot):
-            logger.warning("Failed to send receipt to webhook.")
+        # if not send_receipt_to_webhook(order, venue, spot):
+        #     logger.warning("Failed to send receipt to webhook.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
