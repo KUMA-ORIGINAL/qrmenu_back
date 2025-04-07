@@ -20,7 +20,7 @@ from ..serializers import ProductSerializer
         ),
         OpenApiParameter(
             name='spot_id',  # Имя параметра
-            description='Фильтр по slug точки',  # Описание параметра
+            description='Фильтр по id точки',  # Описание параметра
             required=False,  # Параметр необязательный
             type=str  # Тип данных
         ),

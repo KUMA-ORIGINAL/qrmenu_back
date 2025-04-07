@@ -40,7 +40,7 @@ def send_receipt_to_webhook(order, venue, spot):
             "company_name": venue.company_name,
             "company_id": '23412341234124234',
             "company_address": spot.address,
-            "order_date": order_date_local.str ftime('%d.%m.%Y'),
+            "order_date": order_date_local.strftime('%d.%m.%Y'),
             "order_time": order_date_local.strftime('%H:%M:%S'),
             "tr_id": f"rq_{order.id}",
             "tr_type": 'Платеж по QR',
