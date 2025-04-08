@@ -44,11 +44,15 @@ class ProductViewSet(viewsets.GenericViewSet,
         venue_slug = self.request.GET.get("venue_slug")
         spot_id = self.request.GET.get("spot_id")
 
-        if not all([venue_slug, spot_id]):
-            return Response({'error': 'venue_slug, spot_id are required.'},
+        if not venue_slug:
+            return Response({'error': 'venue_slug is required.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        queryset = queryset.filter(venue__slug=venue_slug, spots__id=spot_id)
+        queryset = queryset.filter(venue__slug=venue_slug)
+
+        if spot_id:
+            queryset = queryset.filter(spot_id=spot_id)
+
         queryset = queryset.distinct()
 
         if search_query:
