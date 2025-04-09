@@ -10,7 +10,7 @@ class VenueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'tip_amount', 'spots')
+        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'service_fee_percent', 'spots')
 
 
 class VenueWithTableSerializer(serializers.ModelSerializer):
@@ -18,4 +18,4 @@ class VenueWithTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'tip_amount')
+        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'service_fee_percent')
