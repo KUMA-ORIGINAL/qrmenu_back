@@ -59,7 +59,7 @@ class Venue(BaseModel):
     country = models.CharField(
         max_length=100, verbose_name="Страна"
     )
-    tip_amount = models.PositiveIntegerField(default=0, verbose_name="Процент за обслуживание")
+    service_fee_percent = models.PositiveIntegerField(default=0, verbose_name="Процент за обслуживание")
 
     tariff_key = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Ключ тарифа"
