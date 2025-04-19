@@ -51,15 +51,17 @@ class Order(BaseModel):
         default=0, verbose_name='Бонусы'
     )
     spot = models.ForeignKey(
-        'venues.Spot', on_delete=models.CASCADE, related_name='orders', null=True, blank=True,
+        'venues.Spot', on_delete=models.SET_NULL, related_name='orders',
+        null=True, blank=True,
         verbose_name="Точка заведения")
+    table = models.ForeignKey(
+        'venues.Table', on_delete=models.SET_NULL, related_name='orders',
+        null=True, blank=True,
+        verbose_name="Стол"
+    )
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='orders',
         verbose_name="Заведение"
-    )
-    table = models.ForeignKey(
-        'venues.Table', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders',
-        verbose_name="Стол"
     )
     client = models.ForeignKey(
         'Client', on_delete=models.CASCADE, related_name='orders', null=True,

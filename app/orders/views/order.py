@@ -63,7 +63,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         queryset = super().get_queryset()
 
         venue_slug = self.request.GET.get('venue_slug', None)
-        spot_id = self.request.GET.get("spot_id")
+        spot_id = self.request.GET.get("spot_id", None)
         table_id = self.request.GET.get('table_id', None)
 
         if venue_slug:
@@ -84,26 +84,15 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         order_data = serializer.validated_data
         venue_slug = request.data.get('venue_slug')
-        spot_id = request.data.get('spot_id')
-        table_id = request.data.get('table_id')
 
-        if not all([venue_slug, spot_id, table_id]):
-            return Response({'error': 'venue_slug, spot_id, and table_id are required.'},
+        if not venue_slug:
+            return Response({'error': 'venue_slug is required.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         venue = Venue.objects.filter(slug=venue_slug).first()
         if not venue:
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        spot = Spot.objects.filter(venue=venue, id=spot_id).first()
-        if not spot:
-            return Response({'error': 'Spot not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        table = Table.objects.filter(venue=venue, id=table_id).first()
-        if not table:
-            return Response({'error': 'Table not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        order_data.update({'table': table, 'venue': venue, 'spot': spot})
+        order_data['venue'] = venue
 
         pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
 
@@ -149,13 +138,6 @@ class OrderViewSet(viewsets.GenericViewSet,
                 logger.error(f"Failed to save order: {str(e)}", exc_info=True)
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # payment_url = generate_payment_link(order)
-        # if not payment_url:
-        #     logger.warning(f"Не удалось создать ссылку на оплату для заказа #{order.id}")
-        #     return Response({'error': 'Не удалось создать ссылку на оплату'},
-        #                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # o = payment_url
 
         # Optionally handle webhook here
         # if not send_receipt_to_webhook(order, venue, spot):

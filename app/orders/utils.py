@@ -24,8 +24,8 @@ def format_order_details(order):
         f"Итог: {total_price} сом"
     ]
 
-    if hasattr(order, 'venue') and order.venue.tip_amount:
-        service_percentage = order.venue.tip_amount
+    if hasattr(order, 'venue') and order.venue.service_fee_percent:
+        service_percentage = order.venue.service_fee_percent
         total_service_price = order.service_price
         receipt_lines.append(f"Обслуживание {service_percentage}%: {total_service_price} сом")
 

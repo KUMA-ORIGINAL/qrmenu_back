@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers, request
 
 from transactions.models import Transaction
 from ..serializers import OrderProductSerializer
@@ -13,13 +13,15 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ('id', 'phone', 'comment', 'service_mode', 'service_price',
-                  'tips_price', 'order_products', 'payment_url')
+                  'tips_price', 'spot', 'table', 'order_products', 'payment_url')
         extra_kwargs = {
             'phone': {'write_only': True},
             'comment': {'write_only': True},
             'service_mode': {'write_only': True},
             'service_price': {'write_only': True},
             'tips_price': {'write_only': True},
+            'spot': {'write_only': True},  # Only write, no read
+            'table': {'write_only': True},  # Only write, no read
         }
 
     def create(self, validated_data):
@@ -27,11 +29,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order = Order.objects.create(**validated_data)
 
         for order_product_data_item in order_product_data:
-            # product_attributes = order_product_data_item.pop('product_attributes', [])
             order_product = OrderProduct.objects.create(order=order, **order_product_data_item)
-
-            # order_product.product_attributes.set(product_attributes)
-
             order_product.save()
 
         total_amount = order.total_price

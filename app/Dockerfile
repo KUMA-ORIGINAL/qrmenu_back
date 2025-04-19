@@ -27,4 +27,3 @@ COPY ./app_entrypoint.dev.sh .
 RUN chmod +x ./app_entrypoint.dev.sh
 
 COPY . .
-

@@ -4,7 +4,7 @@ import logging
 
 from django.conf import settings
 
-PAYMENT_API_URL = "https://openbanking-api.bakai.kg/api/PayLink/CreatePayLink"
+PAYMENT_API_URL = "https://pay.operator.kg/api/v1/payments/make-payment-link/"
 PAYMENT_API_TOKEN = settings.PAYMENT_API_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -12,15 +12,15 @@ logger = logging.getLogger(__name__)
 
 def generate_payment_link(transaction):
     payload = {
-        "amount": str(transaction.total_price),  # Итоговая сумма заказа
-        "transactionID": str(transaction.id),  # ID заказа
-        "comment": f"Оплата заказа #{transaction.id}",  # Комментарий
-        "redirectURL": f"https://yourwebsite.com/payment_success/{transaction.id}"  # URL после успешной оплаты
+        "amount": str(transaction.total_price),
+        "transaction_id": str(transaction.id),
+        "comment": f"Оплата заказа #{transaction.id} hospital",
+        "redirect_url": f"https://hospital.operator.kg/",
+        'token': PAYMENT_API_TOKEN,
     }
 
     headers = {
         "Content-Type": "application/json",
-        'Authorization': f"Bearer {PAYMENT_API_TOKEN}"
     }
 
     try:
