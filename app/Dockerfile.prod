@@ -15,6 +15,10 @@ FROM python:3.13-slim
 ENV PROJECT_DIR=/app
 WORKDIR $PROJECT_DIR
 
+RUN apt update && apt install -y --no-install-recommends \
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache /wheels/*
