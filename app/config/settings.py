@@ -429,6 +429,11 @@ UNFOLD = {
                         "icon": "table_restaurant",
                         "link": reverse_lazy("admin:venues_table_changelist"),
                     },
+                    {
+                        "title": _("Рекламные баннеры"),
+                        "icon": "photo_library",
+                        "link": reverse_lazy("admin:venues_banner_changelist"),
+                    },
                 ]
             },
             {

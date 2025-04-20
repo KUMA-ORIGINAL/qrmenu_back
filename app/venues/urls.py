@@ -1,11 +1,12 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import PosterCallbackView, PosterAuthorizeView
+from .views import PosterCallbackView, PosterAuthorizeView, BannerViewSet
 from .views.venue import VenueViewSet
 
 router = DefaultRouter()
 router.register('venues', VenueViewSet)
+router.register(r'banners', BannerViewSet, basename='banners')
 
 urlpatterns = [
     path('poster-auth/', PosterAuthorizeView.as_view(), name='poster_authorize'),

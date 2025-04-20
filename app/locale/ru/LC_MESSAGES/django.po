@@ -86,7 +86,7 @@ msgstr ""
 
 #: account/templates/admin/login.html:31
 msgid "Welcome back to"
-msgstr ""
+msgstr "С возвращением"
 
 #: account/templates/admin/login.html:44
 #, python-format
@@ -105,7 +105,7 @@ msgstr ""
 
 #: account/templates/admin/login.html:88
 msgid "Return to site"
-msgstr ""
+msgstr "Вернуться на сайт"
 
 #: account/views/password_reset.py:30
 msgid "Password reset"
@@ -235,5 +235,54 @@ msgstr ""
 msgid "Spot"
 msgstr ""
 
+msgid "No results found"
+msgstr "Ничего не найдено"
+
+msgid "This page yielded into no results. Create a new item or reset your filters."
+msgstr "На этой странице нет результатов. Создайте новый элемент или сбросьте фильтры."
+
+msgid "Reset filters"
+msgstr "Сбросить фильтры"
+
+msgid "Dark"
+msgstr "Тёмная"
+
+msgid "Light"
+msgstr "Светлая"
+
+msgid "System"
+msgstr "Системная"
+
+msgid "Type to search"
+msgstr "Введите для поиска"
+
+msgid "Date from"
+msgstr "Дата с"
+
+msgid "Date to"
+msgstr "Дата по"
+
+msgid "Apply Filters"
+msgstr "Применить фильтры"
+
 msgid "You have been successfully logged out from the administration"
-msgstr "Вы успешно вышли из панели администрирования."
+msgstr "Вы успешно вышли из административной панели"
+
+msgid "Select value"
+msgstr "Выберите значение"
+
+msgid "By"
+msgstr "По"
+
+msgid "Choose file to upload"
+msgstr "Выберите файл для загрузки"
+
+msgid ""
+"Raw passwords are not stored, so there is no way to see this user’s password, "
+"but you can change the password using "
+"<a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">this form</a>."
+msgstr ""
+"Пароли в открытом виде не сохраняются, поэтому вы не можете увидеть пароль этого пользователя, "
+"но вы можете изменить его с помощью "
+"<a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">этой формы</a>."
+

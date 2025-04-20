@@ -33,7 +33,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             order_product.save()
 
         total_amount = order.total_price
-        transaction = Transaction.objects.create(order=order, total_price=1)
+        transaction = Transaction.objects.create(order=order, total_price=total_amount)
         self.context['transaction'] = transaction
 
         return order
