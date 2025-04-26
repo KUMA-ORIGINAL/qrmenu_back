@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 )
 class OrderViewSet(viewsets.GenericViewSet,
                    mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
                    mixins.CreateModelMixin):
     queryset = Order.objects.all()
     filter_backends = [DjangoFilterBackend]
@@ -69,7 +70,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         if venue_slug:
             queryset = queryset.filter(venue__slug=venue_slug)
         if spot_id:
-            queryset = queryset.filter(spots__id=spot_id)
+            queryset = queryset.filter(spot__id=spot_id)
         if table_id:
             queryset = queryset.filter(table__id=table_id)
 

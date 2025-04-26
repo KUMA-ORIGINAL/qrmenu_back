@@ -1,13 +1,13 @@
 from rest_framework import serializers, request
 
 from transactions.models import Transaction
-from ..serializers import OrderProductSerializer
+from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
 from ..models import Order, OrderProduct
 from ..services import generate_payment_link
 
 
 class OrderCreateSerializer(serializers.ModelSerializer):
-    order_products = OrderProductSerializer(many=True, write_only=True)
+    order_products = OrderProductCreateSerializer(many=True, write_only=True)
     payment_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -46,8 +46,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 
 class OrderListSerializer(serializers.ModelSerializer):
-    order_products = OrderProductSerializer(many=True)
+    order_products = OrderProductSerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
-        fields = ('id', 'order_products')
+        fields = ('id', 'status', 'order_products')

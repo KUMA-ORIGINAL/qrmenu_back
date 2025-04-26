@@ -17,7 +17,7 @@ class OrderStatus(models.IntegerChoices):
 
 class Order(BaseModel):
     external_id = models.CharField(
-        max_length=100, verbose_name="Внешний ID онлайн-заказа"
+        max_length=100, verbose_name="Внешний ID онлайн-заказа", blank=True, null=True
     )
     phone = models.CharField(
         max_length=20, verbose_name="Телефон клиента"
@@ -64,13 +64,14 @@ class Order(BaseModel):
         verbose_name="Заведение"
     )
     client = models.ForeignKey(
-        'Client', on_delete=models.CASCADE, related_name='orders', null=True,
+        'Client', on_delete=models.CASCADE, related_name='orders', null=True, blank=True,
         verbose_name="Клиент"
     )
 
     class Meta:
         verbose_name = "Заказ"
         verbose_name_plural = "Заказы"
+        ordering = ['-created_at']
 
     def __str__(self):
         return f'Order {self.id} for {self.phone}'
