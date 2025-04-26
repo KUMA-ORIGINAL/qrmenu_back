@@ -39,15 +39,17 @@ def format_order_details(order):
         comment = "Не указан"
 
     receipt = "\n".join(receipt_lines)
-    phone = order.phone
 
     message_parts = [
         f"{order.spot} - НОВЫЙ ЗАКАЗ #{order.id}\n\n",
         f"{items_description}\n\n"
     ]
 
-    if phone:
-        message_parts.append(f"*Номер клиента:* {phone}\n")
+    if order.phone:
+        message_parts.append(f"*Номер клиента:* {order.phone}\n")
+
+    if order.address:
+        message_parts.append(f"*Адрес доставки:* {order.address}\n")
 
     if comment != "Не указан":
         message_parts.append(f"*Комментарий к заказу:* _{comment}_\n\n")
