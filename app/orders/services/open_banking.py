@@ -14,7 +14,7 @@ def generate_payment_link(transaction):
         "amount": str(transaction.total_price),
         "transaction_id": str(transaction.id),
         "comment": f"Оплата заказа #{transaction.id} hospital",
-        "redirect_url": f"https://localhost:3000/orders/{transaction.order_id}",
+        "redirect_url": f"http://localhost:3000/orders/{transaction.order_id}",
         'token': PAYMENT_API_TOKEN,
     }
 
