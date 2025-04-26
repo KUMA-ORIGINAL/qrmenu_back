@@ -108,7 +108,7 @@ class OrderViewSet(viewsets.GenericViewSet,
             if user_owner and user_owner.tg_chat_id:
                 order_info = format_order_details(order)
                 logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
-                send_order_notification(user_owner.tg_chat_id, order_info)
+                send_order_notification(user_owner.tg_chat_id, order_info, order.id)
             else:
                 logger.info("No valid Telegram chat ID found or owner does not exist.")
         else:

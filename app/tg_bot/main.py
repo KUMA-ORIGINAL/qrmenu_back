@@ -2,10 +2,12 @@ import logging
 import re
 
 from asgiref.sync import sync_to_async
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, \
+    InlineKeyboardButton
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 
 from account.models import User
+from orders.models import Order
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,11 +59,52 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message, reply_markup=ReplyKeyboardRemove())
 
 
+async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    data = query.data
+    if data == "noop":
+        await query.answer("Это действие уже выполнено.")
+        return
+    logger.info(f"Callback query received: {data}")
+
+    if data.startswith("accept_"):
+        order_id = data.split("_")[1]
+        new_status = 1
+        button_text = "✅ Принято"
+    elif data.startswith("reject_"):
+        order_id = data.split("_")[1]
+        new_status = 7
+        button_text = "❌ Отклонено"
+    else:
+        await query.answer("Неизвестное действие.", show_alert=True)
+        return
+
+    # Обновляем заказ в БД
+    order = await sync_to_async(Order.objects.filter(id=order_id).first)()
+    if order:
+        order.status = new_status
+        await sync_to_async(order.save)()
+        logger.info(f"Order {order_id} updated to status '{new_status}'")
+
+        # Обновляем клавиатуру: заменяем две кнопки на одну неактивную
+        new_keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton(button_text, callback_data="noop")]
+        ])
+
+        # Меняем только клавиатуру, оставляя текст сообщения
+        await query.edit_message_reply_markup(reply_markup=new_keyboard)
+    else:
+        await query.answer("❗ Заказ не найден.", show_alert=True)
+
+
 def setup_bot(token: str):
     """Настраивает бота"""
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
+    app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     return app

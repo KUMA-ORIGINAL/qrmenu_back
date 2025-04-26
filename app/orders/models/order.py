@@ -35,6 +35,12 @@ class Order(BaseModel):
         default=OrderStatus.NEW,
         verbose_name="Статус заказа"
     )
+    address = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Адрес"
+    )
     total_price = models.BigIntegerField(
         default=0, verbose_name="Итоговая цена"
     )

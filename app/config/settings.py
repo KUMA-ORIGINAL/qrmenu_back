@@ -192,6 +192,10 @@ CSRF_TRUSTED_ORIGINS = [f"https://{DOMAIN}", f"http://{DOMAIN}"]
 
 AUTH_USER_MODEL = 'account.User'
 
+if DEBUG:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE.insert(0, 'silk.middleware.SilkyMiddleware')
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',

@@ -12,12 +12,13 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ('id', 'phone', 'comment', 'service_mode', 'service_price',
+        fields = ('id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
                   'tips_price', 'spot', 'table', 'order_products', 'payment_url')
         extra_kwargs = {
             'phone': {'write_only': True},
             'comment': {'write_only': True},
             'service_mode': {'write_only': True},
+            'address': {'write_only': True},
             'service_price': {'write_only': True},
             'tips_price': {'write_only': True},
             'spot': {'write_only': True},  # Only write, no read
