@@ -43,6 +43,12 @@ logger = logging.getLogger(__name__)
                 description='Фильтр по номеру стола',  # Описание параметра
                 required=False,  # Параметр необязательный
                 type=int  # Тип данных
+            ),
+            OpenApiParameter(
+                name='phone',  # Имя параметра
+                description='Фильтр по номеру',  # Описание параметра
+                required=False,  # Параметр необязательный
+                type=str  # Тип данных
             )
         ]
     )
@@ -65,6 +71,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         venue_slug = self.request.GET.get('venue_slug', None)
         spot_id = self.request.GET.get("spot_id", None)
         table_id = self.request.GET.get('table_id', None)
+        phone = self.request.GET.get('phone', None)
 
         if venue_slug:
             queryset = queryset.filter(venue__slug=venue_slug)
@@ -72,6 +79,8 @@ class OrderViewSet(viewsets.GenericViewSet,
             queryset = queryset.filter(spot__id=spot_id)
         if table_id:
             queryset = queryset.filter(table__id=table_id)
+        if phone:
+            queryset = queryset.filter(phone=phone)
 
         return queryset
 
