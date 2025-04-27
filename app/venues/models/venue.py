@@ -35,13 +35,13 @@ class Venue(BaseModel):
         default='09:00-18:00'
     )
     account_number = models.CharField(
-        max_length=100, unique=True, verbose_name="Номер аккаунта"
+        max_length=100, verbose_name="Номер аккаунта", blank=True
     )
     access_token = models.CharField(
-        max_length=255, verbose_name="Токен доступа для POS-системы"
+        max_length=255, verbose_name="Токен доступа для POS-системы", blank=True, null=True
     )
     owner_id = models.PositiveIntegerField(
-        verbose_name="ID владельца"
+        verbose_name="ID владельца", blank=True, null=True
     )
     owner_name = models.CharField(
         max_length=100, verbose_name="Имя владельца", blank=True
@@ -72,6 +72,19 @@ class Venue(BaseModel):
     )
     pos_system = models.ForeignKey(
         'POSSystem', on_delete=models.CASCADE, blank=True, null=True, verbose_name="POS система"
+    )
+
+    is_delivery_available = models.BooleanField(
+        default=True,
+        verbose_name="Доставка доступна"
+    )
+    is_takeout_available = models.BooleanField(
+        default=True,
+        verbose_name="Самовывоз доступен"
+    )
+    is_dinein_available = models.BooleanField(
+        default=True,
+        verbose_name="Обслуживание на месте доступно"
     )
 
     def __str__(self):
