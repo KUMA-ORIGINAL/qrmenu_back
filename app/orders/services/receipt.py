@@ -60,7 +60,6 @@ except Exception as e:
     logger.error(f'Failed to connect MQTT client: {str(e)}', exc_info=True)
 
 
-
 def send_receipt_to_mqtt(order, venue):
     try:
         # Получаем принтер
@@ -128,6 +127,8 @@ def send_receipt_to_mqtt(order, venue):
 
         topic = receipt_printer.topic
         result = mqtt_client.publish(topic, payload_json)
+
+        mqtt_client.loop_stop()
 
         if result.rc == mqtt.MQTT_ERR_SUCCESS:
             logger.info("Сообщение успешно отправлено в топик!")
