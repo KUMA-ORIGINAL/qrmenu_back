@@ -80,40 +80,35 @@ def send_receipt_to_mqtt(order, venue):
         delivery_address = order.address if order.address else "Адрес не указан"
 
         # Заголовок
-        header = f"""
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
-<LOGO>printest</LOGO><CENTER><F3232>{venue.company_name}</F3232></CENTER>
-<F2424>Терминал ID: {receipt_printer.printer_id}</F2424>
-<F2424>Организация: {venue.company_name}</F2424>
-<F2424><CENTER>Адрес: {address}</CENTER></F2424>
-<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}</CENTER></F2424>
-<F2424><CENTER>Тип операции: Оплата</CENTER></F2424>
-<F2424><CENTER>ID транзакции: TRX{order.id}</CENTER></F2424>
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
-<F2424><CENTER>Номер заказа: {order.id}</CENTER></F2424>
-<F2424><CENTER>Адрес доставки: {delivery_address}</CENTER></F2424>
-<F2424><CENTER>Клиент: {order.phone}</CENTER></F2424>
-"""
+        printdata = (
+            # "<F3232><CENTER>----------------------------</CENTER></F3232>\r"
+            f"<LOGO>printest</LOGO><F3232><CENTER>{venue.company_name}\r</CENTER></F3232>"
+            f"<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y             %H:%M:%S')}</CENTER></F2424>\r"
+            f"<F2424>Терминал ID: {receipt_printer.topic}\r</F2424>"
+            f"<F2424>Адрес: {address}\r</F2424>"
+            f"<F2424>Тип операции: Оплата elQR\r</F2424>"
+            f"<F2424>ID транзакции: trx_{order.id}\r</F2424>"
+            f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
+            f"<F2424>Заказ #{order.id}\r</F2424>"
+            f"<F2424>Клиент: {order.phone}\r\r</F2424>"
+        )
 
-        # Товары
         order_items = "<F2424>"
         for idx, op in enumerate(order.order_products.all(), start=1):
-            product_line = f"{idx}. {op.product.product_name} x{op.count}  {op.total_price} сом"
-            order_items += product_line
-        order_items += "</F2424>\r"
+            order_items += f"{idx}. {op.product.product_name} x{op.count} {op.total_price} сом\r"
+        order_items += "</F2424>"
 
-        # Общая сумма
-        total_sum = f"""
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
-<F3232><CENTER>ИТОГО: {order.total_price} сом</CENTER></F3232>
-<F3232><FB><CENTER>УСПЕШНО</CENTER></FB></F3232>
-<F3232><CENTER>----------------------------</CENTER></F3232>
-<CENTER>Подпись клиента не требуется\n</CENTER>
-\r\n
-"""
+        total_sum = (
+            f"<F2424><CENTER>\rАдрес доставки: {delivery_address}\r</CENTER></F2424>"
+            f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
+            f"<F3232><CENTER>{order.total_price} сом\r</CENTER></F3232>"
+            f"<F3232><FB><CENTER>УСПЕШНО\r</CENTER></FB></F3232>"
+            f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
+            f"<CENTER>Подпись клиента не требуется\r</CENTER>"
+            f"<F3232><CENTER>----------------------------\r\n\n</CENTER></F3232>"
+        )
 
-        # Собираем весь текст
-        printdata = header + order_items + total_sum
+        printdata = printdata + order_items + total_sum
 
         # Формируем payload
         payload_data = {
