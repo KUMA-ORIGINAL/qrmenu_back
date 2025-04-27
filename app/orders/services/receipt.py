@@ -81,7 +81,6 @@ def send_receipt_to_mqtt(order, venue):
 
         # Заголовок
         printdata = (
-            # "<F3232><CENTER>----------------------------</CENTER></F3232>\r"
             f"<LOGO>printest</LOGO><F3232><CENTER>{venue.company_name}\r</CENTER></F3232>"
             f"<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y             %H:%M:%S')}</CENTER></F2424>\r"
             f"<F2424>Терминал ID: {receipt_printer.topic}\r</F2424>"
@@ -105,7 +104,7 @@ def send_receipt_to_mqtt(order, venue):
             f"<F3232><FB><CENTER>УСПЕШНО\r</CENTER></FB></F3232>"
             f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
             f"<CENTER>Подпись клиента не требуется\r</CENTER>"
-            f"<F3232><CENTER>----------------------------\r\n</CENTER></F3232>"
+            f"<F3232><CENTER>----------------------------\r\r\r</CENTER></F3232>"
         )
 
         printdata = printdata + order_items + total_sum
