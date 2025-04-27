@@ -113,7 +113,7 @@ def send_receipt_to_mqtt(order, venue):
         payload_data = {
             "request_id": f"rq_{order.id}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
             "biz_type": "1",
-            "broadcast_type": "1",
+            # "broadcast_type": "1",
             "money": str(order.total_price),
             "printdata": printdata.strip()
         }
