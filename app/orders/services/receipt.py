@@ -77,17 +77,21 @@ def send_receipt_to_mqtt(order, venue):
         timezone.activate('Asia/Bishkek')
         order_date_local = timezone.localtime(order.created_at)
 
+        address = order.spot.address if order.spot else "Адрес не указан"
+        delivery_address = order.address if order.address else "Адрес не указан"
+
         # Заголовок
         header = f"""
 <F3232><CENTER>----------------------------\r</CENTER></F3232>
 <LOGO>printest</LOGO><CENTER><F3232>{venue.company_name}\r</F3232></CENTER>
 <F2424>Терминал ID: {receipt_printer.printer_id}\r</F2424>
 <F2424>Организация: {venue.company_name}\r</F2424>
-<F2424><CENTER>Адрес: {order.spot.address}\r</CENTER></F2424>
+<F2424><CENTER>Адрес: {address}\r</CENTER></F2424>
 <F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}\r</CENTER></F2424>
 <F2424><CENTER>Номер чека: {order.id}\r</CENTER></F2424>
 <F2424><CENTER>Тип операции: Оплата\r</CENTER></F2424>
 <F2424><CENTER>ID транзакции: TRX{order.id}\r</CENTER></F2424>
+<F2424><CENTER>Адрес доставки: {delivery_address}\r</CENTER></F2424>
 <F3232><CENTER>----------------------------\r</CENTER></F3232>
 """
 
