@@ -40,7 +40,7 @@ def on_message(client, userdata, msg):
 
 mqtt_client = mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION2,
-    # client_id="mqttx_be0e1ee",
+    client_id="mqttx_be0e1",
     clean_session=True,
 )
 mqtt_client.username_pw_set(settings.RECEIPT_MQTT_USERNAME, settings.RECEIPT_MQTT_PASSWORD)
