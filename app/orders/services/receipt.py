@@ -92,7 +92,7 @@ def send_receipt_to_mqtt(order, venue):
 <F3232><CENTER>----------------------------\r</CENTER></F3232>
 <F2424><CENTER>Номер заказа: {order.id}</CENTER></F2424>
 <F2424><CENTER>Адрес доставки: {delivery_address}</CENTER></F2424>
-<F2424><CENTER>Клиент: {order.phone_number}</CENTER></F2424>
+<F2424><CENTER>Клиент: {order.phone}</CENTER></F2424>
 """
 
         # Товары
