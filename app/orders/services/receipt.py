@@ -105,7 +105,7 @@ def send_receipt_to_mqtt(order, venue):
             f"<F3232><FB><CENTER>УСПЕШНО\r</CENTER></FB></F3232>"
             f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
             f"<CENTER>Подпись клиента не требуется\r</CENTER>"
-            f"<F3232><CENTER>----------------------------\r\n\n</CENTER></F3232>"
+            f"<F3232><CENTER>----------------------------\r\n</CENTER></F3232>"
         )
 
         printdata = printdata + order_items + total_sum
