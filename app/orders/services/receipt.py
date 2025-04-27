@@ -82,32 +82,32 @@ def send_receipt_to_mqtt(order, venue):
 
         # Заголовок
         header = f"""
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
-<LOGO>printest</LOGO><CENTER><F3232>{venue.company_name}\r</F3232></CENTER>
-<F2424>Терминал ID: {receipt_printer.printer_id}\r</F2424>
-<F2424>Организация: {venue.company_name}\r</F2424>
-<F2424><CENTER>Адрес: {address}\r</CENTER></F2424>
-<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}\r</CENTER></F2424>
-<F2424><CENTER>Номер чека: {order.id}\r</CENTER></F2424>
-<F2424><CENTER>Тип операции: Оплата\r</CENTER></F2424>
-<F2424><CENTER>ID транзакции: TRX{order.id}\r</CENTER></F2424>
-<F2424><CENTER>Адрес доставки: {delivery_address}\r</CENTER></F2424>
+<F3232><CENTER>----------------------------</CENTER></F3232>
+<LOGO>printest</LOGO><CENTER><F3232>{venue.company_name}</F3232></CENTER>
+<F2424>Терминал ID: {receipt_printer.printer_id}</F2424>
+<F2424>Организация: {venue.company_name}</F2424>
+<F2424><CENTER>Адрес: {address}</CENTER></F2424>
+<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}</CENTER></F2424>
+<F2424><CENTER>Номер чека: {order.id}</CENTER></F2424>
+<F2424><CENTER>Тип операции: Оплата</CENTER></F2424>
+<F2424><CENTER>ID транзакции: TRX{order.id}</CENTER></F2424>
+<F2424><CENTER>Адрес доставки: {delivery_address}</CENTER></F2424>
 <F3232><CENTER>----------------------------\r</CENTER></F3232>
 """
 
         # Товары
-        order_items = "<F2424>\r"
+        order_items = "<F2424>"
         for idx, op in enumerate(order.order_products.all(), start=1):
-            product_line = f"{idx}. {op.product.product_name} x{op.count}  {op.total_price} сом\r"
+            product_line = f"{idx}. {op.product.product_name} x{op.count}  {op.total_price} сом"
             order_items += product_line
         order_items += "</F2424>\r"
 
         # Общая сумма
         total_sum = f"""
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
-<F3232><CENTER>ИТОГО: {order.total_price} сом\r</CENTER></F3232>
-<F3232><FB><CENTER>УСПЕШНО\r</CENTER></FB></F3232>
-<F3232><CENTER>----------------------------\r</CENTER></F3232>
+<F3232><CENTER>----------------------------</CENTER></F3232>
+<F3232><CENTER>ИТОГО: {order.total_price} сом</CENTER></F3232>
+<F3232><FB><CENTER>УСПЕШНО</CENTER></FB></F3232>
+<F3232><CENTER>----------------------------</CENTER></F3232>
 <CENTER>Подпись клиента не требуется\r</CENTER>
 \r\n
 """
