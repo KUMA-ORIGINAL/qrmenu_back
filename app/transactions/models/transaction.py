@@ -7,7 +7,7 @@ class Transaction(BaseModel):
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма")
     status = models.CharField(
         max_length=50,
-        choices=[('paid', 'Оплачено'), ('pending', 'В ожидании'), ('failed', 'Не удалось')],
+        choices=[('success', 'Оплачено'), ('pending', 'В ожидании'), ('failed', 'Не удалось')],
         verbose_name="Статус оплаты"
     )
     json_data = models.JSONField(blank=True, null=True, verbose_name='Ответ из платежной системы')
@@ -21,4 +21,4 @@ class Transaction(BaseModel):
     class Meta:
         verbose_name = "Транзакция"
         verbose_name_plural = "Транзакции"
-        ordering = ['-created_at']  # Упорядочивание по дате транзакции (от новых к старым)
+        ordering = ['-created_at']

@@ -7,12 +7,11 @@ from rest_framework.response import Response
 
 from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
-from ..services import send_receipt_to_webhook, generate_payment_link
+from ..services import send_receipt_to_mqtt, format_order_details
 from tg_bot.utils import send_order_notification
 from venues.models import Venue, Table, Spot
 from ..models import Order
 from ..serializers import OrderListSerializer, OrderCreateSerializer
-from ..utils import format_order_details
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +139,7 @@ class OrderViewSet(viewsets.GenericViewSet,
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Optionally handle webhook here
-        # if not send_receipt_to_webhook(order, venue, spot):
-        #     logger.warning("Failed to send receipt to webhook.")
+        if not send_receipt_to_mqtt(order, venue):
+            logger.warning("Failed to send receipt to webhook.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)

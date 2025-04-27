@@ -1,9 +1,9 @@
+import time
 from datetime import datetime
-
-import requests
 import json
 import logging
 
+import paho.mqtt.client as mqtt
 from django.conf import settings
 from django.utils import timezone
 
@@ -13,60 +13,140 @@ from ..models import ReceiptPrinter
 logger = logging.getLogger(__name__)
 
 
-def send_receipt_to_webhook(order, venue, spot):
+def on_connect(client, userdata, flags, reason_code, properties):
+    if reason_code == 0:
+        logger.info('Connected to MQTT broker successfully')
+    else:
+        logger.error(f'Bad connection. Code: {reason_code}')
+
+
+def on_disconnect(client, userdata, flags, reason_code, properties):
+    if reason_code != 0:
+        logger.warning(f'Unexpected disconnection (rc={reason_code}). Trying to reconnect...')
+        while True:
+            try:
+                time.sleep(5)
+                client.reconnect()
+                logger.info('Successfully reconnected to MQTT broker.')
+                break
+            except Exception as e:
+                logger.error(f'Reconnect failed: {str(e)}', exc_info=True)
+                time.sleep(5)
+
+
+def on_message(client, userdata, msg):
+    logger.info(f'Received message on topic: {msg.topic} with payload: {msg.payload.decode()}')
+
+
+mqtt_client = mqtt.Client(
+    mqtt.CallbackAPIVersion.VERSION2,
+    client_id="mqttx_be0e1ee7",
+    clean_session=True,
+)
+mqtt_client.username_pw_set(settings.RECEIPT_MQTT_USERNAME, settings.RECEIPT_MQTT_PASSWORD)
+
+mqtt_client.on_connect = on_connect
+mqtt_client.on_disconnect = on_disconnect
+mqtt_client.on_message = on_message
+
+try:
+    mqtt_client.connect(
+        host=settings.RECEIPT_MQTT_BROKER,
+        port=settings.RECEIPT_MQTT_PORT,
+        keepalive=60
+    )
+    logger.info('MQTT client initialized and connected')
+except Exception as e:
+    logger.error(f'Failed to connect MQTT client: {str(e)}', exc_info=True)
+
+
+
+def send_receipt_to_mqtt(order, venue):
     try:
+        # Получаем принтер
         receipt_printer = ReceiptPrinter.objects.filter(venue=venue).first()
 
-        timezone.activate('Asia/Bishkek')  # Пример для часового пояса UTC+6
+        if not receipt_printer:
+            logger.error(f"No receipt printer found for venue {venue.id}")
+            return False
+
+        if not receipt_printer.topic:
+            logger.error(f"No topic configured for receipt printer {receipt_printer.id}")
+            return False
+
+        timezone.activate('Asia/Bishkek')
         order_date_local = timezone.localtime(order.created_at)
 
-        header = (
-                "<F3232><CENTER><FB>iMENU.KG</FB> ЗАКАЗ #" + str(order.id) + "\\r</CENTER></F3232>"
-                f"<F3232><CENTER><FB>АДРЕС: {spot.address}\\r</FB></CENTER></F3232>"
-                "<F3232><CENTER><FB>СТОЛ: ВЫНОС\\r</FB></CENTER></F3232>"
-        )
-        order_items = "".join([
-            f"<F2424>{idx + 1}. {op.product.product_name} - {op.count} шт.\\r</F2424>"
-            for idx, op in enumerate(order.order_products.all())
-        ])
-        full_order_details = header + order_items
+        # Заголовок
+        header = f"""
+<F3232><CENTER>----------------------------\r</CENTER></F3232>
+<LOGO>printest</LOGO><CENTER><F3232>{venue.company_name}\r</F3232></CENTER>
+<F2424>Терминал ID: {receipt_printer.printer_id}\r</F2424>
+<F2424>Организация: {venue.company_name}\r</F2424>
+<F2424><CENTER>Адрес: {order.spot.address}\r</CENTER></F2424>
+<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}\r</CENTER></F2424>
+<F2424><CENTER>Номер чека: {order.id}\r</CENTER></F2424>
+<F2424><CENTER>Тип операции: Оплата\r</CENTER></F2424>
+<F2424><CENTER>ID транзакции: TRX{order.id}\r</CENTER></F2424>
+<F3232><CENTER>----------------------------\r</CENTER></F3232>
+"""
 
-        order_count = order.order_products.count()
+        # Товары
+        order_items = "<F2424>\r"
+        for idx, op in enumerate(order.order_products.all(), start=1):
+            product_line = f"{idx}. {op.product.product_name} x{op.count}  {op.total_price} сом\r"
+            order_items += product_line
+        order_items += "</F2424>\r"
 
-        receipt_data = {
+        # Общая сумма
+        total_sum = f"""
+<F3232><CENTER>----------------------------\r</CENTER></F3232>
+<F3232><CENTER>ИТОГО: {order.total_price} сом\r</CENTER></F3232>
+<F3232><FB><CENTER>УСПЕШНО\r</CENTER></FB></F3232>
+<F3232><CENTER>----------------------------\r</CENTER></F3232>
+<CENTER>Подпись клиента не требуется\r</CENTER>
+\r\n
+"""
+
+        # Собираем весь текст
+        printdata = header + order_items + total_sum
+
+        # Формируем payload
+        payload_data = {
             "request_id": f"rq_{order.id}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
-            "amount": str(order.total_price),
-            "terminal_id": receipt_printer.printer_id,  # Номер принтера
-            "company_name": venue.company_name,
-            "company_id": '23412341234124234',
-            "company_address": spot.address,
-            "order_date": order_date_local.strftime('%d.%m.%Y'),
-            "order_time": order_date_local.strftime('%H:%M:%S'),
-            "tr_id": f"rq_{order.id}",
-            "tr_type": 'Платеж по QR',
-            "order_count": f"{order_count}",
-            "order_items": full_order_details
+            "biz_type": "1",
+            "broadcast_type": "1",
+            "money": str(order.total_price),
+            "printdata": printdata.strip()
         }
 
-        response = requests.post(settings.RECEIPT_WEBHOOK_URL, data=json.dumps(receipt_data), headers={"Content-Type": "application/json"})
+        payload_json = json.dumps(payload_data, ensure_ascii=False)
 
-        if response.status_code == 200:
-            logger.info(f"Receipt sent successfully: {response.content}")
+        topic = receipt_printer.topic
+        result = mqtt_client.publish(topic, payload_json)
 
+        if result.rc == mqtt.MQTT_ERR_SUCCESS:
+            logger.info("Сообщение успешно отправлено в топик!")
+        else:
+            logger.error(f"Ошибка отправки сообщения: код {result.rc}")
+
+        if result:
+            logger.info(f"Receipt sent successfully via MQTT to topic {topic}")
+
+            # Cохраняем
             Receipt.objects.create(
                 order=order,
                 receipt_printer=receipt_printer,
-                venue=order.venue,
+                venue=venue,
                 amount=order.total_price,
-                order_count=order_count,
-                payload=receipt_data,  # Сохраняем JSON-параметры чека
+                order_count=order.order_products.count(),
+                payload=payload_data,
             )
             return True
-
         else:
-            logger.error(f"Failed to send receipt. Status code: {response.status_code}, Response: {response.content}")
+            logger.error(f"Failed to publish receipt to MQTT topic {topic}")
             return False
 
     except Exception as e:
-        logger.error(f"Error sending receipt: {str(e)}", exc_info=True)
+        logger.error(f"Error sending receipt via MQTT: {str(e)}", exc_info=True)
         return False

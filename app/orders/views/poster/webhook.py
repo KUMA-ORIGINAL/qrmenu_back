@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from orders.models import Order
 from orders.serializers.webhook import PosterWebhookSerializer
-from orders.websocket_utils import notify_order_status
+from orders.services import notify_order_status
 from services.pos_service_factory import POSServiceFactory
 from venues.models import Venue
 

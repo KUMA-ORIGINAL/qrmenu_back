@@ -162,7 +162,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TG_BOT_TOKEN = env('TG_BOT_TOKEN')
 
-RECEIPT_WEBHOOK_URL = env('RECEIPT_WEBHOOK_URL')
+RECEIPT_MQTT_BROKER = "193.176.239.186"
+RECEIPT_MQTT_PORT = 1883
+RECEIPT_MQTT_USERNAME = "myuser"
+RECEIPT_MQTT_PASSWORD = "123456"
 
 PAYMENT_API_TOKEN = env('PAYMENT_API_TOKEN')
 
@@ -366,29 +369,29 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
     },
-    "TABS": [
-        {
-            'page': 'Заказы',
-            "models": ["orders.order", 'orders.receiptprinter', 'orders.receipt'],
-            "items": [
-                {
-                    "title": _("Заказы"),
-                    "icon": "shopping_bag",
-                    "link": reverse_lazy("admin:orders_order_changelist"),
-                },
-                {
-                    "title": _("Чеки"),
-                    "icon": "grade",
-                    "link": reverse_lazy("admin:orders_receipt_changelist"),
-                },
-                {
-                    "title": _("Принтеры для чека"),
-                    "icon": "grade",
-                    "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
-                },
-            ],
-        },
-    ],
+    # "TABS": [
+    #     {
+    #         'page': 'Заказы',
+    #         "models": ["orders.order", 'orders.receiptprinter', 'orders.receipt'],
+    #         "items": [
+    #             {
+    #                 "title": _("Заказы"),
+    #                 "icon": "shopping_bag",
+    #                 "link": reverse_lazy("admin:orders_order_changelist"),
+    #             },
+    #             {
+    #                 "title": _("Чеки"),
+    #                 "icon": "grade",
+    #                 "link": reverse_lazy("admin:orders_receipt_changelist"),
+    #             },
+    #             {
+    #                 "title": _("Принтеры для чека"),
+    #                 "icon": "grade",
+    #                 "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
+    #             },
+    #         ],
+    #     },
+    # ],
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
         "show_all_applications": False,  # Dropdown with all applications and models
@@ -477,6 +480,21 @@ UNFOLD = {
                         "title": _("Клиенты"),
                         "icon": "groups",
                         "link": reverse_lazy("admin:orders_client_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": _("Чеки"),
+                "items": [
+                    {
+                        "title": _("Чеки"),
+                        "icon": "grade",
+                        "link": reverse_lazy("admin:orders_receipt_changelist"),
+                    },
+                    {
+                        "title": _("Принтеры для чека"),
+                        "icon": "grade",
+                        "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
                     },
                 ]
             },

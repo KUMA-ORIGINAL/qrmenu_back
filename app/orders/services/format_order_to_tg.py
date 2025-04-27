@@ -1,3 +1,4 @@
+
 def format_order_details(order):
     items_details = []
     items_receipt = []
@@ -57,3 +58,4 @@ def format_order_details(order):
     message_parts.append(f"```\n{receipt}\n```")
 
     return ''.join(message_parts)
+
