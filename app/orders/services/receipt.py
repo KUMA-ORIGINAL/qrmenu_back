@@ -87,11 +87,12 @@ def send_receipt_to_mqtt(order, venue):
 <F2424>Организация: {venue.company_name}</F2424>
 <F2424><CENTER>Адрес: {address}</CENTER></F2424>
 <F2424><CENTER>{order_date_local.strftime('%d.%m.%Y %H:%M')}</CENTER></F2424>
-<F2424><CENTER>Номер чека: {order.id}</CENTER></F2424>
 <F2424><CENTER>Тип операции: Оплата</CENTER></F2424>
 <F2424><CENTER>ID транзакции: TRX{order.id}</CENTER></F2424>
-<F2424><CENTER>Адрес доставки: {delivery_address}</CENTER></F2424>
 <F3232><CENTER>----------------------------\r</CENTER></F3232>
+<F2424><CENTER>Номер заказа: {order.id}</CENTER></F2424>
+<F2424><CENTER>Адрес доставки: {delivery_address}</CENTER></F2424>
+<F2424><CENTER>Клиент: {order.phone_number}</CENTER></F2424>
 """
 
         # Товары
@@ -107,7 +108,7 @@ def send_receipt_to_mqtt(order, venue):
 <F3232><CENTER>ИТОГО: {order.total_price} сом</CENTER></F3232>
 <F3232><FB><CENTER>УСПЕШНО</CENTER></FB></F3232>
 <F3232><CENTER>----------------------------</CENTER></F3232>
-<CENTER>Подпись клиента не требуется\r</CENTER>
+<CENTER>Подпись клиента не требуется\n</CENTER>
 \r\n
 """
 

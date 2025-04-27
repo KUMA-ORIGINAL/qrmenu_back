@@ -21,6 +21,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             transaction_id = data.get('operation_id')
             payment_status = data.get('operation_state')
 
+            logger.info(f'webhook data: {data}')
+
             if not transaction_id or not payment_status:
                 logger.warning("Недостаточно данных в webhook: %s", data)
                 return Response({'error': 'Недостаточно данных'}, status=status.HTTP_400_BAD_REQUEST)
