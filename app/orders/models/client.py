@@ -44,7 +44,6 @@ class Client(BaseModel):
     address = models.TextField(
         blank=True, null=True, verbose_name="Адрес"
     )
-
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='clients',
         verbose_name="Заведение"
