@@ -1,22 +1,38 @@
 import json
+import logging
+from urllib.parse import parse_qs
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.layers import get_channel_layer
+
+logger = logging.getLogger(__name__)
 
 
 class OrderStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.order_id = self.scope['url_route']['kwargs']['order_id']
-        self.room_group_name = f'order_{self.order_id}'
-
         try:
+            query_params = parse_qs(self.scope["query_string"].decode())
+            self.phone_number = query_params.get("phone_number", [None])[0]
+
+            if not self.phone_number:
+                await self.close(code=4001)
+                logger.error("Phone number not provided in query params.")
+                return
+
+            # Можно использовать номер телефона в названии группы
+            self.room_group_name = f'orders_{self.phone_number}'
+
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
             )
             await self.accept()
+
+            logger.info(f"WebSocket connected for {self.phone_number}")
+
         except Exception as e:
-            # Обрабатываем ошибки подключения
+            logger.exception(f"Ошибка подключения WebSocket: {e}")
             await self.close(code=1001)
-            print(f"Ошибка подключения: {e}")
 
     async def disconnect(self, close_code):
         try:
@@ -24,15 +40,16 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
+            logger.info(f"WebSocket disconnected for {self.phone_number}")
         except Exception as e:
-            print(f"Ошибка отключения: {e}")
+            logger.exception(f"Ошибка отключения WebSocket: {e}")
 
-    # Получение сообщения из группы и отправка на WebSocket
+    # Обработка сообщений от группы
     async def order_status_update(self, event):
-        status = event.get('status', 'unknown')  # Подстраховка на случай, если статус не передан
         try:
             await self.send(text_data=json.dumps({
-                'status': status
+                'order_id': event.get('order_id'),
+                'status': event.get('status', 'unknown')
             }))
         except Exception as e:
-            print(f"Ошибка отправки данных: {e}")
+            logger.exception(f"Ошибка отправки данных через WebSocket: {e}")
