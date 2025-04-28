@@ -8,6 +8,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 
 from account.models import User
 from orders.models import Order
+from orders.services import notify_order_status
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -86,6 +87,9 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     if order:
         order.status = new_status
         await sync_to_async(order.save)()
+
+        await notify_order_status(order.id, new_status)
+
         logger.info(f"Order {order_id} updated to status '{new_status}'")
 
         # Обновляем клавиатуру: заменяем две кнопки на одну неактивную
