@@ -1,3 +1,6 @@
+import math
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.db import models
 
 from services.model import BaseModel
@@ -41,25 +44,30 @@ class Order(BaseModel):
         null=True,
         verbose_name="Адрес"
     )
-    total_price = models.BigIntegerField(
-        default=0, verbose_name="Итоговая цена"
+    total_price = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Итоговая цена"
     )
-    service_price = models.BigIntegerField(
-        default=0, verbose_name="Цена за обслуживание"
+    service_price = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Цена за обслуживание"
     )
-    tips_price = models.BigIntegerField(
-        default=0, verbose_name="Чаевые"
+    tips_price = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Чаевые"
     )
     discount = models.PositiveIntegerField(
-        default=0, verbose_name="скидка в %"
+        default=0, verbose_name="Скидка в %"
     )
     bonus = models.PositiveIntegerField(
-        default=0, verbose_name='Бонусы'
+        default=0, verbose_name="Бонусы"
     )
+
     spot = models.ForeignKey(
         'venues.Spot', on_delete=models.SET_NULL, related_name='orders',
         null=True, blank=True,
-        verbose_name="Точка заведения")
+        verbose_name="Точка заведения"
+    )
     table = models.ForeignKey(
         'venues.Table', on_delete=models.SET_NULL, related_name='orders',
         null=True, blank=True,
@@ -70,7 +78,8 @@ class Order(BaseModel):
         verbose_name="Заведение"
     )
     client = models.ForeignKey(
-        'Client', on_delete=models.CASCADE, related_name='orders', null=True, blank=True,
+        'Client', on_delete=models.CASCADE, related_name='orders',
+        null=True, blank=True,
         verbose_name="Клиент"
     )
 
@@ -83,8 +92,17 @@ class Order(BaseModel):
         return f'Order {self.id} for {self.phone}'
 
     def calculate_total_price(self):
-        """Подсчитывает общую стоимость заказа и сохраняет ее."""
-        total = sum(order_product.total_price for order_product in self.order_products.all())
-        total += self.service_price
-        self.total_price = total
+        products_total = sum(
+            order_product.total_price for order_product in self.order_products.all()
+        )
+
+        service_fee_percent = self.venue.service_fee_percent or 0
+
+        service_price = math.ceil(products_total * service_fee_percent / 100)
+
+        total_price = products_total + service_price
+
+        self.service_price = service_price
+        self.total_price = total_price
+
         self.save()

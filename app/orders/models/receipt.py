@@ -4,7 +4,7 @@ from services.model import BaseModel
 
 
 class Receipt(BaseModel):
-    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма")
+    amount = models.PositiveIntegerField(verbose_name="Сумма")
     order_count = models.PositiveIntegerField(verbose_name="Количество товаров")
     payload = models.JSONField(verbose_name="JSON-данные чека")
     order = models.OneToOneField(

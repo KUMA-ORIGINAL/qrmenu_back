@@ -37,6 +37,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
     )
 
     model = User
+    autocomplete_fields = ("groups",)
 
     ordering = ['date_joined']
 
@@ -64,19 +65,18 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         fieldsets = (
             (None, {"fields": ("email", "password")}),
             (
-                "Permissions",
+                "Права",
                 {
                     "fields": (
                         "is_staff",
                         "is_active",
                         "is_superuser",
                         "groups",
-                        "user_permissions",
                     )
                 },
             ),
-            ("Dates", {"fields": ("last_login", "date_joined")}),
-            ('required', {
+            ("Даты", {"fields": ("last_login", "date_joined")}),
+            (None, {
                 'fields': ('venue', 'spot', 'role', 'phone_number', 'full_name', 'tg_chat_id')}),
         )
         if request.user.is_superuser:

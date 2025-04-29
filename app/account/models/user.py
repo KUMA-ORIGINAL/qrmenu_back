@@ -54,14 +54,14 @@ class User(AbstractUser):
         validators=[EmailValidator(_("Enter a valid email address."))],
         unique=True
     )
-    phone_number = PhoneNumberField(_("phone number"), blank=True)
-    full_name = models.CharField(max_length=100, blank=False)
+    phone_number = PhoneNumberField(_("Номер телефона"), blank=True)
+    full_name = models.CharField('ФИО', max_length=100, blank=False)
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
         blank=True
     )
-    tg_chat_id = models.BigIntegerField(unique=True, blank=True, null=True)
+    tg_chat_id = models.BigIntegerField('chat id в телеграмме',unique=True, blank=True, null=True)
     venue = models.ForeignKey(
         'venues.Venue', on_delete=models.CASCADE, related_name='users',
         verbose_name="Заведение", blank=True, null=True

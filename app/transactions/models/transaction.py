@@ -4,7 +4,7 @@ from services.model import BaseModel
 
 
 class Transaction(BaseModel):
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма")
+    total_price = models.PositiveIntegerField(verbose_name="Общая сумма", default=0)
     status = models.CharField(
         max_length=50,
         choices=[('success', 'Оплачено'), ('pending', 'В ожидании'), ('failed', 'Не удалось')],

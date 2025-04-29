@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
+from account.models import ROLE_OWNER
+from orders.services import format_order_details
+from tg_bot.utils import send_order_notification
 from ..models import Transaction
 import logging
 
@@ -39,6 +42,15 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 transaction.save(update_fields=["status"])
             else:
                 logger.info(f"Повторное получение webhook: статус уже установлен — {payment_status}")
+
+            user_owner = transaction.order.venue.users.filter(role=ROLE_OWNER).first()
+            order = transaction.order
+            if user_owner and user_owner.tg_chat_id:
+                order_info = format_order_details(order)
+                logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
+                send_order_notification(user_owner.tg_chat_id, order_info, order.id)
+            else:
+                logger.info("No valid Telegram chat ID found or owner does not exist.")
 
             return Response({'success': True}, status=status.HTTP_200_OK)
 

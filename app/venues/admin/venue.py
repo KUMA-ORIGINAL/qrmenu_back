@@ -2,8 +2,9 @@ import logging
 
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.html import format_html
 
-from unfold.decorators import action
+from unfold.decorators import action, display
 
 from account.models import ROLE_OWNER
 from menu.models import Category, Product
@@ -154,12 +155,22 @@ class VenueAdmin(BaseModelAdmin):
 
 
     def get_list_display(self, request):
-        list_display = ('id', 'company_name', 'pos_system', 'detail_link')
+        list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role == ROLE_OWNER:
-            list_display = ('company_name', 'pos_system', 'detail_link')
+            list_display = ('company_name', 'pos_system', 'link_to_venue', 'detail_link')
         return list_display
+
+    @display(
+        description="Ссылка на заведение",
+        label=True
+    )
+    def link_to_venue(self, obj):
+        if obj.slug:
+            url = f"https://imenu.kg/I/{obj.slug}"
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return "-"
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)

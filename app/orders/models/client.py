@@ -32,8 +32,8 @@ class Client(BaseModel):
         choices=[(0, 'Мужской'), (1, 'Женский')], default=0, verbose_name="Пол"
     )
     bonus = models.PositiveIntegerField(default=0, verbose_name='Бонусы')
-    total_payed_sum = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Общая сумма платежей"
+    total_payed_sum = models.PositiveIntegerField(
+        default=0, verbose_name="Общая сумма платежей"
     )
     country = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Страна"

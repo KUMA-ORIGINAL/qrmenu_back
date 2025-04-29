@@ -112,13 +112,6 @@ class OrderViewSet(viewsets.GenericViewSet,
                 logger.error(f"Failed to save order: {str(e)}", exc_info=True)
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            user_owner = venue.users.filter(role=ROLE_OWNER).first()
-            if user_owner and user_owner.tg_chat_id:
-                order_info = format_order_details(order)
-                logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
-                send_order_notification(user_owner.tg_chat_id, order_info, order.id)
-            else:
-                logger.info("No valid Telegram chat ID found or owner does not exist.")
         else:
             api_token = venue.access_token
             pos_service = POSServiceFactory.get_service(pos_system_name, api_token)

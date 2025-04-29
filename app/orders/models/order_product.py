@@ -13,11 +13,11 @@ class OrderProduct(BaseModel):
     count = models.PositiveIntegerField(
         default=1, verbose_name="Количество"
     )
-    price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Цена за единицу"
+    price = models.PositiveIntegerField(
+        default=0, verbose_name="Цена за единицу"
     )
-    total_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0, verbose_name="Общая цена"
+    total_price = models.PositiveIntegerField(
+        default=0, verbose_name="Общая цена"
     )
     modificator = models.ForeignKey(
         'menu.Modificator', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Модификатор"
