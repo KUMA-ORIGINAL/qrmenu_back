@@ -23,7 +23,7 @@ class VenueViewSet(viewsets.GenericViewSet,
         venue = get_object_or_404(Venue, slug=slug)
         table = get_object_or_404(Table, pk=table_id, venue=venue)  # Проверяем, что стол принадлежит заведению
 
-        venue_data = VenueSerializer(venue).data
+        venue_data = VenueSerializer(venue, context={'request': request}).data
         venue_data['table'] = TableSerializer(table).data  # Добавляем данные о столе
 
         return Response(venue_data)
