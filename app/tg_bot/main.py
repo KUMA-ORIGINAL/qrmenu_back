@@ -82,7 +82,6 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         await query.answer("Неизвестное действие.", show_alert=True)
         return
 
-    # Обновляем заказ в БД
     order = await sync_to_async(Order.objects.filter(id=order_id).first)()
     if order:
         order.status = new_status
@@ -93,12 +92,10 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
         logger.info(f"Order {order_id} updated to status '{new_status}'")
 
-        # Обновляем клавиатуру: заменяем две кнопки на одну неактивную
         new_keyboard = InlineKeyboardMarkup([
             [InlineKeyboardButton(button_text, callback_data="noop")]
         ])
 
-        # Меняем только клавиатуру, оставляя текст сообщения
         await query.edit_message_reply_markup(reply_markup=new_keyboard)
     else:
         await query.answer("❗ Заказ не найден.", show_alert=True)
