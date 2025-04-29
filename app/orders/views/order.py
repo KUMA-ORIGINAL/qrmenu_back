@@ -82,7 +82,12 @@ class OrderViewSet(viewsets.GenericViewSet,
         if phone:
             queryset = queryset.filter(phone=phone)
 
-        return queryset
+        return queryset.prefetch_related(
+            'order_products',
+            'order_products__product',
+            'order_products__product__modificators',
+            'order_products__product__category',
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

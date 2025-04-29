@@ -1,9 +1,8 @@
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank, TrigramSimilarity
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models.functions import Lower
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, mixins, status
-from rest_framework.response import Response
+from rest_framework import viewsets, mixins
 
 from ..models import Product
 from ..serializers import ProductSerializer
@@ -39,19 +38,21 @@ class ProductViewSet(viewsets.GenericViewSet,
     filterset_fields = ('category',)
 
     def get_queryset(self):
-        queryset = Product.objects.select_related('category', 'venue').prefetch_related('spots')
+        queryset = Product.objects.select_related('category', 'venue') \
+            .prefetch_related('spots', 'modificators')
+
         search_query = self.request.GET.get("search")
         venue_slug = self.request.GET.get("venue_slug")
         spot_id = self.request.GET.get("spot_id")
 
         if not venue_slug:
-            return Response({'error': 'venue_slug is required.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'venue_slug': 'This parameter is required.'})
 
         queryset = queryset.filter(venue__slug=venue_slug)
 
         if spot_id:
-            queryset = queryset.filter(spot_id=spot_id)
+            queryset = queryset.filter(spots__id=spot_id)
 
         queryset = queryset.distinct()
 

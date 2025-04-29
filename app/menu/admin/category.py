@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
+from unfold.decorators import display
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
@@ -13,6 +14,7 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
     readonly_fields = ('category_photo_preview',)
+    list_select_related = ('venue',)
     list_per_page = 20
 
     mptt_level_indent = 20
@@ -27,14 +29,26 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         return list_filter
 
     def get_list_display(self, request):
-        list_display = ('id', 'category_name', 'venue', 'category_hidden', 'category_photo_preview',
+        list_display = ('id', 'category_name', 'venue', 'display_category_hidden', 'category_photo_preview',
                         'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('category_name', 'category_hidden', 'category_photo_preview',
+            list_display = ('category_name', 'display_category_hidden', 'category_photo_preview',
                             'detail_link')
         return list_display
+
+    @display(
+        description="Скрыт?",
+        label={
+            'Да': "info",
+            'Нет': "secondary"
+        }
+    )
+    def display_category_hidden(self, instance):
+        if instance.category_hidden:
+            return "Да"
+        return "Нет"
 
     def category_photo_preview(self, obj):
         if obj.category_photo:

@@ -13,6 +13,7 @@ from ..models import Table, Spot, Hall
 @admin.register(Table)
 class TableAdmin(BaseModelAdmin):
     search_fields = ('table_num', 'table_title')
+    list_select_related = ('spot', 'hall', 'venue')
 
     actions_detail = ('download_qr_actions_detail',)
     list_before_template = "menu/change_list_before.html"

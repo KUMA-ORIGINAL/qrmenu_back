@@ -15,14 +15,19 @@ class OrderProductInline(TabularInline):
     extra = 0
     fields = ('product', 'count', 'price', 'total_price', 'modificator',)
     readonly_fields = ('product', 'count', 'price', 'total_price', 'modificator',)
-    # filter_horizontal = ('product_attributes',)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('product').prefetch_related('modificator')
 
 
 @admin.register(Order)
 class OrderAdmin(BaseModelAdmin):
     compressed_fields = True
     search_fields = ('phone',)
+    list_select_related = ('venue', 'spot', 'client', 'table')
     inlines = [OrderProductInline]
+    list_per_page = 50
     list_before_template = "menu/change_list_before.html"
 
     def changelist_view(self, request, extra_context=None):

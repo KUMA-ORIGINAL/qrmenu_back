@@ -1,9 +1,11 @@
 from django.contrib import admin
+from django.core.files.storage import default_storage
 from django.http import HttpRequest
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
 from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
+from unfold.decorators import display
 from unfold.typing import FieldsetsType
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
@@ -24,6 +26,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     compressed_fields = True
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
+    list_select_related = ('category', 'venue')
     inlines = [ModificatorInline]
     autocomplete_fields = ('spots',)
     list_before_template = "menu/change_list_before.html"
@@ -47,28 +50,55 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         return list_filter
 
     def get_list_display(self, request):
-        list_display = ('id', 'product_name', 'category', 'hidden', 'is_recommended', 'venue',
+        list_display = ('id', 'product_name', 'category', 'display_hidden', 'display_is_recommended', 'venue',
                         'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('product_name', 'category', 'hidden', 'is_recommended',
+            list_display = ('product_name', 'category', 'display_hidden', 'display_is_recommended',
                             'product_price', 'photo_preview', 'detail_link')
         return list_display
 
+    @display(
+        description="Рекомендован?",
+        label={
+            'Да': "info",
+            'Нет': "secondary"
+        }
+    )
+    def display_is_recommended(self, instance):
+        if instance.is_recommended:
+            return "Да"
+        return "Нет"
+
+    @display(
+        description="Скрыт?",
+        label={
+            'Да': "info",
+            'Нет': "secondary"
+        }
+    )
+    def display_hidden(self, instance):
+        if instance.hidden:
+            return "Да"
+        return "Нет"
+
     def photo_preview(self, obj):
-        if obj.product_photo:
-            if (str(obj.product_photo).startswith('http') or
-                str(obj.product_photo).startswith('https')):
-                return format_html('<img src="{}" style="border-radius:5px; '
-                                   'width: 100px; height: auto;" />',
-                                   obj.product_photo)
-            else:
-                return format_html('<img src="{}" style="border-radius:5px; '
-                                   'width: 100px; height: auto;" />',
-                                   obj.product_photo.url)
-        return "No Image"
-    photo_preview.short_description = 'Превью'
+        if not obj.product_photo:
+            return "No Image"
+
+        photo = str(obj.product_photo)
+
+        if photo.startswith('http://') or photo.startswith('https://'):
+            return format_html('<img src="{}" style="border-radius:5px; width:100px; height:auto;" />', photo)
+
+        try:
+            url = default_storage.url(obj.product_photo.name)
+            return format_html('<img src="{}" style="border-radius:5px; width:100px; height:auto;" />', url)
+        except Exception:
+            return "Image not available"
+
+    photo_preview.short_description = "Превью"
 
     def get_fieldsets(self, request: HttpRequest, obj=None) -> FieldsetsType:
         fieldsets = (

@@ -209,12 +209,20 @@ CACHES = {
     }
 }
 
-CACHALOTE_ONLY_CACHABLE_MODELS = (
-    'menu.category',  # Кешировать только эти модели
-    'menu.product',  # Кешировать только эти модели
-    'menu.modificator',  # Кешировать только эти модели
+CACHALOT_ENABLED = True
+
+CACHALOT_ONLY_CACHABLE_MODELS = (
+    'menu.category',
+    'menu.product',
+    'menu.modificator',
+    'venues.banner',
+    'venues_venue',
+    'venues_spot',
+    'venues_hall',
+    'venues_table',
 )
-CACHALOT_TIMEOUT = 60 * 30
+
+CACHALOT_TIMEOUT = 60 * 30  # 30 минут
 
 CHANNEL_LAYERS = {
     'default': {
@@ -369,29 +377,6 @@ UNFOLD = {
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
     },
-    # "TABS": [
-    #     {
-    #         'page': 'Заказы',
-    #         "models": ["orders.order", 'orders.receiptprinter', 'orders.receipt'],
-    #         "items": [
-    #             {
-    #                 "title": _("Заказы"),
-    #                 "icon": "shopping_bag",
-    #                 "link": reverse_lazy("admin:orders_order_changelist"),
-    #             },
-    #             {
-    #                 "title": _("Чеки"),
-    #                 "icon": "grade",
-    #                 "link": reverse_lazy("admin:orders_receipt_changelist"),
-    #             },
-    #             {
-    #                 "title": _("Принтеры для чека"),
-    #                 "icon": "grade",
-    #                 "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
-    #             },
-    #         ],
-    #     },
-    # ],
     "SIDEBAR": {
         "show_search": False,  # Search in applications and models names
         "show_all_applications": False,  # Dropdown with all applications and models

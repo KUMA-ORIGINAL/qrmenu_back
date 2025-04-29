@@ -39,7 +39,8 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
     model = User
     autocomplete_fields = ("groups",)
 
-    ordering = ['date_joined']
+    ordering = ('-date_joined',)
+    list_select_related = ('venue', 'spot')
 
     list_display_links = ('id', 'email')
 
@@ -97,16 +98,15 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
-        if request.user.role == 'owner':
-            if not change:
-                obj.venue = request.user.venue
-                obj.is_staff = True
-                obj.role = 'admin'
-            super().save_model(request, obj, form, change)
+        if request.user.role == 'owner' and not change:
+            obj.venue = request.user.venue
+            obj.is_staff = True
+            obj.role = 'admin'
+        super().save_model(request, obj, form, change)
 
+        if request.user.role == 'owner':
             admin_group = Group.objects.get(name='Администратор')
             obj.groups.add(admin_group)
-        super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

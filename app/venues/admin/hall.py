@@ -8,6 +8,7 @@ from ..models import Hall, Spot
 @admin.register(Hall)
 class HallAdmin(BaseModelAdmin):
     search_fields = ('hall_name',)
+    list_select_related = ('venue', 'spot')
     list_before_template = "menu/change_list_before.html"
 
     def changelist_view(self, request, extra_context=None):

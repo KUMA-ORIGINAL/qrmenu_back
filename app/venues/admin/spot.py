@@ -26,6 +26,7 @@ class SpotAdminForm(forms.ModelForm):
 class SpotAdmin(BaseModelAdmin):
     form = SpotAdminForm
     search_fields = ('name',)
+    list_select_related = ('venue',)
     # change_form_before_template = 'venues/spot_change_form_before.html'
 
     def get_list_display(self, request):

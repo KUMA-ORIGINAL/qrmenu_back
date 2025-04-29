@@ -9,9 +9,10 @@ from ..models import Transaction
 
 @admin.register(Transaction)
 class TransactionAdmin(BaseModelAdmin):
-    ordering = ("-created_at",)
     readonly_fields = ("created_at", 'updated_at')
     date_hierarchy = "created_at"
+    list_select_related = ('order',)
+    list_filter = ('status',)
     list_filter_submit = True
 
     def get_list_display(self, request):

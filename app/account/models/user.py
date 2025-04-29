@@ -77,9 +77,9 @@ class User(AbstractUser):
     objects = UserManager()
 
     class Meta:
-        ordering = ('-date_joined',)
         verbose_name = "User"
         verbose_name_plural = "Users"
+        ordering = ['-date_joined']
 
     def __str__(self):
         return f"{self.email} - {self.full_name}"

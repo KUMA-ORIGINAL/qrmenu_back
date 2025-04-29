@@ -3,6 +3,7 @@ from rest_framework import viewsets, mixins
 from ..models import Category
 from ..serializers import CategorySerializer
 
+
 @extend_schema(
     tags=['Сategory',],
     parameters=[
