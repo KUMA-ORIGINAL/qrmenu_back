@@ -9,13 +9,18 @@ PAYMENT_API_TOKEN = settings.PAYMENT_API_TOKEN
 logger = logging.getLogger(__name__)
 
 
-def generate_payment_link(transaction):
+def generate_payment_link(transaction, order):
+    redirect_url = (
+        order.tg_redirect_url if order.is_tg_bot and order.tg_redirect_url
+        else f"https://imenu.kg/orders/{order.id}"
+    )
+
     payload = {
         "amount": str(transaction.total_price),
         "transaction_id": str(transaction.id),
         "comment": f"Оплата заказа #{transaction.id} hospital",
-        "redirect_url": f"https://imenu.kg/orders/{transaction.order_id}",
-        'token': PAYMENT_API_TOKEN,
+        "redirect_url": redirect_url,
+        "token": PAYMENT_API_TOKEN,
     }
 
     headers = {

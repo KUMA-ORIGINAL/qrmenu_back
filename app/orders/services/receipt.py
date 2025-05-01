@@ -1,11 +1,14 @@
 import time
+import uuid
 from datetime import datetime
 import json
 import logging
+import atexit
 
 import paho.mqtt.client as mqtt
 from django.conf import settings
 from django.utils import timezone
+from django.apps import AppConfig
 
 from ..models import Receipt
 from ..models import ReceiptPrinter
@@ -13,56 +16,116 @@ from ..models import ReceiptPrinter
 logger = logging.getLogger(__name__)
 
 
-def on_connect(client, userdata, flags, reason_code, properties):
-    if reason_code == 0:
-        logger.info('Connected to MQTT broker successfully')
-    else:
-        logger.error(f'Bad connection. Code: {reason_code}')
+class MQTTClient:
+    def __init__(self):
+        self.client = None
+        self.initialized = False
 
+    def on_connect(self, client, userdata, flags, reason_code, properties):
+        if reason_code == 0:
+            logger.info('Connected to MQTT broker successfully')
+        else:
+            logger.error(f'Bad connection. Code: {reason_code}')
 
-def on_disconnect(client, userdata, flags, reason_code, properties):
-    if reason_code != 0:
-        logger.warning(f'Unexpected disconnection (rc={reason_code}). Trying to reconnect...')
-        while True:
+    def on_disconnect(self, client, userdata, flags, reason_code, properties):
+        if reason_code != 0:
+            logger.warning(f'Unexpected disconnection (rc={reason_code})')
+
+    def on_message(self, client, userdata, msg):
+        logger.info(f'Received message on topic: {msg.topic} with payload: {msg.payload.decode()}')
+
+    def initialize(self):
+        if self.initialized:
+            return
+
+        try:
+            self.client = mqtt.Client(
+                mqtt.CallbackAPIVersion.VERSION2,
+                client_id=f"receipt_sender_{uuid.uuid4()}",
+                transport="tcp",
+            )
+            self.client.username_pw_set(settings.RECEIPT_MQTT_USERNAME, settings.RECEIPT_MQTT_PASSWORD)
+
+            self.client.on_connect = self.on_connect
+            self.client.on_disconnect = self.on_disconnect
+            self.client.on_message = self.on_message
+
+            self.client.connect(
+                host=settings.RECEIPT_MQTT_BROKER,
+                port=settings.RECEIPT_MQTT_PORT,
+                keepalive=60
+            )
+            self.client.loop_start()
+            self.initialized = True
+            logger.info('MQTT client initialized and connected')
+        except Exception as e:
+            logger.error(f'Failed to connect MQTT client: {str(e)}', exc_info=True)
+            self.initialized = False
+
+    def disconnect(self):
+        if self.client and self.initialized:
             try:
-                time.sleep(5)
-                client.reconnect()
-                logger.info('Successfully reconnected to MQTT broker.')
-                break
+                self.client.loop_stop()
+                self.client.disconnect()
+                logger.info('MQTT client disconnected')
+                self.initialized = False
+            except Exception as e:
+                logger.error(f'Error disconnecting MQTT client: {str(e)}', exc_info=True)
+
+    def reconnect(self):
+        if not self.initialized or not self.client or not self.client.is_connected():
+            try:
+                if self.client:
+                    self.client.reconnect()
+                    logger.info('Successfully reconnected to MQTT broker')
+                else:
+                    self.initialize()
             except Exception as e:
                 logger.error(f'Reconnect failed: {str(e)}', exc_info=True)
-                time.sleep(5)
+                return False
+        return True
+
+    def send_message(self, topic, payload, qos=1):
+        if not self.initialized:
+            self.initialize()
+
+        if not self.client.is_connected():
+            if not self.reconnect():
+                return False
+
+        try:
+            result = self.client.publish(topic, payload, qos=qos)
+            result.wait_for_publish()
+
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logger.info("Message successfully sent to topic!")
+                return True
+            else:
+                logger.error(f"Error sending message: code {result.rc}")
+                return False
+        except Exception as e:
+            logger.error(f"Error publishing message: {str(e)}", exc_info=True)
+            return False
 
 
-def on_message(client, userdata, msg):
-    logger.info(f'Received message on topic: {msg.topic} with payload: {msg.payload.decode()}')
+# Create a singleton instance
+mqtt_client = MQTTClient()
 
 
-mqtt_client = mqtt.Client(
-    mqtt.CallbackAPIVersion.VERSION2,
-    # client_id="mqttx_be0e17",
-    clean_session=True,
-)
-mqtt_client.username_pw_set(settings.RECEIPT_MQTT_USERNAME, settings.RECEIPT_MQTT_PASSWORD)
+class ReceiptAppConfig(AppConfig):
+    name = 'receipts'  # Change this to your actual app name
 
-mqtt_client.on_connect = on_connect
-mqtt_client.on_disconnect = on_disconnect
-mqtt_client.on_message = on_message
+    def ready(self):
+        # Initialize the MQTT client when the app is ready
+        mqtt_client.initialize()
 
-try:
-    mqtt_client.connect(
-        host=settings.RECEIPT_MQTT_BROKER,
-        port=settings.RECEIPT_MQTT_PORT,
-        keepalive=60
-    )
-    logger.info('MQTT client initialized and connected')
-except Exception as e:
-    logger.error(f'Failed to connect MQTT client: {str(e)}', exc_info=True)
+        # Register cleanup function when Django shuts down
+        atexit.register(mqtt_client.disconnect)
 
 
 def send_receipt_to_mqtt(order, venue):
     try:
-        # Получаем принтер
+        # Get the receipt printer
         receipt_printer = ReceiptPrinter.objects.filter(venue=venue).first()
 
         if not receipt_printer:
@@ -80,7 +143,7 @@ def send_receipt_to_mqtt(order, venue):
         delivery_address = order.address if order.address else "Адрес не указан"
         service_mode = order.get_service_mode_display().upper()
 
-        # Заголовок
+        # Header
         printdata = (
             f"<LOGO>printest</LOGO><F3232><CENTER>{venue.company_name}\r</CENTER></F3232>"
             f"<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y             %H:%M:%S')}</CENTER></F2424>\r"
@@ -111,7 +174,7 @@ def send_receipt_to_mqtt(order, venue):
 
         printdata = printdata + order_items + total_sum
 
-        # Формируем payload
+        # Format payload
         payload_data = {
             "request_id": f"rq_{order.id}_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
             "biz_type": "1",
@@ -121,21 +184,15 @@ def send_receipt_to_mqtt(order, venue):
         }
 
         payload_json = json.dumps(payload_data, ensure_ascii=False)
-
         topic = receipt_printer.topic
-        result = mqtt_client.publish(topic, payload_json)
 
-        mqtt_client.loop_stop()
-
-        if result.rc == mqtt.MQTT_ERR_SUCCESS:
-            logger.info("Сообщение успешно отправлено в топик!")
-        else:
-            logger.error(f"Ошибка отправки сообщения: код {result.rc}")
+        # Send the message
+        result = mqtt_client.send_message(topic, payload_json)
 
         if result:
             logger.info(f"Receipt sent successfully via MQTT to topic {topic}")
 
-            # Cохраняем
+            # Save the receipt
             Receipt.objects.create(
                 order=order,
                 receipt_printer=receipt_printer,

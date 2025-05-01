@@ -63,6 +63,9 @@ class Order(BaseModel):
         default=0, verbose_name="Бонусы"
     )
 
+    is_tg_bot = models.BooleanField('Из телеграмм бота', default=False)
+    tg_redirect_url = models.URLField('Редирект url бота', blank=True, null=True)
+
     spot = models.ForeignKey(
         'venues.Spot', on_delete=models.SET_NULL, related_name='orders',
         null=True, blank=True,

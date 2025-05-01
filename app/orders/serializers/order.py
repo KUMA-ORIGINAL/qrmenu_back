@@ -13,7 +13,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ('id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
-                  'tips_price', 'spot', 'table', 'order_products', 'payment_url')
+                  'tips_price', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url', 'order_products', 'payment_url')
         extra_kwargs = {
             'phone': {'write_only': True},
             'comment': {'write_only': True},
@@ -21,8 +21,10 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'address': {'write_only': True},
             'service_price': {'write_only': True},
             'tips_price': {'write_only': True},
-            'spot': {'write_only': True},  # Only write, no read
-            'table': {'write_only': True},  # Only write, no read
+            'spot': {'write_only': True},
+            'table': {'write_only': True},
+            'is_tg_bot': {'write_only': True},
+            'tg_redirect_url': {'write_only': True},
         }
 
     def create(self, validated_data):
@@ -42,7 +44,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     def get_payment_url(self, obj):
         transaction = self.context.get('transaction')
         if transaction:
-            return generate_payment_link(transaction)
+            return generate_payment_link(transaction, obj)
         return None
 
 
