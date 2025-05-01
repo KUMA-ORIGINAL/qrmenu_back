@@ -78,6 +78,7 @@ def send_receipt_to_mqtt(order, venue):
 
         address = order.spot.address if order.spot else "Адрес не указан"
         delivery_address = order.address if order.address else "Адрес не указан"
+        service_mode = order.get_service_mode_display().upper()
 
         # Заголовок
         printdata = (
@@ -88,7 +89,7 @@ def send_receipt_to_mqtt(order, venue):
             f"<F2424>Тип операции: Оплата elQR\r</F2424>"
             f"<F2424>ID транзакции: trx_{order.id}\r</F2424>"
             f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
-            f"<F3232><FB><CENTER>{order.get_service_mode_display().upper()}\r</CENTER></FB></F3232>"
+            f"<F3232><FB><CENTER>{service_mode}\r</CENTER></FB></F3232>"
             f"<F2424>Заказ #{order.id}\r</F2424>"
             f"<F2424>Клиент: {order.phone}\r\r</F2424>"
         )
