@@ -146,7 +146,4 @@ class OrderViewSet(viewsets.GenericViewSet,
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        if not send_receipt_to_mqtt(order, venue):
-            logger.warning("Failed to send receipt to webhook.")
-
         return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
 from account.models import ROLE_OWNER
-from orders.services import format_order_details
+from orders.services import format_order_details, send_receipt_to_mqtt
 from tg_bot.utils import send_order_notification
 from ..models import Transaction
 import logging
@@ -49,6 +49,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 order_info = format_order_details(order)
                 logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
                 send_order_notification(user_owner.tg_chat_id, order_info, order.id)
+                if not send_receipt_to_mqtt(order, order.venue):
+                    logger.warning("Failed to send receipt to webhook.")
             else:
                 logger.info("No valid Telegram chat ID found or owner does not exist.")
 
