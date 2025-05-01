@@ -48,7 +48,16 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
 class OrderListSerializer(serializers.ModelSerializer):
     order_products = OrderProductSerializer(many=True, read_only=True)
+    table_num = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ('id', 'total_price', 'status', 'created_at', 'service_mode', 'address', 'comment', 'phone', 'order_products')
+        fields = (
+            'id', 'total_price', 'status', 'created_at', 'service_mode',
+            'address', 'comment', 'phone', 'order_products', 'table_num'
+        )
+
+    def get_table_num(self, obj):
+        if obj.table:
+            return obj.table.table_num
+        return ''
