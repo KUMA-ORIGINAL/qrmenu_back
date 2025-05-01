@@ -49,10 +49,11 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 order_info = format_order_details(order)
                 logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
                 send_order_notification(user_owner.tg_chat_id, order_info, order.id)
-                if not send_receipt_to_mqtt(order, order.venue):
-                    logger.warning("Failed to send receipt to webhook.")
             else:
                 logger.info("No valid Telegram chat ID found or owner does not exist.")
+
+            if not send_receipt_to_mqtt(order, order.venue):
+                logger.warning("Failed to send receipt to webhook.")
 
             return Response({'success': True}, status=status.HTTP_200_OK)
 
