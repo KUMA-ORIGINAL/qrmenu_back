@@ -248,6 +248,8 @@ SPECTACULAR_SETTINGS = {
 
     'SERVE_PUBLIC': True,
     'SERVE_HTTPS': True,
+    'SERVE_PERMISSIONS': ['config.permissions.IsSuperUser'],
+    'SERVE_AUTHENTICATION': ['rest_framework.authentication.SessionAuthentication',]
 }
 
 REST_FRAMEWORK = {
