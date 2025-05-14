@@ -12,6 +12,7 @@ from tg_bot.utils import send_order_notification
 from venues.models import Venue, Table, Spot
 from ..models import Order
 from ..serializers import OrderListSerializer, OrderCreateSerializer
+from ..services.order import is_within_schedule
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,11 @@ class OrderViewSet(viewsets.GenericViewSet,
         venue = Venue.objects.filter(slug=venue_slug).first()
         if not venue:
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not is_within_schedule(venue.schedule):
+            return Response({'error': 'Заказ можно создать только в рабочее время заведения.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
         order_data['venue'] = venue
 
         pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None

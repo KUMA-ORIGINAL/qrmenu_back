@@ -53,7 +53,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         return readonly_fields
 
     def get_list_display(self, request):
-        list_display = ('id', 'email', 'full_name', 'venue', 'is_active')
+        list_display = ('id', 'email', 'full_name', 'role', 'spot', 'venue', 'is_active')
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
