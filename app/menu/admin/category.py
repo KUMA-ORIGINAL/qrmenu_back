@@ -41,10 +41,8 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
             )
 
         try:
-            text_ru = category.category_name
-
-            category.category_name_en = GoogleTranslator(source='ru', target='en').translate(text_ru)
-            category.category_name_ky = GoogleTranslator(source='ru', target='ky').translate(text_ru)
+            category.category_name_en = GoogleTranslator(source='ru', target='en').translate(category.category_name)
+            category.category_name_ky = GoogleTranslator(source='ru', target='ky').translate(category.category_name)
             category.save()
 
             self.message_user(request, "Перевод выполнен успешно", messages.SUCCESS)
