@@ -1,7 +1,12 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import HttpRequest
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
-from unfold.decorators import display
+from unfold.decorators import display, action
+
+from deep_translator import GoogleTranslator
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
@@ -19,6 +24,37 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
 
     mptt_level_indent = 20
     mptt_show_nodedata = True
+
+    actions_detail = ["translate_action"]
+
+    @action(
+        description="Перевести название",
+        url_path="translate",
+    )
+    def translate_action(self, request: HttpRequest, object_id: int):
+        category = Category.objects.get(pk=object_id)
+
+        if not category.category_name:
+            self.message_user(request, "Поле category_name пустое", messages.WARNING)
+            return redirect(
+                reverse_lazy("admin:menu_category_change", args=[category.pk])
+            )
+
+        try:
+            text_ru = category.category_name
+
+            category.category_name_en = GoogleTranslator(source='ru', target='en').translate(text_ru)
+            category.category_name_ky = GoogleTranslator(source='ru', target='ky').translate(text_ru)
+            category.save()
+
+            self.message_user(request, "Перевод выполнен успешно", messages.SUCCESS)
+
+        except Exception as e:
+            self.message_user(request, f"Ошибка перевода: {e}", messages.ERROR)
+
+        return redirect(
+            reverse_lazy("admin:menu_category_change", args=[category.pk])
+        )
 
     def get_list_filter(self, request):
         list_filter = ()

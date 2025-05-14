@@ -31,3 +31,4 @@ django-phonenumber-field[phonenumberslite]==8.0.0
 phonenumbers==9.0.1
 django-silk==5.3.2
 paho-mqtt==2.1.0
+deep-translator==1.11.4

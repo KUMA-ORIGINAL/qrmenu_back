@@ -1,11 +1,14 @@
-from django.contrib import admin
+from deep_translator import GoogleTranslator
+from django.contrib import admin, messages
 from django.core.files.storage import default_storage
 from django.http import HttpRequest
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
 from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter
-from unfold.decorators import display
+from unfold.decorators import display, action
 from unfold.typing import FieldsetsType
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
@@ -30,6 +33,43 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     inlines = [ModificatorInline]
     autocomplete_fields = ('spots',)
     list_before_template = "menu/change_list_before.html"
+
+    actions_detail = ['translate_product_fields']
+
+    @action(
+        description="Перевести название и описание",
+        url_path="translate",
+    )
+    def translate_product_fields(self, request: HttpRequest, object_id: int):
+        product = Product.objects.get(pk=object_id)
+
+        if not product.product_name and not product.product_description:
+            self.message_user(
+                request,
+                "Поля product_name и product_description пустые",
+                messages.WARNING
+            )
+            return redirect(reverse_lazy("admin:menu_product_change", args=[product.pk]))
+
+        try:
+            if product.product_name:
+                product.product_name_en = GoogleTranslator(source='ru', target='en').translate(product.product_name)
+                product.product_name_ky = GoogleTranslator(source='ru', target='ky').translate(product.product_name)
+
+            if product.product_description:
+                product.product_description_en = GoogleTranslator(source='ru', target='en').translate(
+                    product.product_description)
+                product.product_description_ky = GoogleTranslator(source='ru', target='ky').translate(
+                    product.product_description)
+
+            product.save()
+
+            self.message_user(request, "Перевод выполнен успешно", messages.SUCCESS)
+
+        except Exception as e:
+            self.message_user(request, f"Ошибка перевода: {e}", messages.ERROR)
+
+        return redirect(reverse_lazy("admin:menu_product_change", args=[product.pk]))
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
