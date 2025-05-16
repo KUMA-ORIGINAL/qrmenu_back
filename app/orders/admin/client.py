@@ -8,8 +8,15 @@ from ..models import Client
 @admin.register(Client)
 class ClientAdmin(BaseModelAdmin):
     compressed_fields = True
-    list_display = ('id', 'firstname', 'phone', 'created_at', 'detail_link')
     search_fields = ('firstname', 'lastname')
+
+    def get_list_display(self, request, obj=None):
+        list_display = ('id', 'firstname', 'phone', 'created_at', 'venue', 'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
+            list_display = ('id', 'firstname', 'phone', 'created_at', 'detail_link')
+        return list_display
 
     def get_list_filter(self, request, obj=None):
         list_filter = ('venue', 'client_sex',)
