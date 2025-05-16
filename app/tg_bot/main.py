@@ -87,8 +87,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         order.status = new_status
         await sync_to_async(order.save)()
 
-        phone = re.sub(r'\D', '', order.phone)
-        await notify_order_status(phone, order.id, new_status)
+        await notify_order_status(order)
 
         logger.info(f"Order {order_id} updated to status '{new_status}'")
 

@@ -1,6 +1,7 @@
 import hashlib
 import logging
 
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
@@ -93,7 +94,7 @@ class PosterWebhookViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
             order.status = order_status
             order.save()
 
-            notify_order_status(order.id, order.status)
+            async_to_sync(notify_order_status)(order)
 
             logger.info(f"Order {order.id} status updated to {order.status}")
         else:
