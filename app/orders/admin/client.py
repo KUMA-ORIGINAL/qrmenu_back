@@ -10,7 +10,14 @@ class ClientAdmin(BaseModelAdmin):
     compressed_fields = True
     list_display = ('id', 'firstname', 'phone', 'created_at', 'detail_link')
     search_fields = ('firstname', 'lastname')
-    list_filter = ('client_sex',)
+
+    def get_list_filter(self, request, obj=None):
+        list_filter = ('venue', 'client_sex',)
+        if request.user.is_superuser:
+            pass
+        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
+            list_filter = ('client_sex',)
+        return list_filter
 
     def get_fields(self, request, obj=None):
         fields = super().get_fields(request, obj)
