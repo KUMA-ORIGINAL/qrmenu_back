@@ -4,12 +4,11 @@ import logging
 from django.conf import settings
 
 PAYMENT_API_URL = "https://pay.operator.kg/api/v1/payments/make-payment-link/"
-PAYMENT_API_TOKEN = settings.PAYMENT_API_TOKEN
 
 logger = logging.getLogger(__name__)
 
 
-def generate_payment_link(transaction, order):
+def generate_payment_link(transaction, order, payment_account):
     redirect_url = (
         order.tg_redirect_url if order.is_tg_bot and order.tg_redirect_url
         else f"https://imenu.kg/orders/{order.id}"
@@ -20,7 +19,7 @@ def generate_payment_link(transaction, order):
         "transaction_id": str(transaction.id),
         "comment": f"Оплата заказа #{transaction.id} hospital",
         "redirect_url": redirect_url,
-        "token": PAYMENT_API_TOKEN,
+        "token": payment_account.token,
     }
 
     headers = {

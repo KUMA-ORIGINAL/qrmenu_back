@@ -9,6 +9,7 @@ from venues.models import Spot, Table, Hall
 
 logger = logging.getLogger(__name__)
 
+
 class PosterService:
     BASE_URL = 'https://joinposter.com'
     API_URL = f"{BASE_URL}/api/"

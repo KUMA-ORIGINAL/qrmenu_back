@@ -167,8 +167,6 @@ RECEIPT_MQTT_PORT = 1883
 RECEIPT_MQTT_USERNAME = "myuser"
 RECEIPT_MQTT_PASSWORD = "123456"
 
-PAYMENT_API_TOKEN = env('PAYMENT_API_TOKEN')
-
 POSTER_APPLICATION_ID = env('POSTER_APPLICATION_ID')
 POSTER_APPLICATION_SECRET = env('POSTER_APPLICATION_SECRET')
 POSTER_REDIRECT_URI = env('POSTER_REDIRECT_URI')
@@ -211,15 +209,18 @@ CACHES = {
 
 CACHALOT_ENABLED = True
 
-CACHALOT_ONLY_CACHABLE_MODELS = (
+CACHALOT_ONLY_CACHABLE_TABLES = (
     'menu.category',
     'menu.product',
     'menu.modificator',
+
     'venues.banner',
     'venues_venue',
     'venues_spot',
     'venues_hall',
     'venues_table',
+
+    'transactions_paymentaccount',
 )
 
 CACHALOT_TIMEOUT = 60 * 30  # 30 минут
@@ -380,27 +381,22 @@ UNFOLD = {
         },
     },
     "SIDEBAR": {
-        "show_search": False,  # Search in applications and models names
-        "show_all_applications": False,  # Dropdown with all applications and models
+        "show_search": False,
+        "show_all_applications": False,
         "navigation": [
             {
                 "title": _("Навигация"),
                 "items": [
                     {
                         "title": _("Панель"),
-                        "icon": "dashboard",  # Supported icon set: https://fonts.google.com/icons
+                        "icon": "dashboard",
                         "link": reverse_lazy("admin:index"),
-                    },
-                    {
-                        "title": _("POS системы"),
-                        "icon": "Contactless",
-                        "link": reverse_lazy("admin:venues_possystem_changelist"),
-                        "permission": "account.utils.permission_callback",
                     },
                 ],
             },
             {
-                "title": _("Главная"),
+                "title": _("Заведения"),
+                "collapsible": True,
                 "items": [
                     {
                         "title": _("Заведение"),
@@ -428,10 +424,11 @@ UNFOLD = {
                         "icon": "photo_library",
                         "link": reverse_lazy("admin:venues_banner_changelist"),
                     },
-                ]
+                ],
             },
             {
                 "title": _("Меню"),
+                "collapsible": True,
                 "items": [
                     {
                         "title": _("Категории"),
@@ -443,20 +440,28 @@ UNFOLD = {
                         "icon": "menu_book",
                         "link": reverse_lazy("admin:menu_product_changelist"),
                     },
-                ]
+                ],
             },
             {
-                "title": _("Транзакции"),
+                "title": _("Транзакции и Платежи"),
+                "collapsible": True,
                 "items": [
                     {
                         "title": _("Транзакции"),
                         "icon": "account_balance_wallet",
                         "link": reverse_lazy("admin:transactions_transaction_changelist"),
                     },
+                    {
+                        "title": _("Платёжные аккаунты"),
+                        "icon": "credit_card",
+                        "link": reverse_lazy("admin:transactions_paymentaccount_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
                 ],
             },
             {
-                "title": _("Заказы & Клиенты"),
+                "title": _("Заказы и Клиенты"),
+                "collapsible": True,
                 "items": [
                     {
                         "title": _("Заказы"),
@@ -468,25 +473,26 @@ UNFOLD = {
                         "icon": "groups",
                         "link": reverse_lazy("admin:orders_client_changelist"),
                     },
-                ]
+                ],
             },
             {
                 "title": _("Чеки"),
+                "collapsible": True,
                 "items": [
                     {
                         "title": _("Чеки"),
-                        "icon": "grade",
+                        "icon": "receipt_long",
                         "link": reverse_lazy("admin:orders_receipt_changelist"),
                     },
                     {
                         "title": _("Принтеры для чека"),
-                        "icon": "grade",
+                        "icon": "print",
                         "link": reverse_lazy("admin:orders_receiptprinter_changelist"),
                     },
-                ]
+                ],
             },
             {
-                "title": _("Пользователи & Группы"),
+                "title": _("Пользователи и Доступ"),
                 "collapsible": True,
                 "items": [
                     {
@@ -499,10 +505,21 @@ UNFOLD = {
                         "title": _("Группы"),
                         "icon": "group",
                         "link": reverse_lazy("admin:auth_group_changelist"),
-                        "permission": "account.utils.permission_callback",
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+            {
+                "title": _("Системные настройки"),
+                "items": [
+                    {
+                        "title": _("POS системы"),
+                        "icon": "contactless",
+                        "link": reverse_lazy("admin:venues_possystem_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                 ],
             },
         ],
-    },
+    }
 }

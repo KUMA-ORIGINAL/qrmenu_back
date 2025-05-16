@@ -1,6 +1,6 @@
-from rest_framework import serializers, request
+from rest_framework import serializers
 
-from transactions.models import Transaction
+from transactions.models import Transaction, PaymentAccount
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
 from ..models import Order, OrderProduct
 from ..services import generate_payment_link
@@ -37,14 +37,17 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         total_amount = order.total_price
         transaction = Transaction.objects.create(order=order, total_price=total_amount)
+        payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
         self.context['transaction'] = transaction
+        self.context['payment_account'] = payment_account
 
         return order
 
     def get_payment_url(self, obj):
         transaction = self.context.get('transaction')
+        payment_account = self.context.get('payment_account')
         if transaction:
-            return generate_payment_link(transaction, obj)
+            return generate_payment_link(transaction, obj, payment_account)
         return None
 
 
