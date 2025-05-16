@@ -17,7 +17,7 @@ class Client(BaseModel):
         max_length=100, blank=True, null=True, verbose_name="Отчество"
     )
     phone = models.CharField(
-        max_length=20, unique=True, verbose_name="Телефон"
+        max_length=20, verbose_name="Телефон"
     )
     phone_number = models.CharField(
         max_length=20, verbose_name="Номер телефона"
@@ -55,3 +55,4 @@ class Client(BaseModel):
     class Meta:
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"
+        unique_together = ('venue', 'phone')
