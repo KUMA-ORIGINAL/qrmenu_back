@@ -6,12 +6,13 @@ from unfold.decorators import action
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from services.qr_service import add_qr_and_text_to_pdf_in_memory
-from .admin_filters import SpotFilter
+from ..forms import TableAdminForm
 from ..models import Table, Spot, Hall
 
 
 @admin.register(Table)
 class TableAdmin(BaseModelAdmin):
+    form = TableAdminForm
     search_fields = ('table_num', 'table_title')
     list_select_related = ('spot', 'hall', 'venue')
 

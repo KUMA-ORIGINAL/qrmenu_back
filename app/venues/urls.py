@@ -1,8 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import PosterCallbackView, PosterAuthorizeView, BannerViewSet
-from .views.venue import VenueViewSet
+from .views import PosterCallbackView, PosterAuthorizeView, BannerViewSet, VenueViewSet
 
 router = DefaultRouter()
 router.register('venues', VenueViewSet)
