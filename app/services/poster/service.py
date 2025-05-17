@@ -137,9 +137,15 @@ class PosterService:
         return new_hall
 
     def send_order_to_pos(self, poster_order_data):
-        comment = (f"{poster_order_data.get('comment')}\n"
-                   f"Обслуживание: {poster_order_data.get('service_price')}\n"
-                   f"Чаевые: {poster_order_data.get('tips_price')}")
+        table = poster_order_data.get('table')
+        table_info = f"\nСтол: {table.table_num}" if table else ""
+
+        comment = (
+            f"Комментарий: {poster_order_data.get('comment')}\n"
+            f"Обслуживание: {poster_order_data.get('service_price')}\n"
+            f"Чаевые: {poster_order_data.get('tips_price')}"
+            f"{table_info}"
+        )
         incoming_order_data = {
             'spot_id': poster_order_data.get('spot').external_id,
             'phone': poster_order_data.get('phone'),
