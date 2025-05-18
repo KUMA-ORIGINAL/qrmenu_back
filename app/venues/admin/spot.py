@@ -48,7 +48,7 @@ class SpotAdmin(BaseModelAdmin):
         output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)
 
         response = HttpResponse(output_pdf_stream, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="qr_codes_spot_{spot.name}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="qr_codes_spot_{spot.id}.pdf"'
 
         return response
 
