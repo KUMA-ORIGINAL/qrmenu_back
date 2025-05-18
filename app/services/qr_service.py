@@ -1,6 +1,7 @@
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -28,17 +29,27 @@ def create_qr_code_in_memory(url):
     return qr_buffer
 
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height, text_top):
-    """Создает PDF-слой с QR-кодами и текстом в памяти."""
+    """Создает PDF-слой с QR-кодами и центрированным текстом в памяти."""
     packet = BytesIO()
     can = canvas.Canvas(packet, pagesize=landscape(A4))
 
-    pdfmetrics.registerFont(TTFont('Inter', 'static/Inter_18pt-Bold.ttf'))
-    can.setFont('Inter', 40)
+    font_name = 'Inter'
+    font_size = 40
+    pdfmetrics.registerFont(TTFont(font_name, 'static/Inter_18pt-Bold.ttf'))
+    can.setFont(font_name, font_size)
     can.setFillColor(HexColor("#FFFFFF"))
 
-    # Добавляем текст над QR-кодами
-    can.drawString(x1 + 30, y1 + height + 20, text_top)
-    can.drawString(x2 + 30, y2 + height + 20, text_top)
+    # Получаем ширину текста
+    text_width = stringWidth(text_top, font_name, font_size)
+
+    # Центрируем текст над каждым QR-кодом
+    text_x1 = x1 + (width - text_width) / 2
+    text_x2 = x2 + (width - text_width) / 2
+    text_y = y1 + height + 20  # Y-координата текста
+
+    # Рисуем текст
+    can.drawString(text_x1, text_y, text_top)
+    can.drawString(text_x2, text_y, text_top)
 
     # Конвертируем BytesIO в ImageReader
     qr_image = ImageReader(qr_image_buffer)
@@ -46,8 +57,8 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height, text_top)
     # Добавляем QR-коды
     can.drawImage(qr_image, x1, y1, width=width, height=height)
     can.drawImage(qr_image, x2, y2, width=width, height=height)
-    can.save()
 
+    can.save()
     packet.seek(0)
     return PdfReader(packet)
 
