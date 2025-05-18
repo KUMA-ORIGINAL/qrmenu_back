@@ -5,11 +5,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 
-from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
-from ..services import send_receipt_to_mqtt, format_order_details
-from tg_bot.utils import send_order_notification
-from venues.models import Venue, Table, Spot
+from venues.models import Venue
 from ..models import Order
 from ..serializers import OrderListSerializer, OrderCreateSerializer
 from ..services.order import is_within_schedule
@@ -151,8 +148,5 @@ class OrderViewSet(viewsets.GenericViewSet,
                 logger.error(f"Failed to save order: {str(e)}", exc_info=True)
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # if not send_receipt_to_mqtt(order, venue):
-        #     logger.warning("Failed to send receipt to webhook.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)

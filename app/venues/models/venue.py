@@ -88,7 +88,7 @@ class Venue(BaseModel):
     )
 
     def __str__(self):
-        return f'{self.company_name} - {self.owner_name}'
+        return f'{self.company_name}'
 
     class Meta:
         verbose_name = "Заведение"

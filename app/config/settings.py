@@ -64,7 +64,6 @@ INSTALLED_APPS = [
     'account',
     'venues',
     'orders',
-    'transactions',
 ]
 
 MIDDLEWARE = [
@@ -220,7 +219,7 @@ CACHALOT_ONLY_CACHABLE_TABLES = (
     'venues_hall',
     'venues_table',
 
-    'transactions_paymentaccount',
+    'orders_paymentaccount',
 )
 
 CACHALOT_TIMEOUT = 60 * 30  # 30 минут
@@ -449,12 +448,12 @@ UNFOLD = {
                     {
                         "title": _("Транзакции"),
                         "icon": "account_balance_wallet",
-                        "link": reverse_lazy("admin:transactions_transaction_changelist"),
+                        "link": reverse_lazy("admin:orders_transaction_changelist"),
                     },
                     {
                         "title": _("Платёжные аккаунты"),
                         "icon": "credit_card",
-                        "link": reverse_lazy("admin:transactions_paymentaccount_changelist"),
+                        "link": reverse_lazy("admin:orders_paymentaccount_changelist"),
                         "permission": lambda request: request.user.is_superuser,
                     },
                 ],

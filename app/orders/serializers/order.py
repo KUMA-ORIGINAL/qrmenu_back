@@ -1,8 +1,7 @@
 from rest_framework import serializers
 
-from transactions.models import Transaction, PaymentAccount
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
-from ..models import Order, OrderProduct
+from ..models import Order, OrderProduct, Transaction, PaymentAccount
 from ..services import generate_payment_link
 
 

@@ -13,11 +13,12 @@ class Transaction(BaseModel):
     status = models.CharField(
         max_length=50,
         choices=[('success', 'Оплачено'), ('pending', 'В ожидании'), ('failed', 'Не удалось')],
+        default='pending',
         verbose_name="Статус оплаты"
     )
     json_data = models.JSONField(blank=True, null=True, verbose_name='Ответ из платежной системы')
 
-    order = models.ForeignKey('orders.Order', models.PROTECT, verbose_name='Заказ',
+    order = models.ForeignKey('Order', models.PROTECT, verbose_name='Заказ',
                               related_name='transactions', null=True, blank=True)
 
     def __str__(self):

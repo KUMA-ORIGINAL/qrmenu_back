@@ -1,3 +1,5 @@
+import json
+import logging
 import requests
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -8,7 +10,6 @@ from account.models import ROLE_OWNER
 from orders.services import format_order_details, send_receipt_to_mqtt
 from tg_bot.utils import send_order_notification
 from ..models import Transaction
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             if transaction.status != payment_status:
                 logger.info(f"Обновление статуса транзакции {transaction.id}: {transaction.status} → {payment_status}")
                 transaction.status = payment_status
+                transaction.json_data = json.dumps(data)
                 transaction.save(update_fields=["status"])
             else:
                 logger.info(f"Повторное получение webhook: статус уже установлен — {payment_status}")
