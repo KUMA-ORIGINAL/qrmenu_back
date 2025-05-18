@@ -1,8 +1,12 @@
 from django.contrib import admin
 from django import forms
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from unfold.decorators import action
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
+from services.qr_service import add_qr_and_text_to_pdf_in_memory
 from ..models import Spot
 
 
@@ -27,7 +31,26 @@ class SpotAdmin(BaseModelAdmin):
     form = SpotAdminForm
     search_fields = ('name',)
     list_select_related = ('venue',)
+    actions_detail = ('download_qr_actions_detail',)
     # change_form_before_template = 'venues/spot_change_form_before.html'
+
+    @action(
+        description="Cкачать qr-code (На вынос)",
+        url_path="download_qr_actions_detail-url",
+    )
+    def download_qr_actions_detail(self, request, object_id):
+        spot = get_object_or_404(Spot, pk=object_id)
+        venue = spot.venue
+
+        qr_url = f"https://imenu.kg/I/{venue.slug}/{spot.id}/s/"
+        text_top = f"На вынос"
+
+        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)
+
+        response = HttpResponse(output_pdf_stream, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="qr_codes_spot_{spot.name}.pdf"'
+
+        return response
 
     def get_list_filter(self, request):
         list_display = ('venue',)
