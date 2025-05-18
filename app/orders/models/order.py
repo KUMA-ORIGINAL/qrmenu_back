@@ -44,11 +44,15 @@ class Order(BaseModel):
         null=True,
         verbose_name="Адрес"
     )
-    total_price = models.PositiveIntegerField(
+    total_price = models.DecimalField(
+        max_digits=10,  # всего до 10 цифр (включая до и после запятой)
+        decimal_places=2,  # 2 знака после запятой (например: 12345.67)
         default=0,
         verbose_name="Итоговая цена"
     )
-    service_price = models.PositiveIntegerField(
+    service_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
         default=0,
         verbose_name="Цена за обслуживание"
     )
@@ -96,16 +100,23 @@ class Order(BaseModel):
 
     def calculate_total_price(self):
         products_total = sum(
-            order_product.total_price for order_product in self.order_products.all()
+            (Decimal(order_product.total_price) or Decimal('0.00'))
+            for order_product in self.order_products.all()
         )
 
-        service_fee_percent = self.venue.service_fee_percent or 0
+        service_fee_percent = self.venue.service_fee_percent or Decimal('0.00')
 
-        service_price = math.ceil(products_total * service_fee_percent / 100)
+        if not isinstance(service_fee_percent, Decimal):
+            service_fee_percent = Decimal(str(service_fee_percent))
 
-        total_price = products_total + service_price
+        service_price = (products_total * service_fee_percent / Decimal('100')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
+
+        total_price = (products_total + service_price).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
 
         self.service_price = service_price
         self.total_price = total_price
-
         self.save()

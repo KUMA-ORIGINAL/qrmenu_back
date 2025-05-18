@@ -13,11 +13,17 @@ class OrderProduct(BaseModel):
     count = models.PositiveIntegerField(
         default=1, verbose_name="Количество"
     )
-    price = models.PositiveIntegerField(
-        default=0, verbose_name="Цена за единицу"
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Цена за единицу"
     )
-    total_price = models.PositiveIntegerField(
-        default=0, verbose_name="Общая цена"
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Общая цена"
     )
     modificator = models.ForeignKey(
         'menu.Modificator', null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Модификатор"
@@ -50,11 +56,6 @@ class OrderProduct(BaseModel):
             base_price = self.modificator.price
         else:
             base_price = self.product.product_price
-
-        # Добавляем стоимость каждого атрибута
-        # attribute_price = sum(attribute.price for attribute in self.product_attributes.all())
-
-        # Финальная цена — это базовая цена плюс цена всех атрибутов
         final_price = base_price
 
         return final_price
