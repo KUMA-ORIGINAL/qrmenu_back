@@ -29,7 +29,7 @@ class TableAdmin(BaseModelAdmin):
 
     @action(
         description="Cкачать qr-code",
-        url_path="download_qr_actions_detail-url",
+        url_path="download_table_qr_actions_detail-url",
     )
     def download_qr_actions_detail(self, request, object_id):
         table = get_object_or_404(Table, pk=object_id)

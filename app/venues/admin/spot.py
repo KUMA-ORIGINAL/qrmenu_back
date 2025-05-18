@@ -36,7 +36,7 @@ class SpotAdmin(BaseModelAdmin):
 
     @action(
         description="Cкачать qr-code (На вынос)",
-        url_path="download_qr_actions_detail-url",
+        url_path="download_spot_qr_actions_detail-url",
     )
     def download_qr_actions_detail(self, request, object_id):
         spot = get_object_or_404(Spot, pk=object_id)
