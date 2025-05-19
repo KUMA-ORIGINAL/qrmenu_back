@@ -1,5 +1,6 @@
 import logging
 
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
@@ -79,6 +80,9 @@ class OrderViewSet(viewsets.GenericViewSet,
             queryset = queryset.filter(table__id=table_id)
         if phone:
             queryset = queryset.filter(phone=phone)
+
+        today = timezone.now().date()
+        queryset = queryset.filter(created_at__date=today)
 
         return queryset.prefetch_related(
             'order_products',
