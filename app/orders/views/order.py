@@ -6,10 +6,13 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 
+from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
+from tg_bot.utils import send_order_notification
 from venues.models import Venue
 from ..models import Order
 from ..serializers import OrderListSerializer, OrderCreateSerializer
+from ..services import format_order_details
 from ..services.order import is_within_schedule
 
 logger = logging.getLogger(__name__)
@@ -152,5 +155,13 @@ class OrderViewSet(viewsets.GenericViewSet,
                 logger.error(f"Failed to save order: {str(e)}", exc_info=True)
                 return Response({'error': 'Failed to save order due to internal error.'},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            user_owner = order.venue.users.filter(role=ROLE_OWNER).first()
+            if user_owner and user_owner.tg_chat_id:
+                order_info = format_order_details(order)
+                logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
+                send_order_notification(user_owner.tg_chat_id, order_info, order.id)
+            else:
+                logger.info("No valid Telegram chat ID found or owner does not exist.")
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)

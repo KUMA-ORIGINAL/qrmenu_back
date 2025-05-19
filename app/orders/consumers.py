@@ -44,12 +44,12 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             logger.exception(f"Ошибка отключения WebSocket: {e}")
 
-    # Обработка сообщений от группы
     async def order_status_update(self, event):
         try:
             await self.send(text_data=json.dumps({
                 'order_id': event.get('order_id'),
-                'status': event.get('status', 'unknown')
+                'status': event.get('status', 'unknown'),
+                'status_text': event.get('status_text', 'Неизвестно'),
             }))
         except Exception as e:
             logger.exception(f"Ошибка отправки данных через WebSocket: {e}")

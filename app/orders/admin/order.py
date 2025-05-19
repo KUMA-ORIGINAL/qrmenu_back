@@ -42,18 +42,15 @@ class OrderAdmin(BaseModelAdmin):
         description="Статус заказа",
         ordering="status",
         label={
-            'Принят': "success",  # green
-            'Новый': "info",  # blue
-            'Отменён': "danger",  # red
+            'Заказ оформлен': "info",  # Новый — синий
+            'Готовим заказ': "primary",  # Принят — синий (или другой стиль)
+            'Заказ готов': "warning",  # Готов — жёлтый
+            'Заказ выполнен': "success",  # Выполнен — зелёный
+            'Отменён': "danger",  # Отменён — красный
         },
     )
     def display_status(self, obj):
-        if obj.status == 0:
-            return 'Новый'
-        elif obj.status == 1:
-            return 'Принят'
-        elif obj.status == 7:
-            return 'Отменён'
+        return obj.get_status_display()
 
     @display(
         description="Режим обслуживания",

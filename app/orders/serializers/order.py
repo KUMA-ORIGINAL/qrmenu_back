@@ -11,8 +11,11 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ('id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
-                  'tips_price', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url', 'order_products', 'payment_url')
+        fields = (
+            'id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
+            'tips_price', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url',
+            'order_products', 'payment_url',
+        )
         extra_kwargs = {
             'phone': {'write_only': True},
             'comment': {'write_only': True},
@@ -53,15 +56,19 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 class OrderListSerializer(serializers.ModelSerializer):
     order_products = OrderProductSerializer(many=True, read_only=True)
     table_num = serializers.SerializerMethodField()
+    status_text = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Order
         fields = (
             'id', 'total_price', 'status', 'created_at', 'service_mode',
-            'address', 'comment', 'phone', 'order_products', 'table_num'
+            'address', 'comment', 'phone', 'order_products', 'table_num', 'status_text'
         )
 
     def get_table_num(self, obj):
         if obj.table:
             return obj.table.table_num
         return ''
+
+    def get_status_text(self, obj):
+        return obj.get_status_display()

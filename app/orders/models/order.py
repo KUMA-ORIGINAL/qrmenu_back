@@ -13,9 +13,11 @@ class ServiceMode(models.IntegerChoices):
 
 
 class OrderStatus(models.IntegerChoices):
-    NEW = 0, 'Новый'  # Новый заказ
-    ACCEPTED = 1, 'Принят'  # Принят
-    CANCELLED = 7, 'Отменён'  # Отменён
+    NEW = 0, 'Заказ оформлен'
+    ACCEPTED = 1, 'Готовим заказ'
+    READY = 2, 'Заказ готов'
+    COMPLETED = 3, 'Заказ выполнен'
+    CANCELLED = 7, 'Отменён'
 
 
 class Order(BaseModel):

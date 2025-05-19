@@ -25,7 +25,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     user = await sync_to_async(User.objects.filter(tg_chat_id=chat_id).first)()
 
-    if user and user.phone:
+    if user and user.phone_number:
         await update.message.reply_text(f"Добро пожаловать обратно! Ваш номер: {user.phone_number}.")
     else:
         contact_keyboard = KeyboardButton("📲 Отправить мой номер", request_contact=True)
@@ -68,16 +68,33 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     if data == "noop":
         await query.answer("Это действие уже выполнено.")
         return
+
     logger.info(f"Callback query received: {data}")
 
     if data.startswith("accept_"):
         order_id = data.split("_")[1]
         new_status = 1
-        button_text = "✅ Принято"
+        next_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🍽 Готово", callback_data=f"ready_{order_id}")]
+        ])
+    elif data.startswith("ready_"):
+        order_id = data.split("_")[1]
+        new_status = 2
+        next_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Выполнено", callback_data=f"complete_{order_id}")]
+        ])
+    elif data.startswith("complete_"):
+        order_id = data.split("_")[1]
+        new_status = 3
+        next_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("✔ Заказ завершён", callback_data="noop")]
+        ])
     elif data.startswith("reject_"):
         order_id = data.split("_")[1]
         new_status = 7
-        button_text = "❌ Отклонено"
+        next_button = InlineKeyboardMarkup([
+            [InlineKeyboardButton("❌ Отклонено", callback_data="noop")]
+        ])
     else:
         await query.answer("Неизвестное действие.", show_alert=True)
         return
@@ -91,11 +108,8 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
         logger.info(f"Order {order_id} updated to status '{new_status}'")
 
-        new_keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton(button_text, callback_data="noop")]
-        ])
-
-        await query.edit_message_reply_markup(reply_markup=new_keyboard)
+        # Обновляем только кнопки (reply_markup)
+        await query.edit_message_reply_markup(reply_markup=next_button)
     else:
         await query.answer("❗ Заказ не найден.", show_alert=True)
 
