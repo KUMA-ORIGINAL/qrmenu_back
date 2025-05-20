@@ -28,35 +28,99 @@ def create_qr_code_in_memory(url):
     qr_buffer.seek(0)
     return qr_buffer
 
-def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height, text_top):
-    """Создает PDF-слой с QR-кодами и центрированным текстом в памяти."""
+def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
+                       text_top1, text_top2,):
+    text_bottom1_ru = "Ваш персональный\nонлайн-официант"
+    text_bottom1_kg = "Сиздин жеке\nонлайн-официантыңыз"
+
+    # Обновленный текст для нижних блоков, разбитый на более короткие строки
+    text_bottom2_ru = ("Заказывайте еду и напитки онлайн с доставкой\n"
+                       "прямо к вашему столу! Просто отсканируйте QR-код")
+    text_bottom2_kg = ("Тамак-аш менен суусундуктарга онлайн буюртма бериңиз —\n"
+                       "түз эле дасторконуңузга жеткирип беришет!\n"
+                       "Болгону QR-кодду сканерлеңиз.")
+    """Создает PDF-слой с QR-кодами и текстом в памяти."""
     packet = BytesIO()
     can = canvas.Canvas(packet, pagesize=landscape(A4))
 
-    font_name = 'Inter'
-    font_size = 40
-    pdfmetrics.registerFont(TTFont(font_name, 'static/Inter_18pt-Bold.ttf'))
-    can.setFont(font_name, font_size)
+    # Регистрация шрифта
+    pdfmetrics.registerFont(TTFont('Inter', 'static/Inter_18pt-Bold.ttf'))
+
+    # Расстояние между строками для всех текстов
+    line_spacing_title = 25  # Расстояние между строками для заголовка
+    line_spacing = 20  # Расстояние между строками для основного текста
+
+    # Центры QR-блоков
+    center_x1 = x1 + width / 2
+    center_x2 = x2 + width / 2
+
+    # --- Верхний текст (белый на розовом фоне) ---
+    can.setFont('Inter', 36)
     can.setFillColor(HexColor("#FFFFFF"))
+    can.drawCentredString(center_x1, y1 + height + 20, text_top1)
 
-    # Получаем ширину текста
-    text_width = stringWidth(text_top, font_name, font_size)
 
-    # Центрируем текст над каждым QR-кодом
-    text_x1 = x1 + (width - text_width) / 2
-    text_x2 = x2 + (width - text_width) / 2
-    text_y = y1 + height + 20  # Y-координата текста
+    kg_text_top2_lines = text_top2.split('\n')
+    y_offset_kg_text_top2 = y1 + height + 45
 
-    # Рисуем текст
-    can.drawString(text_x1, text_y, text_top)
-    can.drawString(text_x2, text_y, text_top)
+    for line in kg_text_top2_lines:
+        can.drawCentredString(center_x2, y_offset_kg_text_top2, line)
+        y_offset_kg_text_top2 -= 30
 
-    # Конвертируем BytesIO в ImageReader
+    # --- QR-коды ---
     qr_image = ImageReader(qr_image_buffer)
-
-    # Добавляем QR-коды
     can.drawImage(qr_image, x1, y1, width=width, height=height)
     can.drawImage(qr_image, x2, y2, width=width, height=height)
+
+    # --- ЛЕВАЯ ЧАСТЬ (Русский) ---
+    # Заголовок на русском (черный текст)
+    can.setFillColor(HexColor("#000000"))
+    can.setFont('Inter', 14)
+
+    # Разбиваем текст на строки для text_bottom1_ru
+    ru_title_lines = text_bottom1_ru.split('\n')
+    y_offset_ru_title = y1 - 150
+
+    for line in ru_title_lines:
+        can.drawCentredString(center_x1, y_offset_ru_title, line)
+        y_offset_ru_title -= 15
+
+    # Основной текст на русском (серый)
+    can.setFillColor(HexColor("#939393"))
+    can.setFont('Inter', 14)
+
+    # Разбиваем текст на строки для нижнего текста (русский)
+    ru_lines = text_bottom2_ru.split('\n')
+    y_offset_ru = y1 - 220
+
+    for line in ru_lines:
+        can.drawCentredString(center_x1, y_offset_ru, line)
+        y_offset_ru -= line_spacing
+
+    # --- ПРАВАЯ ЧАСТЬ (Киргизский) ---
+    # Заголовок на киргизском (черный текст)
+    can.setFillColor(HexColor("#000000"))
+    can.setFont('Inter', 14)
+
+    # Разбиваем текст на строки для text_bottom1_kg
+    kg_title_lines = text_bottom1_kg.split('\n')
+    y_offset_kg_title = y2 - 150
+
+    for line in kg_title_lines:
+        can.drawCentredString(center_x2, y_offset_kg_title, line)
+        y_offset_kg_title -= 15
+
+    # Основной текст на киргизском (серый)
+    can.setFillColor(HexColor("#939393"))
+    can.setFont('Inter', 12)
+
+    # Разбиваем текст на строки для нижнего текста (киргизский)
+    kg_lines = text_bottom2_kg.split('\n')
+    y_offset_kg = y2 - 220
+
+    for line in kg_lines:
+        can.drawCentredString(center_x2, y_offset_kg, line)
+        y_offset_kg -= line_spacing
 
     can.save()
     packet.seek(0)
@@ -78,7 +142,7 @@ def merge_pdf_with_overlay(input_pdf_stream, overlay_pdf):
     output_pdf_stream.seek(0)
     return output_pdf_stream
 
-def add_qr_and_text_to_pdf_in_memory(qr_url, text_top):
+def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2,):
     """Добавляет QR-коды и текст в PDF, используя миллиметры для координат."""
     qr_image_path = create_qr_code_in_memory(qr_url)
     input_pdf = "static/input_pdf_for_qr.pdf"
@@ -90,6 +154,8 @@ def add_qr_and_text_to_pdf_in_memory(qr_url, text_top):
     x2 = x1 * 3 + qr_height + 1 * mm
     y2 = 100 * mm
 
-    overlay_pdf = create_overlay_pdf(qr_image_path, x1, y1, x2, y2, qr_width, qr_height, text_top)
+    overlay_pdf = create_overlay_pdf(
+        qr_image_path, x1, y1, x2, y2, qr_width, qr_height,
+        text_top1, text_top2,
+    )
     return merge_pdf_with_overlay(input_pdf, overlay_pdf)
-

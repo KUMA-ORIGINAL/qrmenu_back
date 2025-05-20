@@ -43,9 +43,10 @@ class SpotAdmin(BaseModelAdmin):
         venue = spot.venue
 
         qr_url = f"https://imenu.kg/I/{venue.slug}/{spot.id}/s/"
-        text_top = f"На вынос"
+        text_top_ru = f"На вынос"
+        text_top_kg = f"Өзү менен\nалып кетүү"
 
-        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)
+        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top_ru, text_top_kg)
 
         response = HttpResponse(output_pdf_stream, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="qr_codes_spot_{spot.id}.pdf"'
