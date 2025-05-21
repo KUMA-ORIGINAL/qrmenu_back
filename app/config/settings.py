@@ -318,11 +318,6 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
-        'venues.admin': {
-            'handlers': ['console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
         'services.poster': {
             'handlers': ['console'],
             'level': 'INFO',

@@ -37,9 +37,10 @@ class TableAdmin(BaseModelAdmin):
         spot = table.spot
 
         qr_url = f"https://imenu.kg/I/{venue.slug}/{spot.id}/{table.id}/"
-        text_top = f"{table.table_num} стол"
+        text_top_ru = f"{table.table_num} стол"
+        text_top_kg = f"{table.table_num} стол"
 
-        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top)
+        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top_ru, text_top_kg)
 
         response = HttpResponse(output_pdf_stream, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="qr_codes_table_{table.table_num}.pdf"'

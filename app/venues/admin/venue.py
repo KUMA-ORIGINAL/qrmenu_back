@@ -63,7 +63,7 @@ class VenueAdmin(BaseModelAdmin):
             return redirect(request.META["HTTP_REFERER"])
 
         logger.info("Получение categories...")
-        categories_data = pos_service.get_categories()[1:]
+        categories_data = pos_service.get_categories()
         if not self.process_items(
                 request, venue, categories_data, Category, 'category_id', pos_service.create_new_category):
             return redirect(request.META["HTTP_REFERER"])
@@ -84,11 +84,18 @@ class VenueAdmin(BaseModelAdmin):
             ).exists()
 
             if not existing_product:
+                category_external_id = product_data.get('menu_category_id')
                 related_category = Category.objects.filter(
                     venue=venue,
-                    external_id=product_data.get('menu_category_id')
+                    external_id=category_external_id
                 ).first()
                 if not related_category:
+                    logger.warning(
+                        f"Не найдена категория для продукта ID={product_data}, "
+                        f"Не найдена категория для продукта ID={product_data.get('product_id')}, "
+                        f"menu_category_id={category_external_id}, "
+                        f"имеющиеся категории: {list(Category.objects.filter(venue=venue).values_list('external_id', flat=True))}"
+                    )
                     msg = f"Связанная категория не найдена для продукта: {product_data.get('product_id')}"
                     logger.warning(msg)
                     self.message_user(
