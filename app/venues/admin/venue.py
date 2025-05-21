@@ -27,53 +27,56 @@ class VenueAdmin(BaseModelAdmin):
         url_path="spots_and_tables_action_detail-url",
     )
     def pos_action_detail(self, request, object_id):
+        logger.info(f"Начало обработки POS данных для заведения ID: {object_id}")
+
         venue = get_object_or_404(Venue, pk=object_id)
 
         if not venue.access_token:
-            self.message_user(request,
-                              f'Заведение {venue.company_name} не имеет API токена.',
-                              level=messages.ERROR)
+            msg = f'Заведение {venue.company_name} не имеет API токена.'
+            logger.warning(msg)
+            self.message_user(request, msg, level=messages.ERROR)
             return redirect(request.META["HTTP_REFERER"])
 
         pos_system_name = venue.pos_system.name.lower()
+        logger.info(f"POS система: {pos_system_name} для заведения {venue.company_name}")
+
         pos_service = POSServiceFactory.get_service(pos_system_name, venue.access_token)
 
+        logger.info("Получение spots...")
         spots_data = pos_service.get_spots()
-        create_method = pos_service.create_new_spot
-        if not self.process_items(
-                request, venue, spots_data, Spot, 'spot_id', create_method):
+        if not self.process_items(request, venue, spots_data, Spot, 'spot_id', pos_service.create_new_spot):
             return redirect(request.META["HTTP_REFERER"])
 
+        logger.info("Получение halls...")
         halls_data = pos_service.get_halls()
-        create_method = pos_service.create_new_hall
         if not self.process_items(
-                request, venue, halls_data, Hall, 'hall_id', create_method,
+                request, venue, halls_data, Hall, 'hall_id', pos_service.create_new_hall,
                 related_model_class_1=Spot, related_external_id_key_1='spot_id'):
             return redirect(request.META["HTTP_REFERER"])
 
+        logger.info("Получение tables...")
         tables_data = pos_service.get_tables()
-        create_method = pos_service.create_new_table
         if not self.process_items(
-                request, venue, tables_data, Table, 'table_id', create_method,
+                request, venue, tables_data, Table, 'table_id', pos_service.create_new_table,
                 related_model_class_1=Hall, related_external_id_key_1='hall_id',
-                related_model_class_2=Spot, related_external_id_key_2='spot_id',):
+                related_model_class_2=Spot, related_external_id_key_2='spot_id'):
             return redirect(request.META["HTTP_REFERER"])
 
+        logger.info("Получение categories...")
         categories_data = pos_service.get_categories()[1:]
-        create_method = pos_service.create_new_category
         if not self.process_items(
-                request, venue, categories_data, Category, 'category_id', create_method):
+                request, venue, categories_data, Category, 'category_id', pos_service.create_new_category):
             return redirect(request.META["HTTP_REFERER"])
 
+        logger.info("Получение products...")
         products_data = pos_service.get_products()
-        create_method = pos_service.create_new_product
-
         if not products_data:
-            self.message_user(request, 'Ошибка при получении продуктов', level=messages.ERROR)
+            msg = 'Ошибка при получении продуктов'
+            logger.error(msg)
+            self.message_user(request, msg, level=messages.ERROR)
             return redirect(request.META["HTTP_REFERER"])
 
         created_item_count = 0
-
         for product_data in products_data:
             existing_product = Product.objects.filter(
                 venue=venue,
@@ -86,36 +89,42 @@ class VenueAdmin(BaseModelAdmin):
                     external_id=product_data.get('menu_category_id')
                 ).first()
                 if not related_category:
+                    msg = f"Связанная категория не найдена для продукта: {product_data.get('product_id')}"
+                    logger.warning(msg)
                     self.message_user(
                         request,
-                        f"Не удалось найти связанные объекты для Продуктов "
-                        f"({Category._meta.verbose_name_plural}).",
+                        f"Не удалось найти связанные объекты для Продуктов ({Category._meta.verbose_name_plural}).",
                         level=messages.ERROR,
                     )
                     return redirect(request.META["HTTP_REFERER"])
 
                 related_spots = Spot.objects.filter(venue=venue)
 
-                create_method(product_data, venue, related_category, related_spots)
+                logger.debug(f"Создание нового продукта: {product_data}")
+                pos_service.create_new_product(product_data, venue, related_category, related_spots)
                 created_item_count += 1
 
         if created_item_count > 0:
-            self.message_user(request,
-                              f"{created_item_count} продуктов успешно созданы.",
-                              level=messages.SUCCESS)
+            msg = f"{created_item_count} продуктов успешно созданы."
+            logger.info(msg)
+            self.message_user(request, msg, level=messages.SUCCESS)
         else:
-            self.message_user(request,
-                              "Продукты актуальны.",
-                              level=messages.SUCCESS)
+            logger.info("Продукты актуальны.")
+            self.message_user(request, "Продукты актуальны.", level=messages.SUCCESS)
 
+        logger.info(f"Обработка POS данных завершена для заведения ID: {object_id}")
         return redirect(request.META["HTTP_REFERER"])
 
     def process_items(self, request, venue, items_data, model_class, external_id_key, create_method,
                       related_model_class_1=None, related_external_id_key_1=None,
                       related_model_class_2=None, related_external_id_key_2=None):
         item_name = model_class._meta.verbose_name_plural
+        logger.info(f"Обработка {item_name}...")
+
         if not items_data:
-            self.message_user(request, f'{item_name} не найдено!')
+            msg = f'{item_name} не найдено!'
+            logger.warning(msg)
+            self.message_user(request, msg)
             return False
 
         created_item_count = 0
@@ -140,17 +149,19 @@ class VenueAdmin(BaseModelAdmin):
                         external_id=item_data.get(related_external_id_key_2)
                     ).first()
 
+                logger.debug(f"Создание нового объекта {item_name[:-1]}: {item_data}")
                 create_method(item_data, venue, related_instance_1, related_instance_2)
                 created_item_count += 1
 
         if created_item_count > 0:
-            self.message_user(request,
-                              f"{created_item_count} {item_name} успешно созданы.",
-                              level=messages.SUCCESS)
+            msg = f"{created_item_count} {item_name} успешно созданы."
+            logger.info(msg)
+            self.message_user(request, msg, level=messages.SUCCESS)
         else:
-            self.message_user(request,
-                              f"{item_name} актуальны.",
-                              level=messages.SUCCESS)
+            msg = f"{item_name} актуальны."
+            logger.info(msg)
+            self.message_user(request, msg, level=messages.SUCCESS)
+
         return True
 
 
