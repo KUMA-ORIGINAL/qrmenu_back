@@ -90,12 +90,12 @@ class VenueAdmin(BaseModelAdmin):
                     external_id=category_external_id
                 ).first()
                 if not related_category:
-                    logger.warning(
-                        f"Не найдена категория для продукта ID={product_data}, "
-                        f"Не найдена категория для продукта ID={product_data.get('product_id')}, "
-                        f"menu_category_id={category_external_id}, "
-                        f"имеющиеся категории: {list(Category.objects.filter(venue=venue).values_list('external_id', flat=True))}"
-                    )
+                    # logger.warning(
+                    #     f"Не найдена категория для продукта ID={product_data}, "
+                    #     f"Не найдена категория для продукта ID={product_data.get('product_id')}, "
+                    #     f"menu_category_id={category_external_id}, "
+                    #     f"имеющиеся категории: {list(Category.objects.filter(venue=venue).values_list('external_id', flat=True))}"
+                    # )
                     msg = f"Связанная категория не найдена для продукта: {product_data.get('product_id')}"
                     logger.warning(msg)
                     self.message_user(
