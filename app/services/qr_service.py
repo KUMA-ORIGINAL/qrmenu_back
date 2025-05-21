@@ -29,25 +29,20 @@ def create_qr_code_in_memory(url):
     return qr_buffer
 
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
-                       text_top1, text_top2,):
+                       text_top1, text_top2, is_table):
     text_bottom1_ru = "Ваш персональный\nонлайн-официант"
     text_bottom1_kg = "Сиздин жеке\nонлайн-официантыңыз"
-
-    # Обновленный текст для нижних блоков, разбитый на более короткие строки
     text_bottom2_ru = ("Заказывайте еду и напитки онлайн с доставкой\n"
                        "прямо к вашему столу! Просто отсканируйте QR-код")
     text_bottom2_kg = ("Тамак-аш менен суусундуктарга онлайн буюртма бериңиз —\n"
                        "түз эле дасторконуңузга жеткирип беришет!\n"
                        "Болгону QR-кодду сканерлеңиз.")
-    """Создает PDF-слой с QR-кодами и текстом в памяти."""
+
     packet = BytesIO()
     can = canvas.Canvas(packet, pagesize=landscape(A4))
 
-    # Регистрация шрифта
     pdfmetrics.registerFont(TTFont('Inter', 'static/Inter_18pt-Bold.ttf'))
 
-    # Расстояние между строками для всех текстов
-    line_spacing_title = 25  # Расстояние между строками для заголовка
     line_spacing = 20  # Расстояние между строками для основного текста
 
     # Центры QR-блоков
@@ -59,13 +54,15 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     can.setFillColor(HexColor("#FFFFFF"))
     can.drawCentredString(center_x1, y1 + height + 20, text_top1)
 
+    if is_table:
+        can.drawCentredString(center_x2, y1 + height + 20, text_top2)
+    else:
+        kg_text_top2_lines = text_top2.split('\n')
+        y_offset_kg_text_top2 = y1 + height + 45
 
-    kg_text_top2_lines = text_top2.split('\n')
-    y_offset_kg_text_top2 = y1 + height + 45
-
-    for line in kg_text_top2_lines:
-        can.drawCentredString(center_x2, y_offset_kg_text_top2, line)
-        y_offset_kg_text_top2 -= 30
+        for line in kg_text_top2_lines:
+            can.drawCentredString(center_x2, y_offset_kg_text_top2, line)
+            y_offset_kg_text_top2 -= 30
 
     # --- QR-коды ---
     qr_image = ImageReader(qr_image_buffer)
@@ -142,7 +139,7 @@ def merge_pdf_with_overlay(input_pdf_stream, overlay_pdf):
     output_pdf_stream.seek(0)
     return output_pdf_stream
 
-def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2,):
+def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, is_table=False):
     """Добавляет QR-коды и текст в PDF, используя миллиметры для координат."""
     qr_image_path = create_qr_code_in_memory(qr_url)
     input_pdf = "static/input_pdf_for_qr.pdf"
@@ -156,6 +153,6 @@ def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2,):
 
     overlay_pdf = create_overlay_pdf(
         qr_image_path, x1, y1, x2, y2, qr_width, qr_height,
-        text_top1, text_top2,
+        text_top1, text_top2, is_table
     )
     return merge_pdf_with_overlay(input_pdf, overlay_pdf)
