@@ -3,7 +3,6 @@ import logging
 from urllib.parse import parse_qs
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.layers import get_channel_layer
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +10,7 @@ logger = logging.getLogger(__name__)
 class OrderStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         try:
+            self.room_group_name = None
             query_params = parse_qs(self.scope["query_string"].decode())
             self.phone_number = query_params.get("phone_number", [None])[0]
 
@@ -19,9 +19,7 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
                 logger.error("Phone number not provided in query params.")
                 return
 
-            # Можно использовать номер телефона в названии группы
             self.room_group_name = f'orders_{self.phone_number}'
-
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
