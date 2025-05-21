@@ -112,7 +112,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         if not venue:
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not is_within_schedule(venue.schedule):
+        if not is_within_schedule(venue.work_start, venue.work_end):
             return Response({'error': 'Заказ можно создать только в рабочее время заведения.'},
                             status=status.HTTP_403_FORBIDDEN)
 

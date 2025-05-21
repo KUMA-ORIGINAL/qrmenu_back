@@ -1,10 +1,12 @@
 import logging
 
+from django import forms
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
 
 from unfold.decorators import action, display
+from unfold.widgets import UnfoldAdminTimeWidget
 
 from account.models import ROLE_OWNER
 from menu.models import Category, Product
@@ -16,11 +18,125 @@ from ..models import Venue, Spot, Table, Hall
 logger = logging.getLogger(__name__)
 
 
+
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = '__all__'
+        widgets = {
+            'work_start': UnfoldAdminTimeWidget(
+                format='%H:%M',
+            ),
+            'work_end': UnfoldAdminTimeWidget(
+                format='%H:%M',
+            ),
+        }
+
+
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
+    form = VenueForm
     compressed_fields = True
-    list_display = ('id', 'company_name', 'pos_system', 'detail_link')
     actions_detail = ['pos_action_detail',]
+
+
+    def get_list_display(self, request):
+        list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == ROLE_OWNER:
+            list_display = ('company_name', 'pos_system', 'link_to_venue', 'detail_link')
+        return list_display
+
+    @display(
+        description="Ссылка на заведение",
+        label=True
+    )
+    def link_to_venue(self, obj):
+        if obj.slug:
+            url = f"https://imenu.kg/I/{obj.slug}"
+            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
+        return "-"
+
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return ()
+        elif request.user.role == ROLE_OWNER:
+            return ('pos_system_plain', )
+        return ()
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = (
+            ("Основная информация", {
+                'fields': (
+                    'company_name',
+                    'slug',
+                    'color_theme',
+                    'logo',
+                )
+            }),
+            ("График работы", {
+                'fields': (
+                    'work_start', 'work_end',
+                )
+            }),
+            ("Контактные данные владельца", {
+                'fields': (
+                    'owner_name', 'owner_id',
+                    'owner_email', 'owner_phone',
+                )
+            }),
+            ("Локация", {
+                'fields': (
+                    'country',
+                    'city',
+                )
+            }),
+            ("POS и Сервис", {
+                'fields': (
+                    'pos_system',
+                    'account_number',
+                    'access_token',
+                    'service_fee_percent',
+                )
+            }),
+            ("Тариф", {
+                'fields': (
+                    'tariff_key',
+                    'tariff_price',
+                    'next_pay_date',
+                )
+            }),
+            ("Типы обслуживания", {
+                'fields': (
+                    'is_delivery_available',
+                    'is_takeout_available',
+                    'is_dinein_available',
+                )
+            }),
+        )
+        if request.user.is_superuser:
+            pass
+        elif request.user.role == ROLE_OWNER:
+            fieldsets[4][1]['fields'] = (
+                'pos_system_plain',
+                'account_number',
+                'access_token',
+                'service_fee_percent',
+            )
+        return fieldsets
+
+    @display(description="POS система")
+    def pos_system_plain(self, obj):
+        return str(obj.pos_system) if obj.pos_system else "-"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        elif request.user.role == ROLE_OWNER:
+            return qs.filter(users=request.user)
+        return qs
 
     @action(
         description="Получить информацию из POS системы",
@@ -170,38 +286,3 @@ class VenueAdmin(BaseModelAdmin):
             self.message_user(request, msg, level=messages.SUCCESS)
 
         return True
-
-
-    def get_list_display(self, request):
-        list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
-        if request.user.is_superuser:
-            pass
-        elif request.user.role == ROLE_OWNER:
-            list_display = ('company_name', 'pos_system', 'link_to_venue', 'detail_link')
-        return list_display
-
-    @display(
-        description="Ссылка на заведение",
-        label=True
-    )
-    def link_to_venue(self, obj):
-        if obj.slug:
-            url = f"https://imenu.kg/I/{obj.slug}"
-            return format_html('<a href="{}" target="_blank">{}</a>', url, url)
-        return "-"
-
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
-        if request.user.is_superuser:
-            return fields
-        elif request.user.role == ROLE_OWNER:
-            return [field for field in fields if field not in ('pos_system',)]
-        return fields
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.user.is_superuser:
-            return qs
-        elif request.user.role == ROLE_OWNER:
-            return qs.filter(users=request.user)
-        return qs

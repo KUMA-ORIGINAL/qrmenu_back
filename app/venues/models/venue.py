@@ -23,16 +23,23 @@ class Venue(BaseModel):
     )
     slug = models.SlugField(unique=True, verbose_name='Название ссылки', blank=True)
     color_theme = models.CharField(
+        'Тема',
         max_length=7,
         choices=COLOR_CHOICES,
-        default='#008B68'
+        default='#008B68',
+        blank=True,
     )
     logo = models.ImageField(
         upload_to='venue_logo', null=True, blank=True, verbose_name='Логотип')
-    schedule = models.CharField(
-        max_length=255, verbose_name='График работы',
-        help_text="Введите график работы, например: 09:00-18:00",
-        default='09:00-18:00'
+    work_start = models.TimeField(
+        verbose_name="Начало рабочего дня",
+        help_text="Введите время начала (например, 09:00)",
+        default="09:00"
+    )
+    work_end = models.TimeField(
+        verbose_name="Конец рабочего дня",
+        help_text="Введите время окончания (например, 18:00)",
+        default="18:00"
     )
     account_number = models.CharField(
         max_length=100, verbose_name="Номер аккаунта", blank=True
