@@ -1,3 +1,5 @@
+from decimal import Decimal, ROUND_HALF_UP
+
 from rest_framework import serializers
 
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
@@ -33,15 +35,49 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order_product_data = validated_data.pop('order_products', [])
         order = Order.objects.create(**validated_data)
 
-        order_products = [
-            OrderProduct(order=order, **item)
-            for item in order_product_data
-        ]
-        OrderProduct.objects.bulk_create(order_products)
+        products_total_price = Decimal('0.00')
 
-        total_amount = order.total_price
+        for item in order_product_data:
+            product = item['product']
+            modificator = item.get('modificator')
+            count = item['count']
 
-        transaction = Transaction.objects.create(order=order, total_price=total_amount)
+            # Используем Decimal для финансовых расчётов
+            if modificator:
+                price = Decimal(modificator.price)
+            else:
+                price = Decimal(product.product_price)
+
+            total_price = (price * count).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
+            OrderProduct.objects.create(
+                order=order,
+                product=product,
+                modificator=modificator,
+                count=count,
+                price=price,
+                total_price=total_price
+            )
+
+            products_total_price += total_price
+
+        service_fee_percent = order.venue.service_fee_percent or Decimal('0.00')
+        if not isinstance(service_fee_percent, Decimal):
+            service_fee_percent = Decimal(str(service_fee_percent))
+
+        service_price = (products_total_price * service_fee_percent / Decimal('100')).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
+
+        total_price = (products_total_price + service_price).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP
+        )
+
+        order.service_price = service_price
+        order.total_price = total_price
+        order.save()
+
+        transaction = Transaction.objects.create(order=order, total_price=total_price)
         payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
 
         self.context['transaction'] = transaction

@@ -1,3 +1,5 @@
+import atexit
+
 from django.apps import AppConfig
 
 
@@ -9,3 +11,5 @@ class OrdersConfig(AppConfig):
         from .services import mqtt_client
 
         mqtt_client.initialize()
+
+        atexit.register(mqtt_client.disconnect)

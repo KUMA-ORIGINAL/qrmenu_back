@@ -101,12 +101,9 @@ class OrderViewSet(viewsets.GenericViewSet,
             logger.warning(f"Order creation failed due to validation error: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        order_data = serializer.validated_data
         venue_slug = request.data.get('venue_slug')
-
         if not venue_slug:
-            return Response({'error': 'venue_slug is required.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'venue_slug is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         venue = Venue.objects.filter(slug=venue_slug).first()
         if not venue:
@@ -116,10 +113,8 @@ class OrderViewSet(viewsets.GenericViewSet,
             return Response({'error': 'Заказ можно создать только в рабочее время заведения.'},
                             status=status.HTTP_403_FORBIDDEN)
 
-        order_data['venue'] = venue
-
         try:
-            serializer.save()
+            order = serializer.save(venue=venue)
         except Exception as e:
             logger.error(f"Failed to save order: {str(e)}", exc_info=True)
             return Response({'error': 'Failed to save order due to internal error.'},

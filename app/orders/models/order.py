@@ -99,26 +99,3 @@ class Order(BaseModel):
 
     def __str__(self):
         return f'Order {self.id} for {self.phone}'
-
-    def calculate_total_price(self):
-        products_total = sum(
-            (Decimal(order_product.total_price) or Decimal('0.00'))
-            for order_product in self.order_products.all()
-        )
-
-        service_fee_percent = self.venue.service_fee_percent or Decimal('0.00')
-
-        if not isinstance(service_fee_percent, Decimal):
-            service_fee_percent = Decimal(str(service_fee_percent))
-
-        service_price = (products_total * service_fee_percent / Decimal('100')).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
-        )
-
-        total_price = (products_total + service_price).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
-        )
-
-        self.service_price = service_price
-        self.total_price = total_price
-        self.save()

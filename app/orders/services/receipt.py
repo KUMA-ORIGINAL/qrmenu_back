@@ -112,17 +112,6 @@ class MQTTClient:
 mqtt_client = MQTTClient()
 
 
-class ReceiptAppConfig(AppConfig):
-    name = 'receipts'  # Change this to your actual app name
-
-    def ready(self):
-        # Initialize the MQTT client when the app is ready
-        mqtt_client.initialize()
-
-        # Register cleanup function when Django shuts down
-        atexit.register(mqtt_client.disconnect)
-
-
 def send_receipt_to_mqtt(order, venue):
     try:
         # Get the receipt printer
@@ -139,11 +128,10 @@ def send_receipt_to_mqtt(order, venue):
         timezone.activate('Asia/Bishkek')
         order_date_local = timezone.localtime(order.created_at)
 
-        address = order.spot.address if order.spot else "Адрес не указан"
+        address = order.spot.address if order.spot.address else "Адрес не указан"
         delivery_address = order.address if order.address else "Адрес не указан"
         service_mode = order.get_service_mode_display().upper()
 
-        # Header
         printdata = (
             f"<LOGO>printest</LOGO><F3232><CENTER>{venue.company_name}\r</CENTER></F3232>"
             f"<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y             %H:%M:%S')}</CENTER></F2424>\r"
@@ -159,8 +147,17 @@ def send_receipt_to_mqtt(order, venue):
 
         order_items = "<F2424>"
         for idx, op in enumerate(order.order_products.all(), start=1):
-            order_items += f"{idx}. {op.product.product_name} x{op.count} {op.total_price} сом\r"
+            product_name = f"{op.product.product_name}"
+            if op.modificator:
+                product_name = product_name + f"({op.modificator})"
+            order_items += f"{idx}. {product_name} x{op.count} {op.total_price} сом\r"
+
+        if order.service_price and order.service_price > 0:
+            order_items += f"\rОбслуживание: {order.service_price} сом\r"
+        order_items += f"Итого: {order.total_price} сом\r"
+
         order_items += "</F2424>"
+
 
         total_sum = (
             f"<F2424><CENTER>\rАдрес доставки: {delivery_address}\r</CENTER></F2424>"

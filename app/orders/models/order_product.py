@@ -38,31 +38,3 @@ class OrderProduct(BaseModel):
     class Meta:
         verbose_name = "Продукт в заказе"
         verbose_name_plural = "Продукты в заказах"
-
-    def get_total_price(self):
-        """Рассчитывает общую цену с учетом модификатора, атрибутов и количества."""
-        base_price = self.get_price()
-        total_price = base_price * self.count
-        return total_price
-
-    def get_price(self):
-        """
-        Рассчитывает цену продукта с учетом модификатора и атрибутов.
-        Если есть модификатор, используется его цена, иначе — цена продукта.
-        Добавляется цена атрибутов.
-        """
-        # Определяем базовую цену (либо от модификатора, либо от продукта)
-        if self.modificator:
-            base_price = self.modificator.price
-        else:
-            base_price = self.product.product_price
-        final_price = base_price
-
-        return final_price
-
-    def save(self, *args, **kwargs):
-        """Перед сохранением пересчитываем цену и общую цену."""
-        self.price = self.get_price()  # Цена за единицу с учетом атрибутов
-        self.total_price = self.get_total_price()  # Общая цена
-        super().save(*args, **kwargs)
-        self.order.calculate_total_price()  # Пересчитываем цену заказа
