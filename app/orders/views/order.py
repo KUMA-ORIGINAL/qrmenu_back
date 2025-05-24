@@ -118,43 +118,12 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         order_data['venue'] = venue
 
-        pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
-
-        if pos_system_name is None:
-            try:
-                order = serializer.save()
-            except Exception as e:
-                logger.error(f"Failed to save order: {str(e)}", exc_info=True)
-                return Response({'error': 'Failed to save order due to internal error.'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            api_token = venue.access_token
-            pos_service = POSServiceFactory.get_service(pos_system_name, api_token)
-
-            pos_response = pos_service.send_order_to_pos(order_data)
-            if not pos_response:
-                return Response({'error': 'POS system did not accept the order'},
-                                status=status.HTTP_400_BAD_REQUEST)
-
-            client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
-            if not client:
-                return Response({'error': 'Failed to create or retrieve client from POS.'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            order_data['client'] = client
-            external_id = pos_response.get('incoming_order_id')
-            if not external_id:
-                return Response({'error': 'Failed to receive external ID from POS.'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            order_data['external_id'] = external_id
-
-            try:
-                order = serializer.save()
-            except Exception as e:
-                logger.error(f"Failed to save order: {str(e)}", exc_info=True)
-                return Response({'error': 'Failed to save order due to internal error.'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            order = serializer.save()
+        except Exception as e:
+            logger.error(f"Failed to save order: {str(e)}", exc_info=True)
+            return Response({'error': 'Failed to save order due to internal error.'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             # user_owner = order.venue.users.filter(role=ROLE_OWNER).first()
             # if user_owner and user_owner.tg_chat_id:

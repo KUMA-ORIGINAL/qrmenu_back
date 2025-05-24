@@ -33,13 +33,17 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order_product_data = validated_data.pop('order_products', [])
         order = Order.objects.create(**validated_data)
 
-        for order_product_data_item in order_product_data:
-            order_product = OrderProduct.objects.create(order=order, **order_product_data_item)
-            order_product.save()
+        order_products = [
+            OrderProduct(order=order, **item)
+            for item in order_product_data
+        ]
+        OrderProduct.objects.bulk_create(order_products)
 
         total_amount = order.total_price
+
         transaction = Transaction.objects.create(order=order, total_price=total_amount)
         payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
+
         self.context['transaction'] = transaction
         self.context['payment_account'] = payment_account
 

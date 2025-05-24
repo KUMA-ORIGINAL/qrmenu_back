@@ -136,32 +136,32 @@ class PosterService:
         )
         return new_hall
 
-    def send_order_to_pos(self, poster_order_data):
-        table = poster_order_data.get('table')
+    def send_order_to_pos(self, order):
+        table = order.table
         table_info = f"\nСтол: {table.table_num}" if table else ""
 
         comment = (
-            f"Комментарий: {poster_order_data.get('comment')}\n"
-            f"Обслуживание: {poster_order_data.get('service_price')}\n"
-            f"Чаевые: {poster_order_data.get('tips_price')}"
+            f"Комментарий: {order.comment}\n"
+            f"Обслуживание: {order.service_price}\n"
+            f"Чаевые: {order.tips_price}"
             f"{table_info}"
         )
         incoming_order_data = {
-            'spot_id': poster_order_data.get('spot').external_id,
-            'phone': poster_order_data.get('phone'),
+            'spot_id': order.spot.external_id,
+            'phone': order.phone,
             'comment': comment,
-            'service_mode': poster_order_data.get('service_mode'),
+            'service_mode': order.service_mode,
         }
 
         products = []
-        for order_product in poster_order_data.get('order_products'):
-            product = order_product.get('product')
-            modificator = order_product.get('modificator')
+        for order_product in order.order_products.all():
+            product = order_product.product
+            modificator = order_product.modificator
             modificator_id = modificator.external_id if modificator else None
             products.append(
                 {
                     'product_id': product.external_id,
-                    'count': order_product.get('count'),
+                    'count': order_product.count,
                     'modificator_id': modificator_id
                 }
             )

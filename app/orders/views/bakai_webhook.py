@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from account.models import ROLE_OWNER
 from orders.services import format_order_details, send_receipt_to_mqtt
+from services.pos_service_factory import POSServiceFactory
 from tg_bot.utils import send_order_notification
 from ..models import Transaction
 
@@ -33,7 +34,12 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 return Response({'error': 'Недостаточно данных'}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
-                transaction = Transaction.objects.get(id=transaction_id)
+                transaction = Transaction.objects.select_related(
+                    'order__venue__pos_system',
+                    'order__spot'
+                ).prefetch_related(
+                    'order__order_products__product'
+                ).get(id=transaction_id)
             except Transaction.DoesNotExist:
                 logger.error(f"Транзакция не найдена: ID {transaction_id}")
                 return Response({'error': 'Транзакция не найдена'}, status=status.HTTP_404_NOT_FOUND)
@@ -46,8 +52,33 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             else:
                 logger.info(f"Повторное получение webhook: статус уже установлен — {payment_status}")
 
-            user_owner = transaction.order.venue.users.filter(role=ROLE_OWNER).first()
             order = transaction.order
+            venue = transaction.order.venue
+            pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
+
+            if pos_system_name:
+                api_token = venue.access_token
+                pos_service = POSServiceFactory.get_service(pos_system_name, api_token)
+
+                pos_response = pos_service.send_order_to_pos(order)
+                if not pos_response:
+                    return Response({'error': 'POS system did not accept the order'},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+                client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
+                if not client:
+                    return Response({'error': 'Failed to create or retrieve client from POS.'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                order.client = client
+                external_id = pos_response.get('incoming_order_id')
+                if not external_id:
+                    return Response({'error': 'Failed to receive external ID from POS.'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                order.external_id = external_id
+
+            user_owner = transaction.order.venue.users.filter(role=ROLE_OWNER).first()
             if user_owner and user_owner.tg_chat_id:
                 order_info = format_order_details(order)
                 logger.info(f"Attempting to send a Telegram message to {user_owner.tg_chat_id}")
@@ -59,7 +90,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 logger.warning("Failed to send receipt to webhook.")
 
             try:
-                order = transaction.order
                 if order.is_tg_bot:
                     order_payload = {
                         "order_id": order.id,
