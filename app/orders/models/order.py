@@ -17,6 +17,7 @@ class OrderStatus(models.IntegerChoices):
     ACCEPTED = 1, 'Готовим заказ'
     READY = 2, 'Заказ готов'
     COMPLETED = 3, 'Заказ выполнен'
+    WAITING_FOR_PAYMENT = 4, 'Ожидает оплату'
     CANCELLED = 7, 'Отменён'
 
 
@@ -37,7 +38,7 @@ class Order(BaseModel):
     )
     status = models.PositiveSmallIntegerField(
         choices=OrderStatus.choices,
-        default=OrderStatus.NEW,
+        default=OrderStatus.WAITING_FOR_PAYMENT,
         verbose_name="Статус заказа"
     )
     address = models.CharField(

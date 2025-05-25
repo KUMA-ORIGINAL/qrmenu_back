@@ -17,6 +17,7 @@ class Transaction(BaseModel):
         verbose_name="Статус оплаты"
     )
     json_data = models.JSONField(blank=True, null=True, verbose_name='Ответ из платежной системы')
+    payment_url = models.URLField('Ссылка для оплаты', blank=True, null=True)
 
     order = models.ForeignKey('Order', models.PROTECT, verbose_name='Заказ',
                               related_name='transactions', null=True, blank=True)

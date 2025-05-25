@@ -149,17 +149,18 @@ def send_receipt_to_mqtt(order, venue):
         for idx, op in enumerate(order.order_products.all(), start=1):
             product_name = f"{op.product.product_name}"
             if op.modificator:
-                product_name = product_name + f"({op.modificator})"
+                product_name = product_name + f" ({op.modificator})"
             order_items += f"{idx}. {product_name} x{op.count} {op.total_price} сом\r"
 
         if order.service_price and order.service_price > 0:
-            order_items += f"\rОбслуживание: {order.service_price} сом\r"
-        order_items += f"Итого: {order.total_price} сом\r"
+            order_items += f"Обслуживание: {order.service_price} сом"
+        order_items += "</F2424>\r"
+        order_items += f"<F2424><FB>Итого: {order.total_price} сом</FB></F2424>\r"
 
-        order_items += "</F2424>"
-
+        comment_text = f"<F2424>\rКомментарий: {order.comment}</F2424>" if order.comment else ""
 
         total_sum = (
+            comment_text +
             f"<F2424><CENTER>\rАдрес доставки: {delivery_address}\r</CENTER></F2424>"
             f"<F3232><CENTER>----------------------------\r</CENTER></F3232>"
             f"<F3232><CENTER>{order.total_price} сом\r</CENTER></F3232>"

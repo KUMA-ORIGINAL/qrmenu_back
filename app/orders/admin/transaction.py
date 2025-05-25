@@ -26,7 +26,7 @@ class TransactionAdmin(BaseModelAdmin):
     def get_fieldsets(self, request, obj=None):
         fieldsets = (
             (None, {
-                "fields": ("total_price", "status", 'order', 'json_data',)
+                "fields": ("total_price", "status", 'order', 'json_data', 'payment_url'),
             }),
             ('Дополнительная информация', {
                 "fields": ("created_at", 'updated_at'),

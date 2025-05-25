@@ -10,7 +10,7 @@ from account.models import ROLE_OWNER
 from services.pos_service_factory import POSServiceFactory
 from tg_bot.utils import send_order_notification
 from venues.models import Venue
-from ..models import Order
+from ..models import Order, OrderStatus
 from ..serializers import OrderListSerializer, OrderCreateSerializer
 from ..services import format_order_details
 from ..services.order import is_within_schedule
@@ -86,6 +86,8 @@ class OrderViewSet(viewsets.GenericViewSet,
 
         today = timezone.now().date()
         queryset = queryset.filter(created_at__date=today)
+
+        queryset = queryset.exclude(status=OrderStatus.WAITING_FOR_PAYMENT)
 
         return queryset.prefetch_related(
             'order_products',

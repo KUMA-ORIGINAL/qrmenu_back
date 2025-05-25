@@ -43,6 +43,7 @@ class OrderAdmin(BaseModelAdmin):
         ordering="status",
         label={
             'Заказ оформлен': "info",  # Новый — синий
+            'Ожидает оплату': "secondary",
             'Готовим заказ': "primary",  # Принят — синий (или другой стиль)
             'Заказ готов': "warning",  # Готов — жёлтый
             'Заказ выполнен': "success",  # Выполнен — зелёный

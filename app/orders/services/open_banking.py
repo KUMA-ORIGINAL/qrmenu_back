@@ -28,9 +28,15 @@ def generate_payment_link(transaction, order, payment_account):
 
     try:
         response = requests.post(PAYMENT_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
 
         if response.status_code == 200:
             data = response.json()
+            pay_url = data.get('pay_url')
+
+            transaction.payment_url = pay_url
+            transaction.save(update_fields=["payment_url"])
+
             return data.get('pay_url')
         else:
             logger.error(f"Ошибка создания платёжной ссылки. Код: {response.status_code}, Ответ: {response.content}")

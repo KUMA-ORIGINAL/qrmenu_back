@@ -10,7 +10,7 @@ from account.models import ROLE_OWNER
 from orders.services import format_order_details, send_receipt_to_mqtt
 from services.pos_service_factory import POSServiceFactory
 from tg_bot.utils import send_order_notification
-from ..models import Transaction
+from ..models import Transaction, OrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -44,15 +44,21 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 logger.error(f"Транзакция не найдена: ID {transaction_id}")
                 return Response({'error': 'Транзакция не найдена'}, status=status.HTTP_404_NOT_FOUND)
 
+            order = transaction.order
+
             if transaction.status != payment_status:
                 logger.info(f"Обновление статуса транзакции {transaction.id}: {transaction.status} → {payment_status}")
                 transaction.status = payment_status
                 transaction.json_data = json.dumps(data)
                 transaction.save(update_fields=["status"])
+
+                if order.status == OrderStatus.WAITING_FOR_PAYMENT:
+                    order.status = OrderStatus.NEW
+                    order.save(update_fields=["status"])
+                    logger.info(f"Статус заказа {order.id} обновлён на 'Заказ оформлен'")
             else:
                 logger.info(f"Повторное получение webhook: статус уже установлен — {payment_status}")
 
-            order = transaction.order
             venue = transaction.order.venue
             pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
 
