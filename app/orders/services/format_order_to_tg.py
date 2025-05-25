@@ -18,17 +18,18 @@ def format_order_details(order):
     items_description = "\n".join(items_details)
 
     receipt_lines = [
-        f"Квитанция #989898989",
+        f"Квитанция",
         f"{'-' * 30}",
         '\n'.join(items_receipt),
         f"{'-' * 30}",
-        f"Итог: {total_price} сом"
     ]
 
     if hasattr(order, 'venue') and order.venue.service_fee_percent:
         service_percentage = order.venue.service_fee_percent
         total_service_price = order.service_price
         receipt_lines.append(f"Обслуживание {service_percentage}%: {total_service_price} сом")
+
+    receipt_lines.append(f"Итог: {total_price} сом")
 
     if order.tips_price:
         total_tips_price = order.tips_price
@@ -42,7 +43,8 @@ def format_order_details(order):
     receipt = "\n".join(receipt_lines)
 
     message_parts = [
-        f"{order.spot} - НОВЫЙ ЗАКАЗ #{order.id}\n\n",
+        f"*{order.spot} - НОВЫЙ ЗАКАЗ #{order.id}*\n",
+        f"*{order.get_service_mode_display().upper()}*\n\n",
         f"{items_description}\n\n"
     ]
 

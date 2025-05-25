@@ -16,11 +16,11 @@ class TransactionAdmin(BaseModelAdmin):
     list_filter_submit = True
 
     def get_list_display(self, request):
-        list_display = ("id",  "total_price", "status", "created_at", 'updated_at', 'detail_link')
+        list_display = ("id",  "total_price", "status", "created_at", 'updated_at', 'order', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ("total_price", "status", "created_at", 'updated_at', 'detail_link')
+            list_display = ("total_price", "status", "created_at", 'updated_at', 'order', 'detail_link')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
