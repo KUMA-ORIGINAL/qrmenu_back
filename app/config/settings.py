@@ -6,6 +6,8 @@ from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
+import account
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
@@ -151,7 +153,8 @@ LOCALE_PATHS = [
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'static'
 STATICFILES_DIRS = [
-    BASE_DIR / 'site_icons/'
+    BASE_DIR / 'site_icons/',
+    BASE_DIR / 'account/static/'
 ]
 
 MEDIA_URL = '/media/'
@@ -160,6 +163,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 TG_BOT_TOKEN = env('TG_BOT_TOKEN')
+
+SMS_LOGIN=env("SMS_LOGIN")
+SMS_PASSWORD=env("SMS_PASSWORD")
+SMS_SENDER=env("SMS_SENDER")
 
 RECEIPT_MQTT_BROKER = "193.176.239.186"
 RECEIPT_MQTT_PORT = 1883

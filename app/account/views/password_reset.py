@@ -1,153 +1,125 @@
-from django.conf import settings
-from django.contrib.auth.decorators import login_not_required
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth.views import PasswordContextMixin, INTERNAL_RESET_SESSION_TOKEN, UserModel
-from django.core.exceptions import ImproperlyConfigured, ValidationError
-from django.http import HttpResponseRedirect
-from django.shortcuts import resolve_url
-from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
-from django.utils.http import urlsafe_base64_decode
-from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.debug import sensitive_post_parameters
-from django.views.generic import FormView, TemplateView
-from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import login as auth_login
+import random
+from datetime import timedelta
+
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.utils import timezone
+
+from ..forms import PhoneForm, CodeForm, NewPasswordForm
+from ..models import PhoneVerification
+from ..services import send_sms
+
+User = get_user_model()
 
 
-@method_decorator(login_not_required, name="dispatch")
-class PasswordResetView(PasswordContextMixin, FormView):
-    email_template_name = "registration/password_reset_email.html"
-    extra_email_context = None
-    form_class = PasswordResetForm
-    from_email = None
-    html_email_template_name = None
-    subject_template_name = "registration/password_reset_subject.txt"
-    success_url = reverse_lazy("password_reset_done")
-    template_name = "account/registration/password_reset_form.html"
-    title = _("Password reset")
-    token_generator = default_token_generator
+def request_code_view(request):
+    if request.method == "POST":
+        form = PhoneForm(request.POST)
+        if form.is_valid():
+            phone = form.cleaned_data["phone"]
 
-    @method_decorator(csrf_protect)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+            try:
+                user = User.objects.get(phone_number=phone)
+            except User.DoesNotExist:
+                messages.error(request, "Пользователь с таким номером не найден.")
+                return render(request, "admin/password_reset_by_phone.html", {"form": form})
 
-    def form_valid(self, form):
-        opts = {
-            "use_https": self.request.is_secure(),
-            "token_generator": self.token_generator,
-            "from_email": self.from_email,
-            "email_template_name": self.email_template_name,
-            "subject_template_name": self.subject_template_name,
-            "request": self.request,
-            "html_email_template_name": self.html_email_template_name,
-            "extra_email_context": self.extra_email_context,
-        }
-        form.save(**opts)
-        return super().form_valid(form)
+            code = f"{random.randint(100000, 999999)}"
 
+            otp = PhoneVerification.objects.create(phone=phone, code=code)
 
-@method_decorator(login_not_required, name="dispatch")
-class PasswordResetDoneView(PasswordContextMixin, TemplateView):
-    template_name = "account/registration/password_reset_done.html"
-    title = _("Password reset sent")
-
-
-@method_decorator(login_not_required, name="dispatch")
-class PasswordResetConfirmView(PasswordContextMixin, FormView):
-    form_class = SetPasswordForm
-    post_reset_login = False
-    post_reset_login_backend = None
-    reset_url_token = "set-password"
-    success_url = reverse_lazy("password_reset_complete")
-    template_name = "account/registration/password_reset_confirm.html"
-    title = _("Enter new password")
-    token_generator = default_token_generator
-
-    @method_decorator(sensitive_post_parameters())
-    @method_decorator(never_cache)
-    def dispatch(self, *args, **kwargs):
-        if "uidb64" not in kwargs or "token" not in kwargs:
-            raise ImproperlyConfigured(
-                "The URL path must contain 'uidb64' and 'token' parameters."
-            )
-
-        self.validlink = False
-        self.user = self.get_user(kwargs["uidb64"])
-
-        if self.user is not None:
-            token = kwargs["token"]
-            if token == self.reset_url_token:
-                session_token = self.request.session.get(INTERNAL_RESET_SESSION_TOKEN)
-                if self.token_generator.check_token(self.user, session_token):
-                    # If the token is valid, display the password reset form.
-                    self.validlink = True
-                    return super().dispatch(*args, **kwargs)
+            text = f"Код для сброса пароля: {code}"
+            if send_sms(phone=phone, text=text, transaction_id=otp.id):
+                request.session['reset_phone'] = phone
+                messages.success(request, "Код подтверждения отправлен.")
+                return redirect("verify_code")
             else:
-                if self.token_generator.check_token(self.user, token):
-                    # Store the token in the session and redirect to the
-                    # password reset form at a URL without the token. That
-                    # avoids the possibility of leaking the token in the
-                    # HTTP Referer header.
-                    self.request.session[INTERNAL_RESET_SESSION_TOKEN] = token
-                    redirect_url = self.request.path.replace(
-                        token, self.reset_url_token
-                    )
-                    return HttpResponseRedirect(redirect_url)
+                otp.delete()
+                messages.error(request, "Не удалось отправить SMS.")
+    else:
+        form = PhoneForm()
 
-        # Display the "Password reset unsuccessful" page.
-        return self.render_to_response(self.get_context_data())
-
-    def get_user(self, uidb64):
-        try:
-            # urlsafe_base64_decode() decodes to bytestring
-            uid = urlsafe_base64_decode(uidb64).decode()
-            user = UserModel._default_manager.get(pk=uid)
-        except (
-            TypeError,
-            ValueError,
-            OverflowError,
-            UserModel.DoesNotExist,
-            ValidationError,
-        ):
-            user = None
-        return user
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["user"] = self.user
-        return kwargs
-
-    def form_valid(self, form):
-        user = form.save()
-        del self.request.session[INTERNAL_RESET_SESSION_TOKEN]
-        if self.post_reset_login:
-            auth_login(self.request, user, self.post_reset_login_backend)
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.validlink:
-            context["validlink"] = True
-        else:
-            context.update(
-                {
-                    "form": None,
-                    "title": _("Password reset unsuccessful"),
-                    "validlink": False,
-                }
-            )
-        return context
+    return render(request, "admin/password_reset_by_phone.html", {"form": form})
 
 
-@method_decorator(login_not_required, name="dispatch")
-class PasswordResetCompleteView(PasswordContextMixin, TemplateView):
-    template_name = "account/registration/password_reset_complete.html"
-    title = _("Password reset complete")
+def verify_code_view(request):
+    phone = request.session.get('reset_phone')
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["login_url"] = resolve_url(settings.LOGIN_URL)
-        return context
+    if not phone:
+        messages.error(request, "Сначала введите номер телефона.")
+        return redirect('admin_password_reset')
+
+    if request.method == "POST":
+        form = CodeForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data["code"]
+
+            # Определяем время "протухания" кода
+            code_lifetime = timedelta(minutes=10)
+            time_threshold = timezone.now() - code_lifetime
+
+            # Пытаемся найти подходящий код
+            verification = PhoneVerification.objects.filter(
+                phone=phone,
+                code=code,
+                is_verified=False,
+                created_at__gte=time_threshold
+            ).order_by('-created_at').first()
+
+            if verification:
+                verification.is_verified = True
+                verification.save()
+
+                # Помечаем, что пользователь верифицирован
+                request.session['verified_phone'] = phone
+                request.session.pop('phone', None)  # удаляем старое значение
+
+                messages.success(request, "Код подтверждён. Установите новый пароль.")
+                return redirect('set_new_password')
+            else:
+                messages.error(request, "Неверный или просроченный код.")
+    else:
+        form = CodeForm()
+
+    return render(request, "admin/verify_code.html", {"form": form})
+
+
+def set_new_password_view(request):
+    phone = request.session.get("verified_phone")  # используем проверенный номер
+
+    if not phone:
+        messages.error(request, "Сначала подтвердите код.")
+        return redirect("verify_code")
+
+    if request.method == "POST":
+        form = NewPasswordForm(request.POST)
+        if form.is_valid():
+            password = form.cleaned_data["password1"]
+
+            try:
+                user = User.objects.get(phone_number=phone)  # или username=phone, если нужно
+
+                try:
+                    validate_password(password, user)
+                except ValidationError as e:
+                    form.add_error("password1", e)
+                    return render(request, "admin/set_new_password.html", {"form": form})
+
+                user.set_password(password)
+                user.save()
+
+                request.session.pop("verified_phone", None)
+
+                messages.success(request, "Пароль успешно изменён. Теперь вы можете войти.")
+                return redirect('/admin/')
+
+            except User.DoesNotExist:
+                form.add_error(None, "Пользователь не найден.")
+    else:
+        form = NewPasswordForm()
+
+    return render(request, "admin/set_new_password.html", {"form": form})

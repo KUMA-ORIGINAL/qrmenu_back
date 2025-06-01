@@ -2,9 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 from django.contrib.auth.models import Group
 
-from unfold.admin import ModelAdmin as UnfoldModelAdmin
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
+from services.admin import BaseModelAdmin
 from venues.models import Spot
 from ..models import User
 
@@ -12,12 +12,12 @@ admin.site.unregister(Group)
 
 
 @admin.register(Group)
-class GroupAdmin(GroupAdmin, UnfoldModelAdmin):
+class GroupAdmin(GroupAdmin, BaseModelAdmin):
     pass
 
 
 @admin.register(User)
-class UserAdmin(UserAdmin, UnfoldModelAdmin):
+class UserAdmin(UserAdmin, BaseModelAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
     change_password_form = AdminPasswordChangeForm
@@ -28,7 +28,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             {
                 "classes": ("wide",),
                 "fields": (
-                    "email",
+                    "phone_number",
                     "password1",
                     "password2",
                 ),
@@ -42,8 +42,6 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
     ordering = ('-date_joined',)
     list_select_related = ('venue', 'spot')
 
-    list_display_links = ('id', 'email')
-
     def get_readonly_fields(self, request, obj = ...):
         readonly_fields = ()
         if request.user.is_superuser:
@@ -53,18 +51,18 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         return readonly_fields
 
     def get_list_display(self, request):
-        list_display = ('id', 'email', 'full_name', 'role', 'spot', 'venue', 'is_active')
+        list_display = ('id', 'phone_number', 'email', 'full_name', 'role', 'spot', 'venue', 'is_active', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
-            list_display = ('email', 'full_name', 'role', 'spot')
+            list_display = ('phone_number', 'email', 'full_name', 'role', 'spot', 'detail_link')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
             return self.add_fieldsets
         fieldsets = (
-            (None, {"fields": ("email", "password")}),
+            (None, {"fields": ("phone_number", "password")}),
             (
                 "Права",
                 {
@@ -77,16 +75,15 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
                 },
             ),
             ("Даты", {"fields": ("last_login", "date_joined")}),
-            (None, {
-                'fields': ('venue', 'spot', 'role', 'phone_number', 'full_name', 'tg_chat_id')}),
+            (None, {'fields': ('venue', 'spot', 'role', 'email', 'full_name', 'tg_chat_id')}),
         )
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
             fieldsets = (
-                (None, {"fields": ("email", "password")}),
-                ("Dates", {"fields": ("last_login",)}),
-                ('required', {'fields': ('role', 'spot', 'phone_number', 'full_name', 'tg_chat_id')}),
+                (None, {"fields": ("phone_number", "password")}),
+                ("Даты", {"fields": ("last_login",)}),
+                ('required', {'fields': ('role', 'spot', 'email', 'full_name', 'tg_chat_id')}),
             )
         return fieldsets
 
