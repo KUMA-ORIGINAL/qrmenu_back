@@ -54,7 +54,8 @@ class User(AbstractUser):
         validators=[EmailValidator(_("Enter a valid email address."))],
         unique=True
     )
-    phone_number = PhoneNumberField(_("Номер телефона"), blank=True)
+    phone_number = PhoneNumberField(_("Номер телефона"), blank=False, unique=True,
+                                    help_text='Введите в формате 0 или 996')
     full_name = models.CharField('ФИО', max_length=100, blank=False)
     role = models.CharField(
         max_length=20,
@@ -71,7 +72,7 @@ class User(AbstractUser):
         blank=True, null=True, verbose_name="Точка заведения"
     )
 
-    USERNAME_FIELD = "email"  # Use email as the unique identifier
+    USERNAME_FIELD = "phone_number"  # Use email as the unique identifier
     REQUIRED_FIELDS = ['full_name']  # Required fields when creating a superuser
 
     objects = UserManager()

@@ -24,6 +24,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from config import views
 
 urlpatterns = [
+    path('admin/', include('account.urls')),
     path('admin/ajax/', include('venues.admin_urls')),
     path('admin/', admin.site.urls),
 
@@ -32,7 +33,7 @@ urlpatterns = [
 
     path('api/health/', views.health_check, name='health_check'),
 
-    path('api/', include('account.urls')),
+    path('api/', include('account.api_urls')),
     path('api/', include('venues.urls')),
     path('api/', include('menu.urls')),
     path('api/', include('orders.urls')),
