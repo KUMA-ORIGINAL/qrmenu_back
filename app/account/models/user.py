@@ -52,7 +52,8 @@ class User(AbstractUser):
     email = models.EmailField(
         _("email address"),
         validators=[EmailValidator(_("Enter a valid email address."))],
-        unique=True
+        blank=True,
+        null=True,
     )
     phone_number = PhoneNumberField(_("Номер телефона"), blank=False, unique=True,
                                     help_text='Введите в формате 0 или 996')

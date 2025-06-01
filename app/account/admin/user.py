@@ -28,7 +28,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             {
                 "classes": ("wide",),
                 "fields": (
-                    "email",
+                    "phone_number",
                     "password1",
                     "password2",
                 ),
@@ -42,7 +42,7 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
     ordering = ('-date_joined',)
     list_select_related = ('venue', 'spot')
 
-    list_display_links = ('id', 'email')
+    list_display_links = ('id', 'phone_number')
 
     def get_readonly_fields(self, request, obj = ...):
         readonly_fields = ()
@@ -53,18 +53,18 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
         return readonly_fields
 
     def get_list_display(self, request):
-        list_display = ('id', 'email', 'full_name', 'role', 'spot', 'venue', 'is_active')
+        list_display = ('id', 'phone_number', 'email', 'full_name', 'role', 'spot', 'venue', 'is_active')
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
-            list_display = ('email', 'full_name', 'role', 'spot')
+            list_display = ('phone_number', 'email', 'full_name', 'role', 'spot')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
         if not obj:
             return self.add_fieldsets
         fieldsets = (
-            (None, {"fields": ("email", "password")}),
+            (None, {"fields": ("phone_number", "password")}),
             (
                 "Права",
                 {
@@ -78,15 +78,15 @@ class UserAdmin(UserAdmin, UnfoldModelAdmin):
             ),
             ("Даты", {"fields": ("last_login", "date_joined")}),
             (None, {
-                'fields': ('venue', 'spot', 'role', 'phone_number', 'full_name', 'tg_chat_id')}),
+                'fields': ('venue', 'spot', 'role', 'email', 'full_name', 'tg_chat_id')}),
         )
         if request.user.is_superuser:
             pass
         elif request.user.role == 'owner':
             fieldsets = (
-                (None, {"fields": ("email", "password")}),
+                (None, {"fields": ("phone_number", "password")}),
                 ("Dates", {"fields": ("last_login",)}),
-                ('required', {'fields': ('role', 'spot', 'phone_number', 'full_name', 'tg_chat_id')}),
+                ('required', {'fields': ('role', 'spot', 'email', 'full_name', 'tg_chat_id')}),
             )
         return fieldsets
 
