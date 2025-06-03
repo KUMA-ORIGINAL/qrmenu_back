@@ -286,3 +286,5 @@ msgstr ""
 "но вы можете изменить его с помощью "
 "<a href=\"{}\" class=\"text-primary-600 dark:text-primary-500\">этой формы</a>."
 
+msgid "Forgotten your password?"
+msgstr "Забыли свой пароль?"
