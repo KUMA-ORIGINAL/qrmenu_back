@@ -1,9 +1,6 @@
-FROM python:3.13-slim AS builder
+FROM python:3.12.11-slim AS builder
 
 WORKDIR /app
-
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
 
 RUN apt update && apt install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -11,10 +8,13 @@ RUN apt update && apt install -y --no-install-recommends build-essential \
 COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
-FROM python:3.13-slim
+FROM python:3.12.11-slim
 
 ENV PROJECT_DIR=/app
 WORKDIR $PROJECT_DIR
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 RUN apt update && apt install -y --no-install-recommends \
     gettext \

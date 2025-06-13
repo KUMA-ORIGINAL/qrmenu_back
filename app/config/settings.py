@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'cachalot',
     'channels',
     "phonenumber_field",
+    'axes',
 
     'menu',
     'account',
@@ -81,6 +82,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'axes.middleware.AxesMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -138,6 +141,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Asia/Bishkek'
@@ -161,6 +169,16 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+AXES_ENABLED = True
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 1
+AXES_LOCKOUT_PARAMETERS = ["username", ["username", "user_agent"]]
+AXES_RESET_ON_SUCCESS = True
+AXES_ONLY_ADMIN_SITE = True
+AXES_USERNAME_FORM_FIELD = "username"
+
 
 TG_BOT_TOKEN = env('TG_BOT_TOKEN')
 
@@ -521,6 +539,30 @@ UNFOLD = {
                     },
                 ],
             },
+            {
+                "title": _("Безопасность"),
+                "items": [
+                    {
+                        "title": _("Попытки входа (Axes)"),
+                        "icon": "shield",
+                        "link": reverse_lazy("admin:axes_accessattempt_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": _("Логи входа (Axes)"),
+                        "icon": "history",
+                        "link": reverse_lazy("admin:axes_accesslog_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                    {
+                        "title": _("Логи блокировок (Axes)"),
+                        "icon": "lock",
+                        "link": reverse_lazy("admin:axes_accessfailurelog_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
+                    },
+                ],
+            },
+
         ],
     }
 }
