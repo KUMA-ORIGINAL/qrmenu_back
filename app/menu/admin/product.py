@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
-from unfold.admin import TabularInline
+from unfold.admin import TabularInline, StackedInline
 from unfold.contrib.filters.admin import RangeNumericFilter
 from unfold.decorators import display, action
 from unfold.typing import FieldsetsType
@@ -18,7 +18,7 @@ from .admin_filters import CategoryFilter
 from ..models import Product, Category, Modificator
 
 
-class ModificatorInline(TabularInline, TranslationTabularInline):
+class ModificatorInline(StackedInline, TranslationTabularInline):
     model = Modificator
     extra = 1
     fields = ('name', 'price')
