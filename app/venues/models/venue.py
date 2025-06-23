@@ -17,6 +17,7 @@ class Venue(BaseModel):
         ('#00BBFF', 'Голубой'),
         ('#0717FF', 'Синий'),
         ('#AF00A3', 'Розовый'),
+        ('#000000', 'Черный'),
     ]
     company_name = models.CharField(
         max_length=100, verbose_name="Название компании"
