@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.text import slugify
+from imagekit.models import ProcessedImageField
+from pilkit.processors import ResizeToFill
 from unidecode import unidecode
 
 from services.model import BaseModel
@@ -30,8 +32,15 @@ class Venue(BaseModel):
         default='#008B68',
         blank=True,
     )
-    logo = models.ImageField(
-        upload_to='venue_logo', null=True, blank=True, verbose_name='Логотип')
+    logo = ProcessedImageField(
+        upload_to='venue_logo',
+        processors=[ResizeToFill(44, 44)],
+        format='PNG',
+        options={'quality': 80},
+        null=True,
+        blank=True,
+        verbose_name='Логотип',
+    )
     work_start = models.TimeField(
         verbose_name="Начало рабочего дня",
         help_text="Введите время начала (например, 09:00)",
