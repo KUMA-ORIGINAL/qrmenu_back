@@ -1,3 +1,5 @@
+import logging
+
 from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
 from django.core.files.storage import default_storage
@@ -5,9 +7,11 @@ from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.html import format_html
+from import_export.admin import ImportExportModelAdmin
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
-from unfold.admin import TabularInline, StackedInline
+from unfold.admin import StackedInline
 from unfold.contrib.filters.admin import RangeNumericFilter
+from unfold.contrib.import_export.forms import ExportForm
 from unfold.decorators import display, action
 from unfold.typing import FieldsetsType
 
@@ -15,7 +19,11 @@ from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from venues.models import Spot
 from .admin_filters import CategoryFilter
+from ..forms import ImportForm
 from ..models import Product, Category, Modificator
+from ..resources import ProductResource
+
+logger = logging.getLogger(__name__)
 
 
 class ModificatorInline(StackedInline, TranslationTabularInline):
@@ -25,8 +33,13 @@ class ModificatorInline(StackedInline, TranslationTabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
+class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmin):
     compressed_fields = True
+
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+    resource_class = ProductResource
+
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
     list_select_related = ('category', 'venue')
@@ -218,3 +231,22 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin):
             return qs.filter(venue=request.user.venue)
         elif request.user.role == ROLE_ADMIN:
             return qs.filter(spots=request.user.spot)
+
+    def get_import_resource_kwargs(self, request, *args, **kwargs):
+        form = kwargs.get('form')
+        context = {}
+        logger.info(f'get_import_resource_kwargs: {form.data}')
+        if form and form.is_valid():
+            context = {
+                'venue_id': form.cleaned_data.get('venue'),
+                'spot_id': form.cleaned_data.get('spot'),
+                'category_id': form.cleaned_data.get('category'),
+            }
+        elif form:
+            data = form.data
+            context = {
+                'venue_id': data.get('venue'),
+                'spot_id': data.get('spot'),
+                'category_id': data.get('category'),
+            }
+        return {'context': context}

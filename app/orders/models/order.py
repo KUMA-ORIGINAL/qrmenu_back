@@ -1,6 +1,3 @@
-import math
-from decimal import Decimal, ROUND_HALF_UP
-
 from django.db import models
 
 from services.model import BaseModel

@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins
 from ..models import Category
@@ -20,7 +21,6 @@ class CategoryViewSet(viewsets.GenericViewSet,
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
-
     def get_queryset(self):
         queryset = Category.objects.select_related('venue')
         venue_slug = self.request.GET.get("venue_slug")
@@ -30,3 +30,9 @@ class CategoryViewSet(viewsets.GenericViewSet,
 
         queryset = queryset.distinct()
         return queryset
+
+
+def get_categories(request):
+    venue_id = request.GET.get('venue_id')
+    categories = Category.objects.filter(venue_id=venue_id).values('id', 'category_name')
+    return JsonResponse(list(categories), safe=False)

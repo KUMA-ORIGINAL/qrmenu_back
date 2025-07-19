@@ -17,7 +17,7 @@ def generate_payment_link(transaction, order, payment_account):
     payload = {
         "amount": str(transaction.total_price),
         "transaction_id": str(transaction.id),
-        "comment": f"Оплата заказа #{transaction.id} hospital",
+        "comment": f"Оплата заказа #{transaction.id}",
         "redirect_url": redirect_url,
         "token": payment_account.token,
     }

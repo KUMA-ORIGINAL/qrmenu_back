@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'channels',
     "phonenumber_field",
     'axes',
+    "import_export",
 
     'menu',
     'account',

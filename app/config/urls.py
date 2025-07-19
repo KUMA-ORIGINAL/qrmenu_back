@@ -25,7 +25,7 @@ from config import views
 
 urlpatterns = [
     path('admin/', include('account.urls')),
-    path('admin/ajax/', include('venues.admin_urls')),
+    path('admin/ajax/', include('config.admin_urls')),
     path('admin/', admin.site.urls),
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

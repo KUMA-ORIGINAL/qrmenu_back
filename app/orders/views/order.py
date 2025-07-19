@@ -6,13 +6,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 
-from account.models import ROLE_OWNER
-from services.pos_service_factory import POSServiceFactory
-from tg_bot.utils import send_order_notification
 from venues.models import Venue
 from ..models import Order, OrderStatus
 from ..serializers import OrderListSerializer, OrderCreateSerializer
-from ..services import format_order_details
 from ..services.order import is_within_schedule
 
 logger = logging.getLogger(__name__)
