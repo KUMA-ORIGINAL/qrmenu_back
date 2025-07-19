@@ -36,9 +36,9 @@ class ModificatorInline(StackedInline, TranslationTabularInline):
 class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmin):
     compressed_fields = True
 
-    import_form_class = ImportForm
-    export_form_class = ExportForm
-    resource_class = ProductResource
+    # import_form_class = ImportForm
+    # export_form_class = ExportForm
+    # resource_class = ProductResource
 
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
