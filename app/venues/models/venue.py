@@ -104,6 +104,15 @@ class Venue(BaseModel):
         verbose_name="Обслуживание на месте доступно"
     )
 
+    default_delivery_spot = models.ForeignKey(
+        'Spot',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='default_for_venue',
+        verbose_name="Точка доставки по умолчанию"
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 

@@ -73,6 +73,7 @@ class VenueAdmin(BaseModelAdmin):
                     'slug',
                     'color_theme',
                     'logo',
+                    'default_delivery_spot',
                 )
             }),
             ("График работы", {
@@ -125,6 +126,14 @@ class VenueAdmin(BaseModelAdmin):
                 'service_fee_percent',
             )
         return fieldsets
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if request.user.role == ROLE_OWNER:
+            venue = request.user.venue
+            if venue:
+                if db_field.name == 'default_delivery_spot':
+                    kwargs["queryset"] = Spot.objects.filter(venue=venue)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     @display(description="POS система")
     def pos_system_plain(self, obj):

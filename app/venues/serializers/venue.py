@@ -11,7 +11,7 @@ class VenueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'service_fee_percent', 'spots',
+        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedule', 'service_fee_percent', 'default_delivery_spot', 'spots',
                   'is_delivery_available', 'is_takeout_available', 'is_dinein_available')
 
     def get_schedule(self, obj):
