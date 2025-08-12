@@ -36,7 +36,7 @@ class TableAdmin(BaseModelAdmin):
         venue = table.venue
         spot = table.spot
 
-        qr_url = f"https://imenu.kg/I/{venue.slug}/{spot.id}/{table.id}/"
+        qr_url = f"https://imenu.kg/{venue.slug}/{spot.id}/{table.id}/"
         text_top_ru = f"{table.table_num} стол"
         text_top_kg = f"{table.table_num} стол"
 

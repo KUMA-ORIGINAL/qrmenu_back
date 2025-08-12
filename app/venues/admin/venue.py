@@ -54,7 +54,7 @@ class VenueAdmin(BaseModelAdmin):
     )
     def link_to_venue(self, obj):
         if obj.slug:
-            url = f"https://imenu.kg/I/{obj.slug}"
+            url = f"https://imenu.kg/{obj.slug}"
             return format_html('<a href="{}" target="_blank">{}</a>', url, url)
         return "-"
 
