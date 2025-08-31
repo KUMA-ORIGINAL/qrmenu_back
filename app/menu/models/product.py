@@ -16,9 +16,9 @@ class Product(BaseModel):
     )
     product_photo_small = ImageSpecField(
         source='product_photo',
-        processors=[ResizeToFill(182, 136)],
+        processors=[ResizeToFill(364, 272)],
         format='JPEG',
-        options={'quality': 80}
+        options={'quality': 100}
     )
     product_photo_large = ImageSpecField(
         source='product_photo',
