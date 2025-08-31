@@ -10,6 +10,7 @@ class Spot(BaseModel):
                                blank=True, null=True)
     venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='spots',
                               verbose_name="Заведение")
+    is_hidden = models.BooleanField(default=False, verbose_name="Скрыт?")
 
     class Meta:
         verbose_name = "Точка заведения"

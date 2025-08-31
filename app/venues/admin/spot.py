@@ -62,11 +62,11 @@ class SpotAdmin(BaseModelAdmin):
         return list_display
 
     def get_list_display(self, request):
-        list_display = ('id', 'name', 'address', 'venue', 'detail_link')
+        list_display = ('id', 'name', 'address', 'venue', 'is_hidden', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('name', 'address', 'detail_link')
+            list_display = ('name', 'address', 'is_hidden', 'detail_link')
         return list_display
 
     def get_fields(self, request, obj=None):
