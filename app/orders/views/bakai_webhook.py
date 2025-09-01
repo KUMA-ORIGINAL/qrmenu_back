@@ -124,8 +124,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                         }
                     }
 
-                    webhook_url = "https://emirtest.app.n8n.cloud/webhook/payment_success"
-                    response = requests.post(webhook_url, json=order_payload, timeout=5)
+                    webhook_url = "https://n8n.nexus.kg/webhook/payment_success"
+                    response = requests.post(webhook_url, json=order_payload, timeout=20)
 
                     if response.status_code == 200:
                         logger.info("Webhook успешно отправлен в n8n")
