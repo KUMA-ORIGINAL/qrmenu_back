@@ -79,7 +79,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             else:
                 delivery_price = delivery_fixed_fee
 
-        total_price = (products_total_price + service_price).quantize(
+        total_price = (products_total_price + service_price + delivery_price).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP
         )
 
