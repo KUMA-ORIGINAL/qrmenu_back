@@ -115,6 +115,12 @@ class VenueAdmin(BaseModelAdmin):
                     'is_dinein_available',
                 )
             }),
+            ("Доставка", {
+                'fields': (
+                    'delivery_fixed_fee',
+                    'delivery_free_from',
+                )
+            }),
         )
         if request.user.is_superuser:
             pass

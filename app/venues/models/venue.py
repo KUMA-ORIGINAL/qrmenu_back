@@ -114,6 +114,15 @@ class Venue(BaseModel):
         verbose_name="Точка доставки по умолчанию"
     )
 
+    delivery_fixed_fee = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0,
+        verbose_name="Стоимость доставки (фиксированная)"
+    )
+    delivery_free_from = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        verbose_name="Бесплатная доставка от суммы"
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 
