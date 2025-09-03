@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
 
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
-from ..models import Order, OrderProduct, Transaction, PaymentAccount
+from ..models import Order, OrderProduct, Transaction, PaymentAccount, ServiceMode
 from ..services import generate_payment_link
 
 
@@ -71,8 +71,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         delivery_price = Decimal('0.00')
         if order.service_mode == ServiceMode.DELIVERY:
-            delivery_fixed_fee = order.organization.delivery_fixed_fee or Decimal('0.00')
-            delivery_free_from = order.organization.delivery_free_from
+            delivery_fixed_fee = order.venue.delivery_fixed_fee or Decimal('0.00')
+            delivery_free_from = order.venue.delivery_free_from
 
             if delivery_free_from and products_total_price >= delivery_free_from:
                 delivery_price = Decimal('0.00')
