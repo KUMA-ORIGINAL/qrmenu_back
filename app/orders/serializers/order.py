@@ -69,10 +69,21 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             Decimal('0.01'), rounding=ROUND_HALF_UP
         )
 
+        delivery_price = Decimal('0.00')
+        if order.service_mode == ServiceMode.DELIVERY:
+            delivery_fixed_fee = order.organization.delivery_fixed_fee or Decimal('0.00')
+            delivery_free_from = order.organization.delivery_free_from
+
+            if delivery_free_from and products_total_price >= delivery_free_from:
+                delivery_price = Decimal('0.00')
+            else:
+                delivery_price = delivery_fixed_fee
+
         total_price = (products_total_price + service_price).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP
         )
 
+        order.delivery_price = delivery_price
         order.service_price = service_price
         order.total_price = total_price
         order.save()
