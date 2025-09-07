@@ -20,8 +20,7 @@ class Client(BaseModel):
     phone = models.CharField(
         max_length=20, verbose_name="Телефон", blank=True, null=True
     )
-    phone_number = PhoneNumberField("Номер телефона", unique=True,
-                                    help_text='Введите в формате 0 или 996')
+    phone_number = PhoneNumberField("Номер телефона", help_text='Введите в формате 0 или 996')
     email = models.EmailField(
         blank=True, null=True, verbose_name="Электронная почта"
     )
@@ -55,4 +54,4 @@ class Client(BaseModel):
     class Meta:
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"
-        unique_together = ('venue', 'phone')
+        unique_together = ('venue', 'phone_number')
