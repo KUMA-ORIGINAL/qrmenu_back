@@ -68,7 +68,7 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('category_name', 'display_category_hidden', 'category_photo_preview',
+            list_display = ('id', 'category_name', 'display_category_hidden', 'category_photo_preview',
                             'detail_link')
         return list_display
 

@@ -45,7 +45,7 @@ class VenueAdmin(BaseModelAdmin):
         if request.user.is_superuser:
             pass
         elif request.user.role == ROLE_OWNER:
-            list_display = ('company_name', 'pos_system', 'link_to_venue', 'detail_link')
+            list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
         return list_display
 
     @display(
