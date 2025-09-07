@@ -123,6 +123,16 @@ class Venue(BaseModel):
         verbose_name="Бесплатная доставка от суммы"
     )
 
+    is_bonus_system_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Бонусная система включена"
+    )
+    bonus_accrual_percent = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Процент начисления бонусов",
+        help_text="Сколько процентов от суммы заказа будет начисляться бонусами (например: 5 = 5%)"
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 

@@ -121,6 +121,12 @@ class VenueAdmin(BaseModelAdmin):
                     'delivery_free_from',
                 )
             }),
+            ("Бонусы", {
+                'fields': (
+                    'is_bonus_system_enabled',
+                    'bonus_accrual_percent',
+                )
+            }),
         )
         if request.user.is_superuser:
             pass

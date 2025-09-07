@@ -3,7 +3,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from rest_framework import serializers
 
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
-from ..models import Order, OrderProduct, Transaction, PaymentAccount, ServiceMode
+from ..models import Order, OrderProduct, Transaction, PaymentAccount, ServiceMode, BonusHistory
 from ..services import generate_payment_link
 
 
@@ -15,7 +15,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         model = Order
         fields = (
             'id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
-            'tips_price', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url',
+            'tips_price', 'bonus', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url',
             'order_products', 'payment_url',
         )
         extra_kwargs = {
@@ -25,6 +25,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'address': {'write_only': True},
             'service_price': {'write_only': True},
             'tips_price': {'write_only': True},
+            'bonus': {'write_only': True},
             'spot': {'write_only': True},
             'table': {'write_only': True},
             'is_tg_bot': {'write_only': True},

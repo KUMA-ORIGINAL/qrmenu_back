@@ -492,6 +492,11 @@ UNFOLD = {
                         "icon": "groups",
                         "link": reverse_lazy("admin:orders_client_changelist"),
                     },
+                    {
+                        "title": _("История бонусов"),
+                        "icon": "star",  # или "loyalty"/"redeem", если используешь Material Icons
+                        "link": reverse_lazy("admin:orders_bonushistory_changelist"),
+                    },
                 ],
             },
             {

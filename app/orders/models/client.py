@@ -1,4 +1,5 @@
 from django.db import models
+from phonenumber_field.modelfields import PhoneNumberField
 
 from services.model import BaseModel
 
@@ -17,11 +18,10 @@ class Client(BaseModel):
         max_length=100, blank=True, null=True, verbose_name="Отчество"
     )
     phone = models.CharField(
-        max_length=20, verbose_name="Телефон"
+        max_length=20, verbose_name="Телефон", blank=True, null=True
     )
-    phone_number = models.CharField(
-        max_length=20, verbose_name="Номер телефона"
-    )
+    phone_number = PhoneNumberField("Номер телефона", unique=True,
+                                    help_text='Введите в формате 0 или 996')
     email = models.EmailField(
         blank=True, null=True, verbose_name="Электронная почта"
     )

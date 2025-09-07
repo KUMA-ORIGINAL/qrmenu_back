@@ -4,3 +4,4 @@ from .receipt_printer import *
 from .receipt import *
 from .transaction import *
 from .payment_account import *
+from .bonus_history import *

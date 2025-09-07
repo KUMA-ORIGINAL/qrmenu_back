@@ -46,6 +46,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     inlines = [ModificatorInline]
     autocomplete_fields = ('spots',)
     list_before_template = "menu/change_list_before.html"
+    list_per_page = 50
 
     actions_detail = ['translate_product_fields']
 
