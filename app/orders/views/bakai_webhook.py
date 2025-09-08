@@ -1,6 +1,7 @@
 import json
 import logging
 from decimal import Decimal, ROUND_FLOOR
+from pprint import pformat
 
 import requests
 from rest_framework import viewsets, status
@@ -25,6 +26,21 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
     def create(self, request, *args, **kwargs):
         try:
+            logger.info("===== NEW REQUEST =====")
+            logger.info("Method: %s", request.method)
+            logger.info("User: %s", request.user if request.user.is_authenticated else "Anonymous")
+            logger.info("User ID: %s", getattr(request.user, "id", None))
+            logger.info("IP: %s", request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR"))
+
+            logger.info("Headers: %s", pformat(dict(request.headers)))
+            logger.info("Query Params: %s", pformat(dict(request.query_params)))
+
+            try:
+                body_json = json.dumps(request.data, indent=2, ensure_ascii=False)
+                logger.info("Body:\n%s", body_json)
+            except Exception:
+                logger.warning("Не удалось сериализовать request.data")
+
             data = request.data
 
             transaction = self._get_transaction(data)

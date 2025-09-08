@@ -1,8 +1,6 @@
 import requests
 import logging
 
-from django.conf import settings
-
 PAYMENT_API_URL = "https://pay.operator.kg/api/v1/payments/make-payment-link/"
 
 logger = logging.getLogger(__name__)
