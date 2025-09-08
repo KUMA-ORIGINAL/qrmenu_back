@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from unfold.admin import TabularInline
 from unfold.contrib.filters.admin import RangeNumericFilter, RangeDateTimeFilter
@@ -65,6 +66,36 @@ class OrderAdmin(BaseModelAdmin):
         elif obj.service_mode == 3:
             return 'Доставка'
 
+    @display(description="Товары заказа", dropdown=True)
+    def display_products(self, instance: Order):
+        products = instance.order_products.all()
+
+        total = products.count()
+        if total == 0:
+            return "-"
+
+        items = [
+            {
+                "title": format_html(
+                    '<div class="flex flex-col">'
+                    '<span class="text-sm text-gray-500"><b>{product}</b> Кол-во: {count} | Цена: {price} | Сумма: {total}</span>'
+                    '</div>',
+                    product=op.product.product_name,
+                    count=op.count,
+                    price=op.price,
+                    total=op.total_price
+                )
+            }
+            for op in products
+        ]
+
+        return {
+            "title": f"{total} товаров",
+            "items": items,
+            "striped": False,
+            "width": 450,
+        }
+
     def get_list_filter(self, request):
         list_filter = ('venue', 'status', 'service_mode',
                        ("total_price", RangeNumericFilter),
@@ -81,7 +112,7 @@ class OrderAdmin(BaseModelAdmin):
         list_display = ()
         if request.user.is_superuser:
             list_display = ('id', 'phone', 'display_status', 'display_service_mode',
-                            'total_price', 'tips_price', 'bonus', 'created_at', 'venue', 'detail_link')
+                            'total_price', 'tips_price', 'bonus', 'display_products', 'created_at', 'venue', 'detail_link')
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             list_display = ('id', 'phone', 'display_status', 'display_service_mode',
                             'total_price', 'tips_price', 'bonus', 'created_at', 'detail_link')
@@ -110,6 +141,7 @@ class OrderAdmin(BaseModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
+        qs = qs.prefetch_related("order_products__product")  # префетчим товары
         if request.user.is_superuser:
             return qs
         elif request.user.role == ROLE_OWNER:
