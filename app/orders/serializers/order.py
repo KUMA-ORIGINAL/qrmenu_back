@@ -11,31 +11,31 @@ class OrderCreateSerializer(serializers.ModelSerializer):
     order_products = OrderProductCreateSerializer(many=True, write_only=True)
     payment_url = serializers.SerializerMethodField(read_only=True)
 
+    code = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
+    hash = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
+    phone_verification_hash = serializers.CharField(read_only=True)  # вернём при успешном подтверждении
+
     class Meta:
         model = Order
         fields = (
-            'id', 'phone', 'comment', 'service_mode', 'address', 'service_price',
-            'tips_price', 'bonus', 'spot', 'table', 'is_tg_bot', 'tg_redirect_url',
-            'order_products', 'payment_url',
+            'id', 'phone', 'comment', 'service_mode', 'address',
+            'service_price', 'tips_price', 'bonus', 'spot', 'table',
+            'is_tg_bot', 'tg_redirect_url', 'order_products',
+            'payment_url', 'code', 'hash', 'phone_verification_hash'
         )
         extra_kwargs = {
-            'phone': {'write_only': True},
-            'comment': {'write_only': True},
-            'service_mode': {'write_only': True},
-            'address': {'write_only': True},
-            'service_price': {'write_only': True},
-            'tips_price': {'write_only': True},
-            'bonus': {'write_only': True},
-            'spot': {'write_only': True},
-            'table': {'write_only': True},
-            'is_tg_bot': {'write_only': True},
-            'tg_redirect_url': {'write_only': True},
+            f: {'write_only': True}
+            for f in fields if f not in ('id', 'payment_url', 'phone_verification_hash')
         }
 
     def create(self, validated_data):
         order_product_data = validated_data.pop('order_products', [])
-        order = Order.objects.create(**validated_data)
+        bonus = validated_data.get("bonus", 0) or 0
+        validated_data.pop("code", None)
+        validated_data.pop("hash", None)
 
+        # --- обычное создание заказа ---
+        order = Order.objects.create(**validated_data)
         products_total_price = Decimal('0.00')
 
         for item in order_product_data:
@@ -43,12 +43,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             modificator = item.get('modificator')
             count = item['count']
 
-            # Используем Decimal для финансовых расчётов
-            if modificator:
-                price = Decimal(modificator.price)
-            else:
-                price = Decimal(product.product_price)
-
+            price = Decimal(modificator.price) if modificator else Decimal(product.product_price)
             total_price = (price * count).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
             OrderProduct.objects.create(
@@ -59,13 +54,12 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 price=price,
                 total_price=total_price
             )
-
             products_total_price += total_price
 
+        # сервисный сбор
         service_fee_percent = order.venue.service_fee_percent or Decimal('0.00')
         if not isinstance(service_fee_percent, Decimal):
             service_fee_percent = Decimal(str(service_fee_percent))
-
         service_price = (products_total_price * service_fee_percent / Decimal('100')).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP
         )
@@ -74,15 +68,16 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         if order.service_mode == ServiceMode.DELIVERY:
             delivery_fixed_fee = order.venue.delivery_fixed_fee or Decimal('0.00')
             delivery_free_from = order.venue.delivery_free_from
-
-            if delivery_free_from and products_total_price >= delivery_free_from:
-                delivery_price = Decimal('0.00')
-            else:
-                delivery_price = delivery_fixed_fee
+            delivery_price = Decimal('0.00') if delivery_free_from and products_total_price >= delivery_free_from else delivery_fixed_fee
 
         total_price = (products_total_price + service_price + delivery_price).quantize(
             Decimal('0.01'), rounding=ROUND_HALF_UP
         )
+
+        if bonus:
+            applied_bonus = min(bonus, total_price)
+            total_price = (total_price - applied_bonus).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+            order.bonus = applied_bonus
 
         order.delivery_price = delivery_price
         order.service_price = service_price
@@ -94,7 +89,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         self.context['transaction'] = transaction
         self.context['payment_account'] = payment_account
-
         return order
 
     def get_payment_url(self, obj):

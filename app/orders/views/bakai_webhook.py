@@ -4,6 +4,8 @@ from decimal import Decimal, ROUND_FLOOR
 from pprint import pformat
 
 import requests
+from django.db.models import F
+from django.db import transaction as django_transaction
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
@@ -13,6 +15,7 @@ from account.models import ROLE_OWNER
 from orders.services import format_order_details, send_receipt_to_mqtt
 from services.pos_service_factory import POSServiceFactory
 from tg_bot.utils import send_order_notification
+from ..admin import transaction
 from ..models import Transaction, OrderStatus, Client, BonusHistory
 
 logger = logging.getLogger(__name__)
@@ -135,40 +138,46 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
         order.save(update_fields=["client", "external_id"])
 
     def _apply_bonus_writeoff(self, order):
-        """Списание бонусов клиента после успешной оплаты"""
-        client = order.client
+        """
+        Списание бонусов клиента после успешной оплаты.
+        Количество бонусов уже хранится в order.bonus.
+        """
+        client = getattr(order, "client", None)
         if not client:
-            logger.warning(f"У заказа {order.id} нет клиента — бонусы не списаны")
+            logger.warning("У заказа %s нет клиента — бонусы не списаны", order.id)
             return
 
-        requested = order.bonus or 0
-        if requested <= 0:
-            logger.info(f"У заказа {order.id} не было бонусов к списанию")
+        amount = order.bonus or 0
+        if amount <= 0:
+            logger.info("У заказа %s бонусов к списанию нет (order.bonus=%s)", order.id, amount)
             return
 
-        # Сколько реально можем списать
-        can_write_off = min(requested, client.bonus, int(order.total_price))
-        if can_write_off <= 0:
-            logger.info(f"Списание бонусов для заказа {order.id} невозможно (недостаточно бонусов)")
+        # Проверка: достаточно ли у клиента бонусов (опционально, если доверяете order.bonus — можно убрать)
+        if client.bonus < amount:
+            logger.warning(
+                "У клиента %s недостаточно бонусов для списания: требуется %s, доступно %s. "
+                "Списание не выполнено.",
+                client.phone_number, amount, client.bonus
+            )
             return
 
-        # Списываем у клиентаx
-        client.bonus -= can_write_off
-        client.save(update_fields=["bonus"])
+        with django_transaction.atomic():
+            client.bonus = F("bonus") - amount
+            client.save(update_fields=["bonus"])
+            client.refresh_from_db(fields=["bonus"])
 
-        # Обновляем заказ (храним уже реально списанное количество)
-        order.bonus = can_write_off
-        order.save(update_fields=["bonus"])
+            BonusHistory.objects.create(
+                client=client,
+                order=order,
+                amount=-amount,
+                operation=BonusHistory.Operation.WRITE_OFF,
+                description=f"Списание {amount} бонусов при оплате заказа {order.id}",
+            )
 
-        BonusHistory.objects.create(
-            client=client,
-            order=order,
-            amount=-can_write_off,
-            operation=BonusHistory.Operation.WRITE_OFF,
-            description=f"Списание {can_write_off} бонусов при оплате заказа {order.id}"
+        logger.info(
+            "Списано %s бонусов у клиента %s за заказ %s. Новый баланс: %s",
+            amount, client.phone_number, order.id, client.bonus
         )
-
-        logger.info(f"Списано {can_write_off} бонусов у клиента {client.phone_number} за заказ {order.id}")
 
     def _apply_bonus_logic(self, order):
         """Начисление бонусов клиенту после успешной оплаты"""
@@ -188,8 +197,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             logger.info(f"У заведения {venue.company_name} процент бонусов = 0")
             return
 
-        # Учитываем только реально оплаченные деньги (без бонусов)
-        net_sum = order.total_price - Decimal(order.bonus or 0)
+        net_sum = order.total_price
 
         percent = Decimal(str(percent))  # в Decimal
         accrued = (net_sum * percent / Decimal("100")).to_integral_value(rounding=ROUND_FLOOR)

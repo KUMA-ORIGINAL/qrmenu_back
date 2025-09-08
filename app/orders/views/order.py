@@ -1,4 +1,6 @@
 import logging
+import random
+from datetime import timedelta
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -6,6 +8,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
 from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 
+from account.models import PhoneVerification
+from account.services import send_sms
 from venues.models import Venue
 from ..models import Order, OrderStatus
 from ..serializers import OrderListSerializer, OrderCreateSerializer
@@ -94,10 +98,7 @@ class OrderViewSet(viewsets.GenericViewSet,
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-
-        if not serializer.is_valid():
-            logger.warning(f"Order creation failed due to validation error: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         venue_slug = request.data.get('venue_slug')
         if not venue_slug:
@@ -108,14 +109,72 @@ class OrderViewSet(viewsets.GenericViewSet,
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         if not is_within_schedule(venue.work_start, venue.work_end):
-            return Response({'error': 'Заказ можно создать только в рабочее время заведения.'},
-                            status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {'error': 'Заказ можно создать только в рабочее время заведения.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # --- Проверка бонуса ---
+        bonus = serializer.validated_data.get("bonus", 0) or 0
+        phone = serializer.validated_data.get("phone")
+        code = serializer.validated_data.get("code")
+        hash_val = serializer.validated_data.get("hash")
+
+        if bonus > 0:
+            pv = None
+
+            # Если hash уже есть → значит ранее телефон подтвержден
+            if hash_val:
+                pv = PhoneVerification.objects.filter(
+                    phone=phone,
+                    hash=hash_val,
+                    is_bonus_verified=True
+                ).first()
+
+            if not pv:  # нет подтверждения
+                if code:  # пытаемся подтвердить введённый код
+                    otp = PhoneVerification.objects.filter(
+                        phone=phone,
+                        is_verified=False
+                    ).order_by('-created_at').first()
+
+                    if not otp or otp.code != code:
+                        return Response({"code": "Неверный код."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    if otp.created_at < timezone.now() - timedelta(minutes=5):
+                        return Response({"code": "Код просрочен."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    # подтвердили код → генерим hash
+                    generated_hash = otp.generate_hash()
+                    phone_verification_hash = generated_hash
+                else:
+                    # Отправляем новый код и останавливаем создание заказа
+                    code_gen = f"{random.randint(1000, 9999)}"
+                    otp = PhoneVerification.objects.create(phone=phone, code=code_gen)
+
+                    text = f"Код подтверждения бонуса: {code_gen}"
+                    send_sms(phone=phone, text=text, transaction_id=otp.id)
+
+                    return Response({
+                        "status": "waiting_for_code",
+                        "message": "Для списания бонусов нужно подтвердить телефон. Код отправлен в SMS.",
+                    }, status=status.HTTP_200_OK)
+            else:
+                phone_verification_hash = pv.hash
+        else:
+            phone_verification_hash = None
 
         try:
             order = serializer.save(venue=venue)
         except Exception as e:
             logger.error(f"Failed to save order: {str(e)}", exc_info=True)
-            return Response({'error': 'Failed to save order due to internal error.'},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {'error': 'Failed to save order due to internal error.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data = self.get_serializer(order).data
+        if phone_verification_hash:
+            data["phone_verification_hash"] = phone_verification_hash
+
+        return Response(data, status=status.HTTP_201_CREATED)

@@ -17,7 +17,7 @@ SMS_TIMEOUT = 10  # секунд
 def send_sms(
     phone: str,
     text: str,
-    transaction_id: Optional[str] = None,
+    transaction_id: Optional = None,
     test: bool = False
 ) -> bool:
     transaction_id = transaction_id or uuid.uuid4().hex[:10]
