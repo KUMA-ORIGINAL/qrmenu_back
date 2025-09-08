@@ -213,7 +213,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
         else:
             logger.info("Нет владельца заведения или tg_chat_id")
 
-        # Чек в MQTT
         if not send_receipt_to_mqtt(order, order.venue):
             logger.warning("Не удалось отправить чек в MQTT")
 

@@ -8,7 +8,6 @@ import atexit
 import paho.mqtt.client as mqtt
 from django.conf import settings
 from django.utils import timezone
-from django.apps import AppConfig
 
 from ..models import Receipt
 from ..models import ReceiptPrinter
@@ -206,4 +205,74 @@ def send_receipt_to_mqtt(order, venue):
 
     except Exception as e:
         logger.error(f"Error sending receipt via MQTT: {str(e)}", exc_info=True)
+        return False
+
+
+def send_test_receipt(venue):
+    """
+    Формирует и отправляет тестовый чек на настроенный принтер через MQTT.
+    """
+    try:
+        # Находим принтер
+        receipt_printer = ReceiptPrinter.objects.filter(venue=venue).first()
+        if not receipt_printer:
+            logger.error(f"Нет принтера для заведения {venue.id}")
+            return False
+        if not receipt_printer.topic:
+            logger.error(f"Нет топика для принтера {receipt_printer.id}")
+            return False
+
+        timezone.activate('Asia/Bishkek')
+        now_local = timezone.localtime(timezone.now())
+
+        # Формируем тестовый чек
+        printdata = (
+            f"<LOGO>printest</LOGO>"
+            f"<F3232><CENTER>{venue.company_name} (ТЕСТ)</CENTER></F3232>\r"
+            f"<F2424><CENTER>{now_local.strftime('%d.%m.%Y   %H:%M:%S')}</CENTER></F2424>\r"
+            f"<F2424>Терминал ID: {receipt_printer.topic}</F2424>\r"
+            f"<F3232><CENTER>----------------------------</CENTER></F3232>\r"
+            f"<F3232><FB><CENTER>ТЕСТОВЫЙ ЗАКАЗ</CENTER></FB></F3232>\r"
+            f"<F2424>Заказ #TEST\r"
+            f"<F2424>Клиент: +996 XXX XXX XXX</F2424>\r\r"
+        )
+
+        order_items = "<F2424>1. Тестовый товар x1 100 сом\r</F2424>\r"
+        order_items += f"<F2424><FB>Итого: 100 сом</FB></F2424>\r"
+
+        total_sum = (
+            f"<F3232><CENTER>----------------------------</CENTER></F3232>\r"
+            f"<F3232><CENTER>100 сом</CENTER></F3232>\r"
+            f"<F3232><FB><CENTER>УСПЕШНО (ТЕСТ)</CENTER></FB></F3232>\r"
+            f"<F3232><CENTER>----------------------------</CENTER></F3232>\r"
+            f"<CENTER>Подпись клиента не требуется</CENTER>\r"
+            f"<F3232><CENTER>----------------------------\r\r\r</CENTER></F3232>"
+        )
+
+        printdata = printdata + order_items + total_sum
+
+        # Формируем payload
+        payload_data = {
+            "request_id": f"rq_TEST_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
+            "biz_type": "1",
+            "broadcast_type": "0",
+            "money": "100",
+            "printdata": printdata.strip()
+        }
+
+        payload_json = json.dumps(payload_data, ensure_ascii=False)
+        topic = receipt_printer.topic
+
+        # Отправляем
+        success = mqtt_client.send_message(topic, payload_json)
+
+        if success:
+            logger.info(f"Тестовый чек успешно отправлен в топик {topic}")
+            return True
+        else:
+            logger.error(f"Не удалось отправить тестовый чек в топик {topic}")
+            return False
+
+    except Exception as e:
+        logger.error(f"Ошибка при отправке тестового чека: {str(e)}", exc_info=True)
         return False

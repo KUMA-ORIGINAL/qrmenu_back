@@ -1,13 +1,44 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from ..models import ReceiptPrinter
+from ..services import send_test_receipt
 
 
 @admin.register(ReceiptPrinter)
 class ReceiptPrinterAdmin(BaseModelAdmin):
     search_fields = ('name',)
+
+    actions = ["send_test_receipt_action"]
+
+    def send_test_receipt_action(self, request, queryset):
+        """
+        Админ-экшен: отправить тестовый чек на выбранные принтеры
+        """
+        success_count = 0
+        fail_count = 0
+
+        for printer in queryset:
+            if send_test_receipt(printer.venue):
+                success_count += 1
+            else:
+                fail_count += 1
+
+        if success_count:
+            self.message_user(
+                request,
+                f"Тестовые чеки успешно отправлены на {success_count} принтер(ов).",
+                level=messages.SUCCESS,
+            )
+        if fail_count:
+            self.message_user(
+                request,
+                f"Не удалось отправить чек на {fail_count} принтер(ов).",
+                level=messages.ERROR,
+            )
+
+    send_test_receipt_action.short_description = "Отправить тестовый чек на принтеры"
 
     def get_list_filter(self, request):
         list_filter = ()
