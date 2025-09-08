@@ -208,20 +208,13 @@ def send_receipt_to_mqtt(order, venue):
         return False
 
 
-def send_test_receipt(venue):
+def send_test_receipt(receipt_printer):
     """
     Формирует и отправляет тестовый чек на настроенный принтер через MQTT.
     """
     try:
         # Находим принтер
-        receipt_printer = ReceiptPrinter.objects.filter(venue=venue).first()
-        if not receipt_printer:
-            logger.error(f"Нет принтера для заведения {venue.id}")
-            return False
-        if not receipt_printer.topic:
-            logger.error(f"Нет топика для принтера {receipt_printer.id}")
-            return False
-
+        venue = receipt_printer.venue
         timezone.activate('Asia/Bishkek')
         now_local = timezone.localtime(timezone.now())
 

@@ -20,7 +20,7 @@ class ReceiptPrinterAdmin(BaseModelAdmin):
         fail_count = 0
 
         for printer in queryset:
-            if send_test_receipt(printer.venue):
+            if send_test_receipt(printer):
                 success_count += 1
             else:
                 fail_count += 1
