@@ -174,7 +174,11 @@ class OrderViewSet(viewsets.GenericViewSet,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        data = self.get_serializer(order).data
+        data = OrderCreateSerializer(
+            order,
+            context={'transaction': serializer.context.get('transaction'),
+                     'payment_account': serializer.context.get('payment_account')}
+        ).data
         if phone_verification_hash:
             data["phone_verification_hash"] = phone_verification_hash
 
