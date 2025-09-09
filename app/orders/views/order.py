@@ -154,7 +154,7 @@ class OrderViewSet(viewsets.GenericViewSet,
                     otp = PhoneVerification.objects.create(phone=phone, code=code_gen)
 
                     text = f"Код подтверждения бонуса: {code_gen}"
-                    send_sms(phone=phone, text=text, transaction_id=otp.id)
+                    send_sms(phone=phone, text=text)
 
                     return Response({
                         "status": "waiting_for_code",
