@@ -13,7 +13,8 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     code = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
     hash = serializers.CharField(write_only=True, required=False, allow_blank=True, allow_null=True)
-    phone_verification_hash = serializers.CharField(read_only=True)  # вернём при успешном подтверждении
+    phone_verification_hash = serializers.CharField(read_only=True)
+    use_bonus = serializers.BooleanField(write_only=True, default=False)
 
     class Meta:
         model = Order
@@ -21,7 +22,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'id', 'phone', 'comment', 'service_mode', 'address',
             'service_price', 'tips_price', 'bonus', 'spot', 'table',
             'is_tg_bot', 'tg_redirect_url', 'order_products',
-            'payment_url', 'code', 'hash', 'phone_verification_hash'
+            'payment_url', 'code', 'hash', 'phone_verification_hash', 'use_bonus'
         )
         extra_kwargs = {
             f: {'write_only': True}
@@ -32,6 +33,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         order_product_data = validated_data.pop('order_products', [])
         bonus = validated_data.get("bonus", 0) or 0
         validated_data.pop("code", None)
+        validated_data.pop("use_bonus", None)
         validated_data.pop("hash", None)
 
         # --- обычное создание заказа ---

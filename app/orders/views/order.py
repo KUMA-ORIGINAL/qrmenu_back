@@ -115,12 +115,13 @@ class OrderViewSet(viewsets.GenericViewSet,
             )
 
         # --- Проверка бонуса ---
+        use_bonus = request.data.get('use_bonus')
         bonus = serializer.validated_data.get("bonus", 0) or 0
         phone = serializer.validated_data.get("phone")
         code = serializer.validated_data.get("code")
         hash_val = serializer.validated_data.get("hash")
 
-        if bonus > 0:
+        if bonus > 0 and use_bonus:
             pv = None
 
             # Если hash уже есть → значит ранее телефон подтвержден
