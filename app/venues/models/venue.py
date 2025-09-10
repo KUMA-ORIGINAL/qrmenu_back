@@ -6,6 +6,7 @@ from pilkit.processors import ResizeToFill
 from unidecode import unidecode
 
 from services.model import BaseModel
+from .work_schedule import WorkSchedule
 
 User = get_user_model()
 
@@ -41,16 +42,6 @@ class Venue(BaseModel):
         null=True,
         blank=True,
         verbose_name='Логотип',
-    )
-    work_start = models.TimeField(
-        verbose_name="Начало рабочего дня",
-        help_text="Введите время начала (например, 09:00)",
-        default="09:00"
-    )
-    work_end = models.TimeField(
-        verbose_name="Конец рабочего дня",
-        help_text="Введите время окончания (например, 18:00)",
-        default="18:00"
     )
     account_number = models.CharField(
         max_length=100, verbose_name="Номер аккаунта", blank=True
@@ -142,5 +133,19 @@ class Venue(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(unidecode(self.company_name)).upper()
+            self.slug = slugify(unidecode(self.company_name)).lower()
+
         super().save(*args, **kwargs)
+
+        existing_days = set(
+            self.schedules.values_list("day_of_week", flat=True)
+        )
+        all_days = set(val for val, _ in WorkSchedule.WeekDay.choices)
+
+        missing_days = all_days - existing_days
+        for day_val in missing_days:
+            WorkSchedule.objects.create(
+                venue=self,
+                day_of_week=day_val,
+                is_day_off=True,
+            )

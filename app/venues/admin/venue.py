@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin, messages
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
+from unfold.admin import TabularInline
 
 from unfold.decorators import action, display
 from unfold.widgets import UnfoldAdminTimeWidget
@@ -13,32 +14,45 @@ from menu.models import Category, Product
 from services.pos_service_factory import POSServiceFactory
 from services.admin import BaseModelAdmin
 
-from ..models import Venue, Spot, Table, Hall
+from ..models import Venue, Spot, Table, Hall, WorkSchedule
 
 logger = logging.getLogger(__name__)
 
 
 
-class VenueForm(forms.ModelForm):
+class WorkScheduleForm(forms.ModelForm):
     class Meta:
-        model = Venue
-        fields = '__all__'
+        model = WorkSchedule
+        fields = "__all__"
         widgets = {
-            'work_start': UnfoldAdminTimeWidget(
-                format='%H:%M',
-            ),
-            'work_end': UnfoldAdminTimeWidget(
-                format='%H:%M',
-            ),
+            "work_start": UnfoldAdminTimeWidget(format='%H:%M', attrs={"placeholder": "чч:мм"}),
+            "work_end": UnfoldAdminTimeWidget(format='%H:%M', attrs={"placeholder": "чч:мм"}),
         }
+
+
+class WorkScheduleInline(TabularInline):
+    model = WorkSchedule
+    form = WorkScheduleForm
+    extra = 0
+    max_num = 7
+    can_delete = False
+    ordering = ("day_of_week",)
+    fields = ("day_name", "work_start", "work_end", "is_day_off", 'is_24h')
+    readonly_fields = ("day_name",)
+
+    def day_name(self, obj):
+        return obj.get_day_of_week_display()
+    day_name.short_description = "День недели"
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
-    form = VenueForm
+    inlines = (WorkScheduleInline,)
     compressed_fields = True
     actions_detail = ['pos_action_detail',]
-
 
     def get_list_display(self, request):
         list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
@@ -74,11 +88,6 @@ class VenueAdmin(BaseModelAdmin):
                     'color_theme',
                     'logo',
                     'default_delivery_spot',
-                )
-            }),
-            ("График работы", {
-                'fields': (
-                    'work_start', 'work_end',
                 )
             }),
             ("Контактные данные владельца", {
