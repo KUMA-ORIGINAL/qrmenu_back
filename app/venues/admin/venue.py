@@ -2,9 +2,11 @@ import logging
 
 from django import forms
 from django.contrib import admin, messages
+from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
 from unfold.admin import TabularInline
+from unfold.contrib.forms.widgets import WysiwygWidget
 
 from unfold.decorators import action, display
 from unfold.widgets import UnfoldAdminTimeWidget
@@ -17,7 +19,6 @@ from services.admin import BaseModelAdmin
 from ..models import Venue, Spot, Table, Hall, WorkSchedule
 
 logger = logging.getLogger(__name__)
-
 
 
 class WorkScheduleForm(forms.ModelForm):
@@ -50,6 +51,11 @@ class WorkScheduleInline(TabularInline):
 
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
+    formfield_overrides = {
+        models.TextField: {
+            "widget": WysiwygWidget,
+        }
+    }
     inlines = (WorkScheduleInline,)
     compressed_fields = True
     actions_detail = ['pos_action_detail',]
@@ -88,6 +94,7 @@ class VenueAdmin(BaseModelAdmin):
                     'color_theme',
                     'logo',
                     'default_delivery_spot',
+                    'terms'
                 )
             }),
             ("Контактные данные владельца", {

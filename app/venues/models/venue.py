@@ -124,6 +124,13 @@ class Venue(BaseModel):
         help_text="Сколько процентов от суммы заказа будет начисляться бонусами (например: 5 = 5%)"
     )
 
+    terms = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Условия заведения",
+        help_text="Здесь можно указать правила, условия обслуживания, доставки и т.д."
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 

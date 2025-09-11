@@ -13,7 +13,7 @@ class VenueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Venue
         fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedules', 'service_fee_percent', 'default_delivery_spot', 'spots',
-                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available', 'delivery_fixed_fee', 'delivery_free_from',)
+                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available', 'delivery_fixed_fee', 'delivery_free_from', 'terms')
 
 
 class VenueWithTableSerializer(serializers.ModelSerializer):
@@ -23,4 +23,4 @@ class VenueWithTableSerializer(serializers.ModelSerializer):
     class Meta:
         model = Venue
         fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedules', 'service_fee_percent',
-                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available')
+                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available', 'terms')

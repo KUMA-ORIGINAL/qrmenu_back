@@ -19,7 +19,11 @@ class Category(BaseModel):
         format='JPEG',
         options={'quality': 80}
     )
-    category_hidden = models.BooleanField(default=False, verbose_name="Скрыт?",)
+    category_hidden = models.BooleanField(
+        default=False,
+        verbose_name="Скрыт?",
+        help_text="При скрытии категории будут скрыты все товары в ней"
+    )
     venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='categories',
                               verbose_name="Заведение")
 

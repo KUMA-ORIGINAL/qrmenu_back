@@ -128,6 +128,21 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
 
+        if obj.category_hidden:
+            count = obj.products.update(hidden=True)
+            self.message_user(
+                request,
+                f"Категория '{obj.category_name}' скрыта. {count} товаров также скрыто.",
+                level=messages.WARNING
+            )
+        else:
+            count = obj.products.update(hidden=False)
+            self.message_user(
+                request,
+                f"Категория '{obj.category_name}' снова активна. {count} товаров снова отображаются.",
+                level=messages.SUCCESS
+            )
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
