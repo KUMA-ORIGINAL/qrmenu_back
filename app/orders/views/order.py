@@ -147,7 +147,23 @@ class OrderViewSet(viewsets.GenericViewSet,
                     generated_hash = otp.generate_hash()
                     phone_verification_hash = generated_hash
                 else:
-                    # Отправляем новый код и останавливаем создание заказа
+
+                    last_otp = PhoneVerification.objects.filter(
+                        phone=phone
+                    ).order_by('-created_at').first()
+
+                    now = timezone.now()
+                    if last_otp and last_otp.created_at > now - timedelta(seconds=60):
+                        seconds_passed = (now - last_otp.created_at).total_seconds()
+                        seconds_left = int(60 - seconds_passed)
+                        return Response(
+                            {
+                                "error": "Код уже был отправлен недавно. Подождите минуту.",
+                                "seconds_left": max(0, seconds_left)
+                            },
+                            status=status.HTTP_429_TOO_MANY_REQUESTS
+                        )
+
                     code_gen = f"{random.randint(1000, 9999)}"
                     otp = PhoneVerification.objects.create(phone=phone, code=code_gen)
 
