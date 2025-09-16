@@ -26,7 +26,7 @@ class CategoryViewSet(viewsets.GenericViewSet,
         venue_slug = self.request.GET.get("venue_slug")
 
         if venue_slug:
-            queryset = queryset.filter(venue__slug=venue_slug, category_hidden=False)
+            queryset = queryset.filter(venue__slug=venue_slug.lower(), category_hidden=False)
 
         queryset = queryset.distinct()
         return queryset

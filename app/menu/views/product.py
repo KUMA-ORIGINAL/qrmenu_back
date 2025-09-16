@@ -49,7 +49,7 @@ class ProductViewSet(viewsets.GenericViewSet,
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'venue_slug': 'This parameter is required.'})
 
-        queryset = queryset.filter(venue__slug=venue_slug, hidden=False)
+        queryset = queryset.filter(venue__slug=venue_slug.lower(), hidden=False)
 
         if spot_id:
             queryset = queryset.filter(spots__id=spot_id)

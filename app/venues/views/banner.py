@@ -25,7 +25,7 @@ class BannerViewSet(viewsets.GenericViewSet,
         venue_slug = self.request.GET.get("venue_slug")
 
         if venue_slug:
-            queryset = queryset.filter(venue__slug=venue_slug)
+            queryset = queryset.filter(venue__slug=venue_slug.lower())
 
         queryset = queryset.filter(status="active")
 

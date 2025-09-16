@@ -76,7 +76,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         phone = self.request.GET.get('phone', None)
 
         if venue_slug:
-            queryset = queryset.filter(venue__slug=venue_slug)
+            queryset = queryset.filter(venue__slug=venue_slug.lower())
         if spot_id:
             queryset = queryset.filter(spot__id=spot_id)
         if table_id:

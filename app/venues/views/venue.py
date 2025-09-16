@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
 from venues.models import Venue, Table, Spot
@@ -22,7 +23,7 @@ class VenueViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
         venue = (
             Venue.objects
             .prefetch_related(Prefetch("spots", queryset=Spot.objects.filter(is_hidden=False)))
-            .get(slug=slug)
+            .get(slug=slug.lower())
         )
         table = venue.tables.get(pk=table_id)
 
@@ -30,3 +31,12 @@ class VenueViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
         venue_data['table'] = TableSerializer(table, context={'request': request}).data
 
         return Response(venue_data)
+
+    def get_object(self):
+        slug = self.kwargs.get(self.lookup_field).lower()
+
+        obj = self.get_queryset().filter(slug=slug).first()
+
+        if not obj:
+            raise NotFound(f"Заведение с slug '{slug}' не найдена")
+        return obj
