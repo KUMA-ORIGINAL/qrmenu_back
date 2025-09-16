@@ -94,7 +94,8 @@ class VenueAdmin(BaseModelAdmin):
                     'color_theme',
                     'logo',
                     'default_delivery_spot',
-                    'terms'
+                    'terms',
+                    'description'
                 )
             }),
             ("Контактные данные владельца", {

@@ -130,6 +130,12 @@ class Venue(BaseModel):
         verbose_name="Условия заведения",
         help_text="Здесь можно указать правила, условия обслуживания, доставки и т.д."
     )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Описание заведения",
+        help_text="Общая информация о заведении"
+    )
 
     def __str__(self):
         return f'{self.company_name}'
