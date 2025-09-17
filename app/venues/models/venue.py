@@ -145,8 +145,7 @@ class Venue(BaseModel):
         verbose_name_plural = "Заведения"
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(unidecode(self.company_name)).lower()
+        self.slug = slugify(unidecode(self.company_name)).lower()
 
         super().save(*args, **kwargs)
 

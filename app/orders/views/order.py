@@ -104,7 +104,7 @@ class OrderViewSet(viewsets.GenericViewSet,
         if not venue_slug:
             return Response({'error': 'venue_slug is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        venue = Venue.objects.filter(slug=venue_slug).first()
+        venue = Venue.objects.filter(slug=venue_slug.lower()).first()
         if not venue:
             return Response({'error': 'Venue not found.'}, status=status.HTTP_404_NOT_FOUND)
 

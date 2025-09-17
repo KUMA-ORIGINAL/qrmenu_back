@@ -20,7 +20,7 @@ class Client(BaseModel):
     phone = models.CharField(
         max_length=20, verbose_name="Телефон", blank=True, null=True
     )
-    phone_number = PhoneNumberField("Номер телефона", help_text='Введите в формате 0 или 996')
+    phone_number = PhoneNumberField("Номер телефона", help_text='Введите в формате 0 или 996', unique=True)
     email = models.EmailField(
         blank=True, null=True, verbose_name="Электронная почта"
     )
@@ -29,10 +29,6 @@ class Client(BaseModel):
     )
     client_sex = models.PositiveSmallIntegerField(
         choices=[(0, 'Мужской'), (1, 'Женский')], default=0, verbose_name="Пол"
-    )
-    bonus = models.PositiveIntegerField(default=0, verbose_name='Бонусы')
-    total_payed_sum = models.PositiveIntegerField(
-        default=0, verbose_name="Общая сумма платежей"
     )
     country = models.CharField(
         max_length=100, blank=True, null=True, verbose_name="Страна"
@@ -43,10 +39,6 @@ class Client(BaseModel):
     address = models.TextField(
         blank=True, null=True, verbose_name="Адрес"
     )
-    venue = models.ForeignKey(
-        'venues.Venue', on_delete=models.CASCADE, related_name='clients',
-        verbose_name="Заведение"
-    )
 
     def __str__(self):
         return f'{self.firstname} {self.lastname} - {self.phone}'
@@ -54,4 +46,22 @@ class Client(BaseModel):
     class Meta:
         verbose_name = "Клиент"
         verbose_name_plural = "Клиенты"
-        unique_together = ('venue', 'phone_number')
+
+
+class ClientVenueProfile(BaseModel):
+    client = models.ForeignKey(
+        Client, on_delete=models.CASCADE, related_name="venue_profiles", verbose_name="Клиент"
+    )
+    venue = models.ForeignKey(
+        "venues.Venue", on_delete=models.CASCADE, related_name="client_profiles", verbose_name="Заведение"
+    )
+    bonus = models.PositiveIntegerField(default=0, verbose_name="Бонусы")
+    total_payed_sum = models.PositiveIntegerField(default=0, verbose_name="Общая сумма платежей")
+
+    class Meta:
+        verbose_name = "Профиль клиента в заведении"
+        verbose_name_plural = "Профили клиентов в заведениях"
+        unique_together = ("client", "venue")
+
+    def __str__(self):
+        return f"{self.client} @ {self.venue} | Бонусы: {self.bonus}"

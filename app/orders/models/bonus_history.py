@@ -39,6 +39,9 @@ class BonusHistory(models.Model):
         verbose_name=_("Описание"),
         help_text=_("Причина начисления или списания")
     )
+    venue = models.ForeignKey(
+        "venues.Venue", on_delete=models.CASCADE, related_name="bonus_history", verbose_name="Заведение"
+    )
 
     class Meta:
         verbose_name = _("История бонуса")

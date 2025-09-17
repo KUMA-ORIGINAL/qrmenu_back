@@ -17,7 +17,7 @@ class BonusHistoryAdmin(BaseModelAdmin):
     def get_list_filter(self, request, obj=None):
         list_filter = ("operation", "created_at")
         if request.user.is_superuser:
-            list_filter += ("client__venue",)
+            list_filter += ("venue",)
         return list_filter
 
     def get_queryset(self, request):
@@ -25,5 +25,5 @@ class BonusHistoryAdmin(BaseModelAdmin):
         if request.user.is_superuser:
             return qs
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            return qs.filter(client__venue=request.user.venue)
+            return qs.filter(venue=request.user.venue)
         return qs

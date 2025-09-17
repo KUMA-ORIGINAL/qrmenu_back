@@ -90,7 +90,6 @@ class VenueAdmin(BaseModelAdmin):
             ("Основная информация", {
                 'fields': (
                     'company_name',
-                    'slug',
                     'color_theme',
                     'logo',
                     'default_delivery_spot',

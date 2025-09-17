@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from ..models import Client
 
 
-class ClientBonusSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Client
-        fields = ["phone_number", "bonus"]
-        
+class ClientBonusSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(read_only=True)
+    venue = serializers.CharField(read_only=True)
+    bonus = serializers.IntegerField(read_only=True)

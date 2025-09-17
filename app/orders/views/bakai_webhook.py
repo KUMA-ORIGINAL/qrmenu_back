@@ -15,13 +15,12 @@ from account.models import ROLE_OWNER
 from orders.services import format_order_details, send_receipt_to_mqtt
 from services.pos_service_factory import POSServiceFactory
 from tg_bot.utils import send_order_notification
-from ..admin import transaction
-from ..models import Transaction, OrderStatus, Client, BonusHistory
+from ..models import Transaction, OrderStatus, Client, BonusHistory, ClientVenueProfile
 
 logger = logging.getLogger(__name__)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(csrf_exempt, name="dispatch")
 class PaymentWebhookViewSet(viewsets.ViewSet):
     """
     ViewSet для обработки webhook от платёжной системы
@@ -40,58 +39,60 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
             data = request.data
 
-            transaction = self._get_transaction(data)
-            if isinstance(transaction, Response):
-                return transaction  # это уже ответ с ошибкой
+            # ВАЖНО: бизнес-операции под одной транзакцией
+            with django_transaction.atomic():
+                transaction = self._get_transaction(data)
+                if isinstance(transaction, Response):
+                    return transaction  # это уже готовый ответ с ошибкой
 
-            order = transaction.order
+                order = transaction.order
+                client, venue = order.client, order.venue
 
-            # обновляем статусы платежа и заказа
-            self._update_transaction_and_order(transaction, order, data)
+                # статусы
+                self._update_transaction_and_order(transaction, order, data)
 
-            # создаём клиента (через POS или локально)
-            self._process_client_and_pos(order)
+                # клиент и отправка в POS
+                self._process_client_and_pos(order, venue)
 
-            # списание бонусов (НОВОЕ!)
-            self._apply_bonus_writeoff(order)
+                # бонусы
+                self._apply_bonus_writeoff(order, client, venue)
+                self._apply_bonus_logic(order, client, venue)
 
-            self._apply_bonus_logic(order)
-
-            # Отправляем уведомления и чеки
+            # внешние вызовы/уведомления выполняются уже после коммита
             self._send_notifications(order, transaction)
 
             logger.info("Обработка вебхука успешно завершена")
-            return Response({'success': True}, status=status.HTTP_200_OK)
+            return Response({"success": True}, status=status.HTTP_200_OK)
 
         except Exception:
             logger.exception("Ошибка при обработке webhook")
-            return Response({'error': 'Внутренняя ошибка'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "Внутренняя ошибка"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     # --- Вспомогательные методы ---
 
     def _get_transaction(self, data):
-        """Поиск транзакции и базовая валидация входных данных"""
-        transaction_id = data.get('operation_id')
-        payment_status = data.get('operation_state')
+        """Поиск транзакции и базовая валидация"""
+        transaction_id = data.get("operation_id")
+        payment_status = data.get("operation_state")
 
         if not transaction_id or not payment_status:
             logger.warning("Недостаточно данных в webhook: %s", data)
-            return Response({'error': 'Недостаточно данных'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Недостаточно данных"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             return Transaction.objects.select_related(
-                'order__venue__pos_system',
-                'order__spot'
+                "order__venue__pos_system",
+                "order__spot"
             ).prefetch_related(
-                'order__order_products__product'
+                "order__order_products__product"
             ).get(id=transaction_id)
         except Transaction.DoesNotExist:
             logger.error(f"Транзакция не найдена: {transaction_id}")
-            return Response({'error': 'Транзакция не найдена'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Транзакция не найдена"}, status=status.HTTP_404_NOT_FOUND)
 
     def _update_transaction_and_order(self, transaction, order, data):
         """Обновление статуса транзакции и заказа"""
-        payment_status = data.get('operation_state')
+        payment_status = data.get("operation_state")
 
         if transaction.status != payment_status:
             logger.info(f"Обновление транзакции {transaction.id}: {transaction.status} → {payment_status}")
@@ -106,9 +107,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
         else:
             logger.info(f"Webhook повторный — статус {payment_status} уже установлен")
 
-    def _process_client_and_pos(self, order):
-        """Создание/присвоение клиента (через POS или локально)"""
-        venue = order.venue
+    def _process_client_and_pos(self, order, venue):
+        """Создание/обновление клиента (через POS или локально)"""
         pos_system_name = venue.pos_system.name.lower() if venue.pos_system else None
         client = None
 
@@ -120,121 +120,108 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             if not pos_response:
                 raise ValueError("POS не принял заказ")
 
-            client = pos_service.get_or_create_client(venue, pos_response.get('client_id'))
+            client = pos_service.get_or_create_client(venue, pos_response.get("client_id"))
             if not client:
                 raise ValueError("Не удалось создать/получить клиента из POS")
 
-            order.external_id = pos_response.get('incoming_order_id')
+            order.external_id = pos_response.get("incoming_order_id")
             if not order.external_id:
                 raise ValueError("Не получили external_id от POS")
 
         else:
-            logger.info(f"POS не подключён, создаём локального клиента для заказа {order.id}")
-            client = Client.objects.filter(venue=venue, phone_number=order.phone).first()
+            logger.info(f"POS не подключён, ищем/создаём локального клиента для заказа {order.id}")
+            client = Client.objects.filter(phone_number=order.phone).first()
             if not client:
-                client = Client.objects.create(venue=venue, phone_number=order.phone)
+                client = Client.objects.create(phone_number=order.phone)
+
+        # профиль клиента в конкретном заведении
+        ClientVenueProfile.objects.get_or_create(
+            client=client,
+            venue=venue,
+            defaults={"bonus": 0, "total_payed_sum": 0},
+        )
 
         order.client = client
         order.save(update_fields=["client", "external_id"])
 
-    def _apply_bonus_writeoff(self, order):
-        """
-        Списание бонусов клиента после успешной оплаты.
-        Количество бонусов уже хранится в order.bonus.
-        """
-        client = getattr(order, "client", None)
-        if not client:
-            logger.warning("У заказа %s нет клиента — бонусы не списаны", order.id)
-            return
-
+    def _apply_bonus_writeoff(self, order, client, venue):
+        """Списание бонусов клиента после оплаты"""
         amount = order.bonus or 0
-        if amount <= 0:
-            logger.info("У заказа %s бонусов к списанию нет (order.bonus=%s)", order.id, amount)
+
+        if not client or not venue or amount <= 0:
             return
 
-        # Проверка: достаточно ли у клиента бонусов (опционально, если доверяете order.bonus — можно убрать)
-        if client.bonus < amount:
-            logger.warning(
-                "У клиента %s недостаточно бонусов для списания: требуется %s, доступно %s. "
-                "Списание не выполнено.",
-                client.phone_number, amount, client.bonus
-            )
+        # атомарное списание
+        updated = ClientVenueProfile.objects.filter(
+            client=client,
+            venue=venue,
+            bonus__gte=amount
+        ).update(bonus=F("bonus") - amount)
+
+        if not updated:
+            logger.warning("Недостаточно бонусов у клиента %s для списания", client.phone_number)
             return
 
-        with django_transaction.atomic():
-            client.bonus = F("bonus") - amount
-            client.save(update_fields=["bonus"])
-            client.refresh_from_db(fields=["bonus"])
-
-            BonusHistory.objects.create(
-                client=client,
-                order=order,
-                amount=-amount,
-                operation=BonusHistory.Operation.WRITE_OFF,
-                description=f"Списание {amount} бонусов при оплате заказа {order.id}",
-            )
-
-        logger.info(
-            "Списано %s бонусов у клиента %s за заказ %s. Новый баланс: %s",
-            amount, client.phone_number, order.id, client.bonus
+        BonusHistory.objects.create(
+            client=client,
+            order=order,
+            venue=venue,
+            amount=-amount,
+            operation=BonusHistory.Operation.WRITE_OFF,
+            description=f"Списание {amount} бонусов при оплате заказа {order.id}",
         )
+        logger.info("Списано %s бонусов у клиента %s", amount, client.phone_number)
 
-    def _apply_bonus_logic(self, order):
-        """Начисление бонусов клиенту после успешной оплаты"""
-        client = order.client
-        venue = order.venue
-
-        if not client:
-            logger.warning(f"У заказа {order.id} нет клиента — бонусы не начислены")
+    def _apply_bonus_logic(self, order, client, venue):
+        """Начисление бонусов после успешной оплаты"""
+        if not client or not venue or not venue.is_bonus_system_enabled:
             return
 
-        if not venue.is_bonus_system_enabled:
-            logger.info(f"У заведения {venue.company_name} бонусная система выключена")
-            return
-
-        percent = venue.bonus_accrual_percent
+        percent = Decimal(str(venue.bonus_accrual_percent or 0))
         if percent <= 0:
-            logger.info(f"У заведения {venue.company_name} процент бонусов = 0")
             return
 
-        net_sum = order.total_price
-
-        percent = Decimal(str(percent))  # в Decimal
+        net_sum = Decimal(order.total_price)
         accrued = (net_sum * percent / Decimal("100")).to_integral_value(rounding=ROUND_FLOOR)
         accrued = int(accrued)
+        if accrued <= 0:
+            return
 
-        if accrued > 0:
-            client.bonus += accrued
-            client.total_payed_sum = (client.total_payed_sum or 0) + int(net_sum)
-            client.save(update_fields=["bonus", "total_payed_sum"])
+        profile, created = ClientVenueProfile.objects.get_or_create(
+            client=client,
+            venue=venue,
+            defaults={"bonus": accrued, "total_payed_sum": int(net_sum)},
+        )
 
-            BonusHistory.objects.create(
-                client=client,
-                order=order,
-                amount=accrued,
-                operation=BonusHistory.Operation.ACCRUAL,
-                description=f"Начислено {percent}% за заказ {order.id}"
+        if not created:
+            ClientVenueProfile.objects.filter(id=profile.id).update(
+                bonus=F("bonus") + accrued,
+                total_payed_sum=F("total_payed_sum") + int(net_sum),
             )
 
-            logger.info(
-                f"Начислено {accrued} бонусов клиенту {client.phone_number} "
-                f"за заказ {order.id} в заведении {venue.company_name}"
-            )
+        BonusHistory.objects.create(
+            client=client,
+            venue=venue,
+            order=order,
+            amount=accrued,
+            operation=BonusHistory.Operation.ACCRUAL,
+            description=f"Начислено {percent}% за заказ {order.id}",
+        )
+        logger.info("Начислено %s бонусов клиенту %s", accrued, client.phone_number)
 
     def _send_notifications(self, order, transaction):
-        """Отправка Telegram-оповещения, чека и n8n webhook"""
-        # Telegram
+        """Отправка Telegram, чеков и n8n webhook"""
+        # Telegram владельцу
         user_owner = order.venue.users.filter(role=ROLE_OWNER).first()
         if user_owner and user_owner.tg_chat_id:
             order_info = format_order_details(order)
             send_order_notification(user_owner.tg_chat_id, order_info, order.id)
-        else:
-            logger.info("Нет владельца заведения или tg_chat_id")
 
+        # MQTT чек
         if not send_receipt_to_mqtt(order, order.venue):
             logger.warning("Не удалось отправить чек в MQTT")
 
-        # Webhook в n8n (если заказ из TG-бота)
+        # Webhook в n8n
         if order.is_tg_bot:
             try:
                 order_payload = self._build_order_payload(order, transaction)
@@ -244,12 +231,12 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 if response.status_code == 200:
                     logger.info("Webhook успешно отправлен в n8n")
                 else:
-                    logger.warning(f"Ошибка webhook: {response.status_code} {response.text}")
+                    logger.warning("Ошибка webhook: %s %s", response.status_code, response.text)
             except Exception:
                 logger.exception("Ошибка при отправке webhook в n8n")
 
     def _build_order_payload(self, order, transaction):
-        """Сериализуем заказ в структуру для n8n"""
+        """Формирование payload для n8n"""
         return {
             "order_id": order.id,
             "venue_id": order.venue.id,
@@ -274,5 +261,5 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 "id": transaction.id,
                 "status": transaction.status,
                 "amount": str(transaction.total_price),
-            }
+            },
         }

@@ -4,7 +4,7 @@ import requests
 import logging
 
 from menu.models import Category, Product, Modificator
-from orders.models import Client
+from orders.models import Client, ClientVenueProfile
 from venues.models import Spot, Table, Hall
 
 logger = logging.getLogger(__name__)
@@ -182,48 +182,74 @@ class PosterService:
         return response
 
     def get_or_create_client(self, venue, poster_client_id):
-        client = Client.objects.filter(
-            venue=venue,
-            external_id=poster_client_id
-        ).first()
-        poster_client_data = self.get_client_by_id(poster_client_id)[0]
-        if client:
-            client.firstname = poster_client_data.get('firstname', '')
-            client.lastname = poster_client_data.get('lastname', '')
-            client.patronymic = poster_client_data.get('patronymic', '')
-            client.phone = poster_client_data.get('phone')
-            client.phone_number = poster_client_data.get('phone_number')
-            client.email = poster_client_data.get('email', None)
-            client.birthday = poster_client_data.get('birthday') \
-                if poster_client_data.get('birthday') != '0000-00-00' else None
-            client.client_sex = int(poster_client_data.get('client_sex',
-                                                           0))  # Преобразование значения из строки в число
-            client.bonus = Decimal(poster_client_data.get('bonus', 0))
-            client.total_payed_sum = Decimal(poster_client_data.get('total_payed_sum', 0)) / 100
-            client.country = poster_client_data.get('country', '')
-            client.city = poster_client_data.get('city', '')
-            client.address = poster_client_data.get('address', '')
+        """Получение или создание клиента из Poster и его профиля в конкретном заведении"""
 
-            client.save()
-        else:
-            client = Client.objects.create(
-                external_id=poster_client_data.get('client_id'),
-                firstname=poster_client_data.get('firstname', ''),
-                lastname=poster_client_data.get('lastname', ''),
-                patronymic=poster_client_data.get('patronymic', ''),
-                phone=poster_client_data.get('phone'),
-                phone_number=poster_client_data.get('phone_number'),
-                email=poster_client_data.get('email', None),
-                birthday=poster_client_data.get('birthday')
-                         if poster_client_data.get('birthday') != '0000-00-00' else None,
-                client_sex=int(poster_client_data.get('client_sex', 0)),  # Преобразование значения из строки в число
-                bonus=Decimal(poster_client_data.get('bonus', 0)),
-                total_payed_sum=Decimal(poster_client_data.get('total_payed_sum', 0)),
-                country=poster_client_data.get('country', ''),
-                city=poster_client_data.get('city', ''),
-                address=poster_client_data.get('address', ''),
-                venue=venue  # предположительно, venue уже определена в контексте
+        poster_client_data = self.get_client_by_id(poster_client_id)[0]
+
+        # --- Находим клиента в целом в системе (по external_id или, если нет, по телефону)
+        client = Client.objects.filter(external_id=poster_client_id).first()
+
+        if not client and poster_client_data.get("phone_number"):
+            client = Client.objects.filter(phone_number=poster_client_data["phone_number"]).first()
+
+        if client:
+            # обновляем общие поля
+            client.external_id = poster_client_data.get("client_id", client.external_id)
+            client.firstname = poster_client_data.get("firstname", "")
+            client.lastname = poster_client_data.get("lastname", "")
+            client.patronymic = poster_client_data.get("patronymic", "")
+            client.phone = poster_client_data.get("phone")
+            client.phone_number = poster_client_data.get("phone_number")
+            client.email = poster_client_data.get("email") or None
+            client.birthday = (
+                poster_client_data.get("birthday")
+                if poster_client_data.get("birthday") and poster_client_data.get("birthday") != "0000-00-00"
+                else None
             )
+            client.client_sex = int(poster_client_data.get("client_sex", 0))
+            client.country = poster_client_data.get("country", "")
+            client.city = poster_client_data.get("city", "")
+            client.address = poster_client_data.get("address", "")
+            client.save()
+
+        else:
+            # создаём нового клиента без привязки к venue
+            client = Client.objects.create(
+                external_id=poster_client_data.get("client_id"),
+                firstname=poster_client_data.get("firstname", ""),
+                lastname=poster_client_data.get("lastname", ""),
+                patronymic=poster_client_data.get("patronymic", ""),
+                phone=poster_client_data.get("phone"),
+                phone_number=poster_client_data.get("phone_number"),
+                email=poster_client_data.get("email") or None,
+                birthday=(
+                    poster_client_data.get("birthday")
+                    if poster_client_data.get("birthday") and poster_client_data.get("birthday") != "0000-00-00"
+                    else None
+                ),
+                client_sex=int(poster_client_data.get("client_sex", 0)),
+                country=poster_client_data.get("country", ""),
+                city=poster_client_data.get("city", ""),
+                address=poster_client_data.get("address", ""),
+            )
+
+        # --- Обновляем/создаём профиль клиента в этом заведении
+        profile, created = ClientVenueProfile.objects.get_or_create(
+            client=client,
+            venue=venue,
+            defaults={
+                "bonus": Decimal(poster_client_data.get("bonus", 0)),
+                "total_payed_sum": Decimal(poster_client_data.get("total_payed_sum", 0)) / 100,
+            }
+        )
+
+        # if not created:
+        #     # если профиль уже есть → обновляем бонусы и суммы с POS
+        #     profile.bonus = Decimal(poster_client_data.get("bonus", profile.bonus or 0))
+        #     profile.total_payed_sum = Decimal(
+        #         poster_client_data.get("total_payed_sum", profile.total_payed_sum or 0)) / 100
+        #     profile.save(update_fields=["bonus", "total_payed_sum"])
+
         return client
 
     def get_categories(self):
