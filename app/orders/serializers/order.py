@@ -36,61 +36,71 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         validated_data.pop("use_bonus", None)
         validated_data.pop("hash", None)
 
-        # --- обычное создание заказа ---
-        order = Order.objects.create(**validated_data)
-        products_total_price = Decimal('0.00')
+        with transaction.atomic():  # 🚀 всё, что внутри, будет атомарно
+            # --- создаём заказ ---
+            order = Order.objects.create(**validated_data)
+            products_total_price = Decimal('0.00')
 
-        for item in order_product_data:
-            product = item['product']
-            modificator = item.get('modificator')
-            count = item['count']
+            for item in order_product_data:
+                product = item['product']
+                modificator = item.get('modificator')
+                count = item['count']
 
-            price = Decimal(modificator.price) if modificator else Decimal(product.product_price)
-            total_price = (price * count).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                price = Decimal(modificator.price) if modificator else Decimal(product.product_price)
+                total_price = (price * count).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-            OrderProduct.objects.create(
-                order=order,
-                product=product,
-                modificator=modificator,
-                count=count,
-                price=price,
-                total_price=total_price
+                OrderProduct.objects.create(
+                    order=order,
+                    product=product,
+                    modificator=modificator,
+                    count=count,
+                    price=price,
+                    total_price=total_price
+                )
+                products_total_price += total_price
+
+            # сервисный сбор
+            service_fee_percent = order.venue.service_fee_percent or Decimal('0.00')
+            if not isinstance(service_fee_percent, Decimal):
+                service_fee_percent = Decimal(str(service_fee_percent))
+            service_price = (products_total_price * service_fee_percent / Decimal('100')).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
             )
-            products_total_price += total_price
 
-        # сервисный сбор
-        service_fee_percent = order.venue.service_fee_percent or Decimal('0.00')
-        if not isinstance(service_fee_percent, Decimal):
-            service_fee_percent = Decimal(str(service_fee_percent))
-        service_price = (products_total_price * service_fee_percent / Decimal('100')).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
-        )
+            # доставка
+            delivery_price = Decimal('0.00')
+            if order.service_mode == ServiceMode.DELIVERY:
+                delivery_fixed_fee = order.venue.delivery_fixed_fee or Decimal('0.00')
+                delivery_free_from = order.venue.delivery_free_from
+                delivery_price = (
+                    Decimal('0.00')
+                    if delivery_free_from and products_total_price >= delivery_free_from
+                    else delivery_fixed_fee
+                )
 
-        delivery_price = Decimal('0.00')
-        if order.service_mode == ServiceMode.DELIVERY:
-            delivery_fixed_fee = order.venue.delivery_fixed_fee or Decimal('0.00')
-            delivery_free_from = order.venue.delivery_free_from
-            delivery_price = Decimal('0.00') if delivery_free_from and products_total_price >= delivery_free_from else delivery_fixed_fee
+            # итоговая сумма
+            total_price = (products_total_price + service_price + delivery_price).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
 
-        total_price = (products_total_price + service_price + delivery_price).quantize(
-            Decimal('0.01'), rounding=ROUND_HALF_UP
-        )
+            if bonus:
+                applied_bonus = min(bonus, total_price)
+                total_price = (total_price - applied_bonus).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                order.bonus = applied_bonus
 
-        if bonus:
-            applied_bonus = min(bonus, total_price)
-            total_price = (total_price - applied_bonus).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-            order.bonus = applied_bonus
+            order.delivery_price = delivery_price
+            order.service_price = service_price
+            order.total_price = total_price
+            order.save()
 
-        order.delivery_price = delivery_price
-        order.service_price = service_price
-        order.total_price = total_price
-        order.save()
+            # создаём транзакцию и платежный аккаунт
+            transaction_obj = Transaction.objects.create(order=order, total_price=total_price)
+            payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
 
-        transaction = Transaction.objects.create(order=order, total_price=total_price)
-        payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
+            # Передаём в context (для get_payment_url или других методов)
+            self.context['transaction'] = transaction_obj
+            self.context['payment_account'] = payment_account
 
-        self.context['transaction'] = transaction
-        self.context['payment_account'] = payment_account
         return order
 
     def get_payment_url(self, obj):
