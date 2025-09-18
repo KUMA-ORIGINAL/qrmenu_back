@@ -15,9 +15,9 @@ class Category(BaseModel):
     )
     category_photo_small = ImageSpecField(
         source='category_photo',
-        processors=[ResizeToFill(54, 54)],
+        processors=[ResizeToFill(100, 100)],
         format='JPEG',
-        options={'quality': 80}
+        options={'quality': 90}
     )
     category_hidden = models.BooleanField(
         default=False,
