@@ -49,13 +49,18 @@ class WorkScheduleInline(TabularInline):
         return False
 
 
+class VenueAdminForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = "__all__"
+        widgets = {
+            "terms": WysiwygWidget,  # только для конкретного поля
+        }
+
+
 @admin.register(Venue)
 class VenueAdmin(BaseModelAdmin):
-    formfield_overrides = {
-        models.TextField: {
-            "widget": WysiwygWidget,
-        }
-    }
+    form = VenueAdminForm
     inlines = (WorkScheduleInline,)
     compressed_fields = True
     actions_detail = ['pos_action_detail',]
