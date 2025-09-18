@@ -70,13 +70,13 @@ class OrderViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         queryset = super().get_queryset()
 
-        # if self.action == "retrieve":
-        #     return queryset.prefetch_related(
-        #         'order_products',
-        #         'order_products__product',
-        #         'order_products__product__modificators',
-        #         'order_products__product__category',
-        #     )
+        if self.action == "retrieve":
+            return queryset.prefetch_related(
+                'order_products',
+                'order_products__product',
+                'order_products__product__modificators',
+                'order_products__product__category',
+            )
 
         venue_slug = self.request.GET.get('venue_slug', None)
         spot_id = self.request.GET.get("spot_id", None)
