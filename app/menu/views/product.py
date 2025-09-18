@@ -38,27 +38,35 @@ class ProductViewSet(viewsets.GenericViewSet,
     filterset_fields = ('category',)
 
     def get_queryset(self):
-        queryset = Product.objects.select_related('category', 'venue') \
-            .prefetch_related('spots', 'modificators')
-
-        search_query = self.request.GET.get("search")
-        venue_slug = self.request.GET.get("venue_slug")
-        spot_id = self.request.GET.get("spot_id")
+        request = self.request
+        venue_slug = request.GET.get("venue_slug")
+        search_query = request.GET.get("search")
+        spot_id = request.GET.get("spot_id")
 
         if not venue_slug:
             from rest_framework.exceptions import ValidationError
             raise ValidationError({'venue_slug': 'This parameter is required.'})
 
-        queryset = queryset.filter(venue__slug=venue_slug.lower(), hidden=False)
+        # фильтруем сразу только актуальные продукты конкретного venue
+        qs = (
+            Product.objects
+            .filter(venue__slug__iexact=venue_slug, hidden=False)
+            .select_related("category", "venue")
+            .prefetch_related("modificators")
+        )
 
         if spot_id:
-            queryset = queryset.filter(spots__id=spot_id)
-
-        queryset = queryset.distinct()
+            qs = qs.filter(spots__id=spot_id)
 
         if search_query:
-            queryset = queryset.annotate(
-                similarity=TrigramSimilarity(Lower('product_name'), search_query.lower()),
-            ).filter(similarity__gt=0.1).order_by('-similarity')
+            qs = (
+                qs.annotate(
+                    similarity=TrigramSimilarity(
+                        Lower('product_name'), search_query.lower()
+                    )
+                )
+                .filter(similarity__gt=0.1)
+                .order_by('-similarity')
+            )
 
-        return queryset
+        return qs.distinct()
