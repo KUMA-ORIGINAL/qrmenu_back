@@ -1,5 +1,6 @@
 from decimal import Decimal, ROUND_HALF_UP
 
+from django.db import transaction
 from rest_framework import serializers
 
 from ..serializers import OrderProductCreateSerializer, OrderProductSerializer
@@ -104,9 +105,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         return order
 
     def get_payment_url(self, obj):
-        transaction = self.context.get('transaction')
+        transaction_obj = self.context.get('transaction')
         payment_account = self.context.get('payment_account')
-        if transaction:
+        if transaction_obj:
             return generate_payment_link(transaction, obj, payment_account)
         return None
 
