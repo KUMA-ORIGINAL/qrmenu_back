@@ -44,6 +44,10 @@ class Product(BaseModel):
         verbose_name = "Товар"
         verbose_name_plural = "Товары"
         ordering = ['product_name']
+        indexes = [
+            models.Index(fields=['product_name']),  # For search optimization
+            models.Index(fields=['venue', 'hidden']),  # For filtering
+        ]
 
     def __str__(self):
         return self.product_name
