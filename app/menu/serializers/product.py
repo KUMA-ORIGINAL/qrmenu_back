@@ -40,8 +40,8 @@ class ProductSerializer(serializers.ModelSerializer):
     category = CategoryShortSerializer(read_only=True)
 
     product_photo = AbsoluteImageSerializerField(read_only=True)
-    product_photo_small = AbsoluteImageSerializerField(source="product_photo_small", read_only=True)
-    product_photo_large = AbsoluteImageSerializerField(source="product_photo_large", read_only=True)
+    product_photo_small = AbsoluteImageSerializerField(read_only=True)
+    product_photo_large = AbsoluteImageSerializerField(read_only=True)
 
     class Meta:
         model = Product
