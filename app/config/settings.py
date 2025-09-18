@@ -232,13 +232,12 @@ CACHES = {
 }
 
 CACHALOT_ENABLED = True
-
 CACHALOT_ONLY_CACHABLE_TABLES = (
-    'menu.category',
-    'menu.product',
-    'menu.modificator',
+    'menu_category',
+    'menu_product',
+    'menu_modificator',
 
-    'venues.banner',
+    'venues_banner',
     'venues_venue',
     'venues_spot',
     'venues_hall',
@@ -246,7 +245,6 @@ CACHALOT_ONLY_CACHABLE_TABLES = (
 
     'orders_paymentaccount',
 )
-
 CACHALOT_TIMEOUT = 60 * 30  # 30 минут
 
 CHANNEL_LAYERS = {
