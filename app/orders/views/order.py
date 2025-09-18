@@ -70,6 +70,14 @@ class OrderViewSet(viewsets.GenericViewSet,
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        # if self.action == "retrieve":
+        #     return queryset.prefetch_related(
+        #         'order_products',
+        #         'order_products__product',
+        #         'order_products__product__modificators',
+        #         'order_products__product__category',
+        #     )
+
         venue_slug = self.request.GET.get('venue_slug', None)
         spot_id = self.request.GET.get("spot_id", None)
         table_id = self.request.GET.get('table_id', None)
@@ -84,8 +92,10 @@ class OrderViewSet(viewsets.GenericViewSet,
         if phone:
             queryset = queryset.filter(phone=phone)
 
-        today = timezone.now().date()
-        queryset = queryset.filter(created_at__date=today)
+        start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timezone.timedelta(days=1)
+
+        queryset = queryset.filter(created_at__gte=start, created_at__lt=end)
 
         queryset = queryset.exclude(status=OrderStatus.WAITING_FOR_PAYMENT)
 
