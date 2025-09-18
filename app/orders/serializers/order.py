@@ -108,7 +108,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         transaction_obj = self.context.get('transaction')
         payment_account = self.context.get('payment_account')
         if transaction_obj:
-            return generate_payment_link(transaction, obj, payment_account)
+            return generate_payment_link(transaction_obj, obj, payment_account)
         return None
 
 
