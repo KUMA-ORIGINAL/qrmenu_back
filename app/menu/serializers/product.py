@@ -36,38 +36,33 @@ class AbsoluteImageSerializerField(serializers.ImageField):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # product_attributes = ProductAttributeSerializer(many=True, read_only=True)
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
-    # product_photo = serializers.SerializerMethodField(read_only=True)
-    # product_photo_small = serializers.SerializerMethodField(read_only=True)
-    # product_photo_large = serializers.SerializerMethodField(read_only=True)
+    product_photo = serializers.SerializerMethodField()
+    product_photo_small = serializers.SerializerMethodField()
+    product_photo_large = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'product_name', 'product_description', 'product_price', 'weight',
-            'product_photo', 'product_photo_small', 'product_photo_large', 'category', 'is_recommended', 'modificators'
+            'product_photo', 'product_photo_small', 'product_photo_large',
+            'category', 'is_recommended', 'modificators'
         ]
 
-    # def get_product_photo(self, obj):
-    #     if obj.product_photo and str(obj.product_photo).startswith('http'):
-    #         return str(obj.product_photo)
-    #     if obj.product_photo:
-    #         return self.context['request'].build_absolute_uri(obj.product_photo.url)
-    #     return None
-    #
-    # def get_product_photo_small(self, obj):
-    #     if obj.product_photo and str(obj.product_photo).startswith('http'):
-    #         # Превью не делаем, возвращаем оригинал
-    #         return str(obj.product_photo)
-    #     if obj.product_photo_small:
-    #         return self.context['request'].build_absolute_uri(obj.product_photo_small.url)
-    #     return None
-    #
-    # def get_product_photo_large(self, obj):
-    #     if obj.product_photo and str(obj.product_photo).startswith('http'):
-    #         return str(obj.product_photo)
-    #     if obj.product_photo_large:
-    #         return self.context['request'].build_absolute_uri(obj.product_photo_large.url)
-    #     return None
+    def _build_url(self, image_field):
+        if not image_field:
+            return None
+        request = self.context.get("request")
+        if request:
+            return request.build_absolute_uri(image_field.url)
+        return image_field.url
+
+    def get_product_photo(self, obj):
+        return self._build_url(obj.product_photo)
+
+    def get_product_photo_small(self, obj):
+        return self._build_url(obj.product_photo_small)
+
+    def get_product_photo_large(self, obj):
+        return self._build_url(obj.product_photo_large)
