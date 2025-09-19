@@ -22,29 +22,16 @@ class CategoryShortSerializer(serializers.ModelSerializer):
         fields = ['id', 'category_name']
 
 
-class AbsoluteImageSerializerField(serializers.ImageField):
-    def to_representation(self, value):
-        if not value:
-            return None
-        value_str = str(value)
-        if value_str.startswith("http"):
-            return value_str
-        request = self.context.get("request")
-        if request:
-            return request.build_absolute_uri(value.url)
-        return value.url
-
-
 class ProductSerializer(serializers.ModelSerializer):
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
-    product_photo_small = serializers.ImageField(read_only=True)
-    product_photo_large = serializers.ImageField(read_only=True)
+    # product_photo_small = serializers.ImageField(read_only=True)
+    # product_photo_large = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Product
         fields = [
             'id', 'product_name', 'product_description', 'product_price', 'weight',
-            'product_photo', 'product_photo_small', 'product_photo_large',
+            'product_photo',
             'category', 'is_recommended', 'modificators'
         ]
