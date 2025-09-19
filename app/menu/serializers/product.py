@@ -38,9 +38,8 @@ class AbsoluteImageSerializerField(serializers.ImageField):
 class ProductSerializer(serializers.ModelSerializer):
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
-    product_photo = serializers.SerializerMethodField()
-    product_photo_small = serializers.SerializerMethodField()
-    product_photo_large = serializers.SerializerMethodField()
+    product_photo_small = serializers.ImageField()
+    product_photo_large = serializers.ImageField()
 
     class Meta:
         model = Product
@@ -49,20 +48,3 @@ class ProductSerializer(serializers.ModelSerializer):
             'product_photo', 'product_photo_small', 'product_photo_large',
             'category', 'is_recommended', 'modificators'
         ]
-
-    def _build_url(self, image_field):
-        if not image_field:
-            return None
-        request = self.context.get("request")
-        if request:
-            return request.build_absolute_uri(image_field.url)
-        return image_field.url
-
-    def get_product_photo(self, obj):
-        return self._build_url(obj.product_photo)
-
-    def get_product_photo_small(self, obj):
-        return self._build_url(obj.product_photo_small)
-
-    def get_product_photo_large(self, obj):
-        return self._build_url(obj.product_photo_large)
