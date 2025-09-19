@@ -34,3 +34,4 @@ deep-translator==1.11.4
 django-axes==8.0.0
 django-import-export==4.3.7
 openpyxl==3.1.5
+drf-orjson-renderer==1.7.3

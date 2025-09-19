@@ -291,6 +291,10 @@ REST_FRAMEWORK = {
     ),
 }
 
+JSON_CAMEL_CASE = {
+    'RENDERER_CLASS': 'drf_orjson_renderer.renderers.ORJSONRenderer',
+}
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
