@@ -38,8 +38,8 @@ class AbsoluteImageSerializerField(serializers.ImageField):
 class ProductSerializer(serializers.ModelSerializer):
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
-    product_photo_small = serializers.ImageField()
-    product_photo_large = serializers.ImageField()
+    product_photo_small = serializers.ImageField(read_only=True)
+    product_photo_large = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Product
