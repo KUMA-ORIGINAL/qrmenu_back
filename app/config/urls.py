@@ -24,8 +24,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from config import views
 
 urlpatterns = [
-    path('ustukan/', views.ustukan_view, name='ustukan'),
-
     path('admin/', include('account.urls')),
     path('admin/ajax/', include('config.admin_urls')),
     path('admin/', admin.site.urls),
