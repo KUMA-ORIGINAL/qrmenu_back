@@ -18,7 +18,7 @@ class ProductResource(resources.ModelResource):
         model = Product
         import_id_fields = ('product_name',)  # Используем product_name как уникальный идентификатор
         fields = (
-            'product_name', 'product_description',
+            'product_name', 'product_name_en', 'product_name_ky', 'product_description',
             'product_price', 'weight', 'is_recommended', 'hidden',
             'modificators',
         )
