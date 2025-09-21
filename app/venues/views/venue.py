@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from venues.models import Venue, Table, Spot
+from venues.models import Venue, Spot
 from venues.serializers.table import TableSerializer
 from venues.serializers.venue import VenueSerializer
 
