@@ -96,6 +96,18 @@ services:
     volumes:
       - static_volume:/frontend_static
 
+  frontend2:
+    build:
+      context: ../imenu-nextjs/
+      dockerfile: Dockerfile
+    restart: always
+    expose:
+      - 3000
+    depends_on:
+      - backend
+    volumes:
+      - static_volume:/frontend_static
+
 volumes:
   database-storage:
   redis_data:

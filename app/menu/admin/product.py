@@ -215,6 +215,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
 
     def delete_model(self, request, obj):
         super().delete_model(request, obj)
+
         cache.delete_pattern(f"products:{obj.venue.slug}:*")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
