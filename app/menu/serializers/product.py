@@ -25,13 +25,39 @@ class CategoryShortSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     modificators = ModificatorSerializer(many=True, read_only=True)
     category = CategoryShortSerializer(read_only=True)
-    product_photo_small = serializers.ImageField(read_only=True)
-    product_photo_large = serializers.ImageField(read_only=True)
+
+    product_photo = serializers.SerializerMethodField()
+    product_photo_small = serializers.SerializerMethodField()
+    product_photo_large = serializers.SerializerMethodField()
 
     class Meta:
-        model = Product
-        fields = [
-            'id', 'product_name', 'product_description', 'product_price', 'weight',
-            'product_photo', 'product_photo_small', 'product_photo_large',
-            'category', 'is_recommended', 'modificators'
-        ]
+            model = Product
+            fields = [
+                'id', 'product_name', 'product_description', 'product_price', 'weight',
+                'product_photo', 'product_photo_small', 'product_photo_large',
+                'category', 'is_recommended', 'modificators'
+            ]
+
+    def get_product_photo(self, obj):
+        if obj.product_photo:
+            photo_str = str(obj.product_photo)
+            if photo_str.startswith("http"):
+                return photo_str
+            return self.context['request'].build_absolute_uri(obj.product_photo.url)
+        return None
+
+    def get_product_photo_small(self, obj):
+        if obj.product_photo_small:
+            url = str(obj.product_photo_small)
+            if url.startswith("http"):
+                return url
+            return self.context['request'].build_absolute_uri(obj.product_photo_small.url)
+        return ''
+
+    def get_product_photo_large(self, obj):
+        if obj.product_photo_large:
+            url = str(obj.product_photo_large)
+            if url.startswith("http"):
+                return url
+            return self.context['request'].build_absolute_uri(obj.product_photo_large.url)
+        return ''

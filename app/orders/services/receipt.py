@@ -128,13 +128,14 @@ def send_receipt_to_mqtt(order, venue):
         order_date_local = timezone.localtime(order.created_at)
 
         address = order.spot.address if order.spot.address else "Адрес не указан"
-        delivery_address = order.address if order.address else "Адрес не указан"
+        delivery_address = order.address
         service_mode = order.get_service_mode_display().upper()
 
         printdata = (
             f"<LOGO>printest</LOGO><F3232><CENTER>{venue.company_name}\r</CENTER></F3232>"
             f"<F2424><CENTER>{order_date_local.strftime('%d.%m.%Y             %H:%M:%S')}</CENTER></F2424>\r"
             f"<F2424>Терминал ID: {receipt_printer.topic}\r</F2424>"
+             + (f"<F2424>Адрес: {delivery_address}\r</F2424>" if delivery_address else "") +
             f"<F2424>Адрес: {address}\r</F2424>"
             f"<F2424>Тип операции: Оплата elQR\r</F2424>"
             f"<F2424>ID транзакции: trx_{order.id}\r</F2424>"

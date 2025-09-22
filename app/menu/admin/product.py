@@ -2,6 +2,7 @@ import logging
 
 from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.http import HttpRequest
 from django.shortcuts import redirect
@@ -209,6 +210,12 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         super().save_model(request, obj, form, change)
         if request.user.role == ROLE_ADMIN and not change:
             obj.spots.add(request.user.spot)
+
+        cache.delete_pattern(f"products:{obj.venue.slug}:*")
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        cache.delete_pattern(f"products:{obj.venue.slug}:*")
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and db_field.name == 'category':

@@ -1,8 +1,10 @@
 from django.contrib.postgres.search import TrigramSimilarity
+from django.core.cache import cache
 from django.db.models.functions import Lower
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.response import Response
 
 from ..models import Product
 from ..serializers import ProductSerializer
@@ -70,3 +72,24 @@ class ProductViewSet(viewsets.GenericViewSet,
             )
 
         return qs.distinct()
+
+    def list(self, request, *args, **kwargs):
+        venue_slug = request.GET.get("venue_slug")
+        if not venue_slug:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'venue_slug': 'This parameter is required.'})
+
+        other_params = request.GET.copy()
+        other_params.pop("venue_slug", None)
+        params_str = other_params.urlencode()
+        cache_key = f"products:{venue_slug}:{params_str}"
+
+        data = cache.get(cache_key)
+
+        if not data:
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            data = serializer.data
+            cache.set(cache_key, data, 60 * 5)  # кеш на 5 минут
+
+        return Response(data, status=status.HTTP_200_OK)
