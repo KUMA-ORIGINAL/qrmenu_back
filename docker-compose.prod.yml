@@ -82,19 +82,19 @@ services:
       - certs:/etc/letsencrypt
     depends_on:
       - backend
-      - frontend
+      - frontend2
 
-  frontend:
-    build:
-      context: ../web-menu/
-      dockerfile: Dockerfile
-    restart: always
-    expose:
-      - 3000
-    depends_on:
-      - backend
-    volumes:
-      - static_volume:/frontend_static
+#  frontend:
+#    build:
+#      context: ../web-menu/
+#      dockerfile: Dockerfile
+#    restart: always
+#    expose:
+#      - 3000
+#    depends_on:
+#      - backend
+#    volumes:
+#      - static_volume:/frontend_static
 
   frontend2:
     build:
