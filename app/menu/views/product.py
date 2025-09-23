@@ -82,7 +82,7 @@ class ProductViewSet(viewsets.GenericViewSet,
         other_params = request.GET.copy()
         other_params.pop("venue_slug", None)
         params_str = other_params.urlencode()
-        cache_key = f"products:{venue_slug}:{params_str}"
+        cache_key = f"products:{venue_slug.lower()}:{params_str}"
 
         data = cache.get(cache_key)
 
