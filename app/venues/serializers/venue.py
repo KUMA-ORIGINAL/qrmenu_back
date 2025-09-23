@@ -12,9 +12,25 @@ class VenueSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedules', 'service_fee_percent', 'default_delivery_spot', 'spots',
-                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available', 'delivery_fixed_fee', 'delivery_free_from',
-                  'terms', 'description')
+        fields = (
+            'color_theme',
+            'company_name',
+            'slug',
+            'logo',
+            'schedules',
+            'delivery_service_fee_percent',   # ✅ новое поле
+            'takeout_service_fee_percent',    # ✅ новое поле
+            'dinein_service_fee_percent',     # ✅ новое поле
+            'default_delivery_spot',
+            'spots',
+            'is_delivery_available',
+            'is_takeout_available',
+            'is_dinein_available',
+            'delivery_fixed_fee',
+            'delivery_free_from',
+            'terms',
+            'description',
+        )
 
 
 class VenueWithTableSerializer(serializers.ModelSerializer):
@@ -23,6 +39,18 @@ class VenueWithTableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Venue
-        fields = ('color_theme', 'company_name', 'slug', 'logo', 'schedules', 'service_fee_percent',
-                  'is_delivery_available', 'is_takeout_available', 'is_dinein_available',
-                  'terms', 'description')
+        fields = (
+            'color_theme',
+            'company_name',
+            'slug',
+            'logo',
+            'schedules',
+            'delivery_service_fee_percent',   # ✅ новое поле
+            'takeout_service_fee_percent',    # ✅ новое поле
+            'dinein_service_fee_percent',     # ✅ новое поле
+            'is_delivery_available',
+            'is_takeout_available',
+            'is_dinein_available',
+            'terms',
+            'description',
+        )

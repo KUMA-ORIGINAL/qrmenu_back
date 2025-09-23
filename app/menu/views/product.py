@@ -90,6 +90,6 @@ class ProductViewSet(viewsets.GenericViewSet,
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
-            cache.set(cache_key, data, 60 * 5)  # кеш на 5 минут
+            cache.set(cache_key, data, 60 * 30)  # кеш на 5 минут
 
         return Response(data, status=status.HTTP_200_OK)

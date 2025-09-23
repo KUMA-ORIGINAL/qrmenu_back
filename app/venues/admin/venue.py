@@ -119,7 +119,6 @@ class VenueAdmin(BaseModelAdmin):
                     'pos_system',
                     'account_number',
                     'access_token',
-                    'service_fee_percent',
                 )
             }),
             ("Тариф", {
@@ -132,8 +131,11 @@ class VenueAdmin(BaseModelAdmin):
             ("Типы обслуживания", {
                 'fields': (
                     'is_delivery_available',
+                    'delivery_service_fee_percent',
                     'is_takeout_available',
+                    'takeout_service_fee_percent',
                     'is_dinein_available',
+                    'dinein_service_fee_percent',
                 )
             }),
             ("Доставка", {
@@ -149,15 +151,18 @@ class VenueAdmin(BaseModelAdmin):
                 )
             }),
         )
+
         if request.user.is_superuser:
+            # для суперпользователя уже всё доступно
             pass
         elif request.user.role == ROLE_OWNER:
-            fieldsets[4][1]['fields'] = (
+            # 🔹 для владельца тоже нужно заменить на новые поля
+            fieldsets[3][1]['fields'] = (
                 'pos_system_plain',
                 'account_number',
                 'access_token',
-                'service_fee_percent',
             )
+
         return fieldsets
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):

@@ -37,7 +37,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         validated_data.pop("use_bonus", None)
         validated_data.pop("hash", None)
 
-        with transaction.atomic():  # 🚀 всё, что внутри, будет атомарно
+        with transaction.atomic():
             # --- создаём заказ ---
             order = Order.objects.create(**validated_data)
             products_total_price = Decimal('0.00')
@@ -60,15 +60,22 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 )
                 products_total_price += total_price
 
-            # сервисный сбор
-            service_fee_percent = order.venue.service_fee_percent or Decimal('0.00')
-            if not isinstance(service_fee_percent, Decimal):
-                service_fee_percent = Decimal(str(service_fee_percent))
+            # 🔹 сервисный сбор (берём по режиму)
+            if order.service_mode == ServiceMode.DELIVERY:
+                service_fee_percent = order.venue.delivery_service_fee_percent
+            elif order.service_mode == ServiceMode.PICKUP:
+                service_fee_percent = order.venue.takeout_service_fee_percent
+            elif order.service_mode == ServiceMode.ON_SITE:
+                service_fee_percent = order.venue.dinein_service_fee_percent
+            else:
+                service_fee_percent = 0
+
+            service_fee_percent = Decimal(service_fee_percent or 0)
             service_price = (products_total_price * service_fee_percent / Decimal('100')).quantize(
                 Decimal('0.01'), rounding=ROUND_HALF_UP
             )
 
-            # доставка
+            # 🔹 доставка (только если режим = доставка)
             delivery_price = Decimal('0.00')
             if order.service_mode == ServiceMode.DELIVERY:
                 delivery_fixed_fee = order.venue.delivery_fixed_fee or Decimal('0.00')
@@ -79,16 +86,18 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                     else delivery_fixed_fee
                 )
 
-            # итоговая сумма
+            # 🔹 итоговая сумма
             total_price = (products_total_price + service_price + delivery_price).quantize(
                 Decimal('0.01'), rounding=ROUND_HALF_UP
             )
 
+            # 🔹 бонусы
             if bonus:
                 applied_bonus = min(bonus, total_price)
                 total_price = (total_price - applied_bonus).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
                 order.bonus = applied_bonus
 
+            # сохраняем все цены
             order.delivery_price = delivery_price
             order.service_price = service_price
             order.total_price = total_price
@@ -98,7 +107,7 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             transaction_obj = Transaction.objects.create(order=order, total_price=total_price)
             payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
 
-            # Передаём в context (для get_payment_url или других методов)
+            # Передаём в context
             self.context['transaction'] = transaction_obj
             self.context['payment_account'] = payment_account
 
