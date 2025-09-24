@@ -55,14 +55,14 @@ services:
           memory: 1G
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:7.4
     container_name: redis
     restart: always
     ports:
       - '127.0.0.1:6379:6379'
     volumes:
       - redis_data:/data
-    command: redis-server --replicaof no one --maxmemory-policy noeviction
+    command: redis-server --maxmemory 4gb --maxmemory-policy allkeys-lru
     healthcheck:
       test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
       interval: 1s
