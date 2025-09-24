@@ -116,7 +116,7 @@ class OrderAdmin(BaseModelAdmin):
                             'total_price', 'tips_price', 'bonus', 'display_products', 'created_at', 'venue', 'detail_link')
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             list_display = ('id', 'phone', 'display_status', 'display_service_mode',
-                            'total_price', 'tips_price', 'bonus', 'created_at', 'detail_link')
+                            'total_price', 'tips_price', 'bonus', 'display_products', 'created_at', 'detail_link')
         return list_display
 
     def get_fieldsets(self, request, obj=None):
