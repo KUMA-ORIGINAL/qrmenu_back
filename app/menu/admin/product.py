@@ -12,7 +12,6 @@ from import_export.admin import ImportExportModelAdmin
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
 from unfold.admin import StackedInline
 from unfold.contrib.filters.admin import RangeNumericFilter
-from unfold.contrib.import_export.forms import ExportForm
 from unfold.decorators import display, action
 from unfold.typing import FieldsetsType
 
@@ -47,7 +46,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     inlines = [ModificatorInline]
     autocomplete_fields = ('spots',)
     list_before_template = "menu/change_list_before.html"
-    list_per_page = 50
+    list_per_page = 30
 
     actions_detail = ['translate_product_fields']
 
