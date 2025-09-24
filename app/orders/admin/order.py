@@ -118,13 +118,35 @@ class OrderAdmin(BaseModelAdmin):
                             'total_price', 'tips_price', 'bonus', 'created_at', 'detail_link')
         return list_display
 
-    def get_fields(self, request, obj=None):
-        fields = super().get_fields(request, obj)
+    def get_fieldsets(self, request, obj=None):
+        # Базовые fieldsets
+        fieldsets = [
+            ("Основная информация", {
+                "fields": ["phone", "comment", "service_mode", "status", "venue", "spot", "table"]
+            }),
+            ("Клиент", {
+                "fields": ["client"]
+            }),
+            ("Цены и скидки", {
+                "fields": ["total_price", "service_price", "delivery_price", "tips_price", "discount", "bonus"]
+            }),
+            ("Дополнительно", {
+                "fields": ["external_id", "is_tg_bot", "tg_redirect_url"]
+            }),
+        ]
+
+        # суперпользователь — видит всё
         if request.user.is_superuser:
-            return fields
-        elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            return [field for field in fields if field not in ['venue', 'external_id']]
-        return fields
+            return fieldsets
+
+        # владелец/админ — убираем "venue" и "external_id"
+        cleaned = []
+        for name, opts in fieldsets:
+            fields = opts["fields"]
+            opts["fields"] = [f for f in fields if f not in ["venue", "external_id"]]
+            cleaned.append((name, opts))
+
+        return cleaned
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
