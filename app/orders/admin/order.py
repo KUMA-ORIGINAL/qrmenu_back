@@ -27,6 +27,7 @@ class OrderAdmin(BaseModelAdmin):
     compressed_fields = True
     search_fields = ('phone',)
     list_select_related = ('venue', 'spot', 'client', 'table')
+    autocomplete_fields = ('spot', 'client', 'table')
     inlines = [OrderProductInline]
     list_per_page = 50
     list_before_template = "menu/change_list_before.html"
@@ -152,9 +153,7 @@ class OrderAdmin(BaseModelAdmin):
         if request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             venue = request.user.venue
             if venue:
-                if db_field.name == 'client':
-                    kwargs["queryset"] = Client.objects.filter(venue=venue)
-                elif db_field.name == 'table':
+                if db_field.name == 'table':
                     kwargs["queryset"] = Table.objects.filter(venue=venue)
                 elif db_field.name == 'spot':
                     kwargs["queryset"] = Spot.objects.filter(venue=venue)
