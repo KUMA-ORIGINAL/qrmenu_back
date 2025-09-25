@@ -42,7 +42,7 @@ class SpotAdmin(BaseModelAdmin):
         spot = get_object_or_404(Spot, pk=object_id)
         venue = spot.venue
 
-        qr_url = f"https://imenu.kg/I/{venue.slug}/{spot.id}/s/"
+        qr_url = f"https://imenu.kg/{venue.slug}/{spot.id}/s/"
         text_top_ru = f"На вынос"
         text_top_kg = f"Өзү менен\nалып кетүү"
         color = venue.color_theme
