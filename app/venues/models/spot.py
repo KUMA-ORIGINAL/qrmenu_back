@@ -12,6 +12,8 @@ class Spot(BaseModel):
                               verbose_name="Заведение")
     is_hidden = models.BooleanField(default=False, verbose_name="Скрыт?")
 
+    telegram_chat_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ID Telegram-группы")
+
     class Meta:
         verbose_name = "Точка заведения"
         verbose_name_plural = "Точки заведения"
