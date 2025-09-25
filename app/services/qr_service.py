@@ -17,7 +17,7 @@ def create_qr_code_in_memory(url):
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
-        border=2,
+        border=1,
     )
     qr.add_data(url)
     qr.make(fit=True)
@@ -32,18 +32,11 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
                        text_top1, text_top2, is_table):
     text_bottom1_ru = "Ваш персональный\nонлайн-официант"
     text_bottom1_kg = "Сиздин жеке\nонлайн-официантыңыз"
-    text_bottom2_ru = ("Заказывайте еду и напитки онлайн с доставкой\n"
-                       "прямо к вашему столу! Просто отсканируйте QR-код")
-    text_bottom2_kg = ("Тамак-аш менен суусундуктарга онлайн буюртма бериңиз —\n"
-                       "түз эле дасторконуңузга жеткирип беришет!\n"
-                       "Болгону QR-кодду сканерлеңиз.")
 
     packet = BytesIO()
     can = canvas.Canvas(packet, pagesize=landscape(A4))
 
     pdfmetrics.registerFont(TTFont('Inter', 'static/Inter_18pt-Bold.ttf'))
-
-    line_spacing = 20  # Расстояние между строками для основного текста
 
     # Центры QR-блоков
     center_x1 = x1 + width / 2
@@ -69,6 +62,26 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     can.drawImage(qr_image, x1, y1, width=width, height=height)
     can.drawImage(qr_image, x2, y2, width=width, height=height)
 
+    # --- Новый текст: NFC подсказка ---
+    can.setFont('Inter', 16)
+    can.setFillColor(HexColor("#FFFFFF"))  # красный цвет как в примере
+
+    text_indent = -10  # насколько сдвинуть текст влево (можно регулировать)
+
+    # Под левым QR (русский текст в 3 строки)
+    nfc_text_ru_lines = "Прислоните\nсмартфон к\nNFC".split('\n')
+    y_offset_nfc_ru = y1 - 40
+    for line in nfc_text_ru_lines:
+        can.drawString(center_x1 + text_indent, y_offset_nfc_ru, line)
+        y_offset_nfc_ru -= 18  # шаг между строками
+
+    # Под правым QR (кыргызский текст в 3 строки)
+    nfc_text_kg_lines = "NFCке\nсмартфонду\nжакындатыңыз".split('\n')
+    y_offset_nfc_kg = y2 - 40
+    for line in nfc_text_kg_lines:
+        can.drawString(center_x2 + text_indent, y_offset_nfc_kg, line)
+        y_offset_nfc_kg -= 18
+
     # --- ЛЕВАЯ ЧАСТЬ (Русский) ---
     # Заголовок на русском (черный текст)
     can.setFillColor(HexColor("#000000"))
@@ -76,7 +89,7 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
 
     # Разбиваем текст на строки для text_bottom1_ru
     ru_title_lines = text_bottom1_ru.split('\n')
-    y_offset_ru_title = y1 - 150
+    y_offset_ru_title = y1 - 215
 
     for line in ru_title_lines:
         can.drawCentredString(center_x1, y_offset_ru_title, line)
@@ -86,14 +99,6 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     can.setFillColor(HexColor("#939393"))
     can.setFont('Inter', 14)
 
-    # Разбиваем текст на строки для нижнего текста (русский)
-    ru_lines = text_bottom2_ru.split('\n')
-    y_offset_ru = y1 - 220
-
-    for line in ru_lines:
-        can.drawCentredString(center_x1, y_offset_ru, line)
-        y_offset_ru -= line_spacing
-
     # --- ПРАВАЯ ЧАСТЬ (Киргизский) ---
     # Заголовок на киргизском (черный текст)
     can.setFillColor(HexColor("#000000"))
@@ -101,7 +106,7 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
 
     # Разбиваем текст на строки для text_bottom1_kg
     kg_title_lines = text_bottom1_kg.split('\n')
-    y_offset_kg_title = y2 - 150
+    y_offset_kg_title = y2 - 215
 
     for line in kg_title_lines:
         can.drawCentredString(center_x2, y_offset_kg_title, line)
@@ -110,14 +115,6 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     # Основной текст на киргизском (серый)
     can.setFillColor(HexColor("#939393"))
     can.setFont('Inter', 12)
-
-    # Разбиваем текст на строки для нижнего текста (киргизский)
-    kg_lines = text_bottom2_kg.split('\n')
-    y_offset_kg = y2 - 220
-
-    for line in kg_lines:
-        can.drawCentredString(center_x2, y_offset_kg, line)
-        y_offset_kg -= line_spacing
 
     can.save()
     packet.seek(0)
@@ -139,17 +136,18 @@ def merge_pdf_with_overlay(input_pdf_stream, overlay_pdf):
     output_pdf_stream.seek(0)
     return output_pdf_stream
 
-def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, is_table=False):
+
+def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, input_pdf_color, is_table=False):
     """Добавляет QR-коды и текст в PDF, используя миллиметры для координат."""
     qr_image_path = create_qr_code_in_memory(qr_url)
-    input_pdf = "static/input_pdf_for_qr.pdf"
+    input_pdf = f"static/input_pdfs/{input_pdf_color}.pdf"
 
-    qr_width = 70 * mm
-    qr_height = 70 * mm
-    x1 = 39 * mm
-    y1 = 100 * mm
-    x2 = x1 * 3 + qr_height + 1 * mm
-    y2 = 100 * mm
+    qr_width = 66 * mm
+    qr_height = 66 * mm
+    x1 = 40 * mm
+    y1 = 107 * mm
+    x2 = x1 * 3 + qr_height + 3 * mm
+    y2 = 107 * mm
 
     overlay_pdf = create_overlay_pdf(
         qr_image_path, x1, y1, x2, y2, qr_width, qr_height,
