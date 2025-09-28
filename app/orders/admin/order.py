@@ -112,10 +112,10 @@ class OrderAdmin(BaseModelAdmin):
     def get_list_display(self, request):
         list_display = ()
         if request.user.is_superuser:
-            list_display = ('id', 'phone', 'display_status', 'display_service_mode',
+            list_display = ('id', 'phone',  'display_service_mode', 'display_status',
                             'total_price', 'tips_price', 'bonus', 'display_products', 'created_at', 'venue', 'detail_link')
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('id', 'phone', 'display_status', 'display_service_mode',
+            list_display = ('id', 'phone', 'display_service_mode', 'display_status',
                             'total_price', 'tips_price', 'bonus', 'display_products', 'created_at', 'detail_link')
         return list_display
 
