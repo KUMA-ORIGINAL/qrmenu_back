@@ -439,6 +439,16 @@ UNFOLD = {
                 "collapsible": True,
                 "items": [
                     {
+                        "title": _("Главные кнопки"),
+                        "icon": "radio_button_checked",
+                        "link": reverse_lazy("admin:menu_mainbutton_changelist"),
+                    },
+                    {
+                        "title": _("разделы"),
+                        "icon": "content_copy",
+                        "link": reverse_lazy("admin:menu_section_changelist"),
+                    },
+                    {
                         "title": _("Категории"),
                         "icon": "category",
                         "link": reverse_lazy("admin:menu_category_changelist"),

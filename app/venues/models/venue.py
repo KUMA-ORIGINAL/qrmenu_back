@@ -5,6 +5,7 @@ from imagekit.models import ProcessedImageField
 from pilkit.processors import ResizeToFill
 from unidecode import unidecode
 
+from menu.models import MainButton
 from services.model import BaseModel
 from .work_schedule import WorkSchedule
 
@@ -109,6 +110,7 @@ class Venue(BaseModel):
     def save(self, *args, **kwargs):
         self.slug = slugify(unidecode(self.company_name)).lower()
         super().save(*args, **kwargs)
+        is_new = self.pk is None
 
         # Автогенерация расписания
         existing_days = set(self.schedules.values_list("day_of_week", flat=True))
@@ -121,3 +123,11 @@ class Venue(BaseModel):
                 day_of_week=day_val,
                 is_day_off=True,
             )
+
+        if is_new:
+            for i in range(1, 6):
+                MainButton.objects.create(
+                    venue=self,
+                    order=i,
+                    button_type="section",  # можно выбрать нужный тип по умолчанию
+                )
