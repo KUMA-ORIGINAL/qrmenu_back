@@ -1,7 +1,7 @@
 from django.urls import path
 
-from menu.views import get_categories
-from venues.views import get_halls_by_spot, get_spots
+from menu.api.v1.views import get_categories
+from venues.api.v1.views import get_halls_by_spot, get_spots
 
 
 urlpatterns = [

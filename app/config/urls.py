@@ -34,9 +34,13 @@ urlpatterns = [
     path('api/health/', views.health_check, name='health_check'),
 
     path('api/', include('account.api_urls')),
-    path('api/', include('venues.urls')),
-    path('api/', include('menu.urls')),
-    path('api/', include('orders.urls')),
+    path('api/', include('venues.api.v1.urls')),
+    path('api/', include('menu.api.v1.urls')),
+    path('api/', include('orders.api.v1.urls')),
+
+    path('api/v2/', include('venues.api.v2.urls')),
+    path('api/v2/', include('menu.api.v2.urls')),
+    path('api/v2/', include('orders.api.v2.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 from imagekit.models import ProcessedImageField, ImageSpecField
 from pilkit.processors import ResizeToFill
 
@@ -8,6 +9,13 @@ from services.model import BaseModel
 class Category(BaseModel):
     external_id = models.CharField(max_length=100, blank=True, verbose_name="Внешний ID товара")
     category_name = models.CharField(max_length=255, verbose_name="Название категории")
+    slug = models.SlugField(
+        max_length=255,
+        verbose_name="URL слаг",
+        help_text="Автоматически генерируется из названия категории",
+        blank=True,  # ⬅ временно разрешаем
+        null=True  # ⬅ чтобы миграция прошла без ошибок
+    )
     category_photo = models.ImageField(
         upload_to='menu/category/%Y/%m',
         verbose_name="Оригинальное фото категории",
@@ -36,3 +44,15 @@ class Category(BaseModel):
         indexes = [
             models.Index(fields=['venue',]),
         ]
+
+    def save(self, *args, **kwargs):
+        # Генерация slug только если он не задан
+        if not self.slug:
+            base_slug = slugify(self.category_name)
+            slug = base_slug
+            num = 1
+            while Category.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{num}"
+                num += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
