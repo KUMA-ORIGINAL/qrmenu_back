@@ -2,7 +2,7 @@ from django.http import JsonResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins
 from menu.models import Category
-from menu.api.v1.serializers import CategorySerializer
+from menu.api.v2.serializers import CategorySerializer
 
 
 @extend_schema(

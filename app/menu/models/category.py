@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.text import slugify
 from imagekit.models import ProcessedImageField, ImageSpecField
 from pilkit.processors import ResizeToFill
+from unidecode import unidecode
 
 from services.model import BaseModel
 
@@ -48,7 +49,7 @@ class Category(BaseModel):
     def save(self, *args, **kwargs):
         # Генерация slug только если он не задан
         if not self.slug:
-            base_slug = slugify(self.category_name)
+            base_slug = slugify(unidecode(self.category_name))
             slug = base_slug
             num = 1
             while Category.objects.filter(slug=slug).exists():

@@ -2,6 +2,7 @@
 
 from django.db import migrations
 from django.utils.text import slugify
+from unidecode import unidecode
 
 
 def fill_slugs(apps, schema_editor):
@@ -9,7 +10,7 @@ def fill_slugs(apps, schema_editor):
 
     for category in Category.objects.all():
         if not category.slug:
-            base_slug = slugify(category.category_name)
+            base_slug = slugify(unidecode(category.category_name))
             slug = base_slug
             num = 1
             # Проверяем уникальность
