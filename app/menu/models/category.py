@@ -24,7 +24,7 @@ class Category(BaseModel):
     )
     category_photo_small = ImageSpecField(
         source='category_photo',
-        processors=[ResizeToFill(100, 100)],
+        processors=[ResizeToFill(200, 200)],
         format='JPEG',
         options={'quality': 90}
     )
