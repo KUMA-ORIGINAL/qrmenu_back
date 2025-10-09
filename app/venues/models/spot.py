@@ -14,6 +14,19 @@ class Spot(BaseModel):
 
     telegram_chat_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="ID Telegram-группы")
 
+    wifi_text = models.TextField(
+        verbose_name="Текст Wi‑Fi блока",
+        blank=True,
+        null=True,
+        help_text="Описание Wi‑Fi подключения, инструкции или промо‑сообщение"
+    )
+    wifi_url = models.URLField(
+        verbose_name="Ссылка для подключения Wi‑Fi",
+        blank=True,
+        null=True,
+        help_text="URL-кнопка 'Подключиться'"
+    )
+
     class Meta:
         verbose_name = "Точка заведения"
         verbose_name_plural = "Точки заведения"

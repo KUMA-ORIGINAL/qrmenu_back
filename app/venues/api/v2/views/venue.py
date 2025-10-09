@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action
@@ -27,7 +28,7 @@ class VenueViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
             .prefetch_related(Prefetch("spots", queryset=Spot.objects.filter(is_hidden=False)))
             .get(slug=slug.lower())
         )
-        table = venue.tables.get(pk=table_id)
+        table = get_object_or_404(venue.tables, pk=table_id)
 
         venue_data = VenueSerializer(venue, context={'request': request}).data
         venue_data['table'] = TableSerializer(table, context={'request': request}).data

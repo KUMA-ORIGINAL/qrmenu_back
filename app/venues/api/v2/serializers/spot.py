@@ -7,4 +7,4 @@ class SpotSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Spot
-        fields = ('id', 'name', 'address')
+        fields = ('id', 'name', 'address', 'wifi_text', 'wifi_url')
