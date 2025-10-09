@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from menu.models import MainButton
-from menu.api.v1.serializers import MainButtonSerializer
+from menu.api.v2.serializers import MainButtonSerializer
 
 
 @extend_schema(

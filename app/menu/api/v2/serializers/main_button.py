@@ -1,10 +1,14 @@
 from rest_framework import serializers
+
+from menu.api.v2.serializers import CategorySerializer
 from menu.models import MainButton
 
 
 class MainButtonSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
+
+    categories = serializers.SerializerMethodField()
 
     class Meta:
         model = MainButton
@@ -14,7 +18,14 @@ class MainButtonSerializer(serializers.ModelSerializer):
             "order",
             "name",
             "photo",
+            'categories'
         ]
+
+    def get_categories(self, obj):
+        if obj.button_type == 'section' and obj.section:
+            categories_qs = obj.section.categories.all()
+            return CategorySerializer(categories_qs, many=True).data
+        return None
 
     def get_name(self, obj):
         """
