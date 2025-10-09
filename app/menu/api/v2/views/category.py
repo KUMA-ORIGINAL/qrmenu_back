@@ -14,6 +14,12 @@ from menu.api.v2.serializers import CategorySerializer
             required=False,  # Параметр необязательный
             type=str  # Тип данных
         ),
+        OpenApiParameter(
+            name='section_id',
+            description='Фильтр по ID раздела (пр. ?section_id=3)',
+            required=False,
+            type=int,
+        ),
     ]
 )
 class CategoryViewSet(viewsets.GenericViewSet,
@@ -23,13 +29,22 @@ class CategoryViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         queryset = Category.objects.select_related('venue')
-        venue_slug = self.request.GET.get("venue_slug")
+        request = self.request
+        venue_slug = request.GET.get("venue_slug")
+        section_id = request.GET.get("section_id")
 
         if venue_slug:
-            queryset = queryset.filter(venue__slug=venue_slug.lower(), category_hidden=False)
+            queryset = queryset.filter(
+                venue__slug=venue_slug.lower(),
+                category_hidden=False
+            )
 
-        queryset = queryset.distinct()
-        return queryset
+        if section_id:
+            queryset = queryset.filter(
+                sections__id=section_id
+            )
+
+        return queryset.distinct()
 
 
 def get_categories(request):
