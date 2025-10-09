@@ -28,9 +28,10 @@ class MainButtonSerializer(serializers.ModelSerializer):
         ]
 
     def get_categories(self, obj):
+        request = self.context.get("request")
         if obj.button_type == 'section' and obj.section:
             categories_qs = obj.section.categories.all()
-            return CategorySerializer(categories_qs, many=True).data
+            return CategorySerializer(categories_qs, many=True, context={'request': request} ).data
         return None
 
     def get_name(self, obj):
