@@ -1,12 +1,12 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, viewsets, mixins
 from phonenumber_field.phonenumber import to_python
 
 from venues.models import Venue
 from orders.models import Client, ClientVenueProfile
-from orders.api.v1.serializers import ClientBonusSerializer
+from orders.api.v2.serializers import ClientBonusSerializer, ClientSerializer
 
 
 @extend_schema(tags=['Client'])
@@ -88,3 +88,17 @@ class ClientBonusAPIView(APIView):
         }
         serializer = ClientBonusSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=['Client'])
+class ClientViewSet(viewsets.GenericViewSet,
+                    mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,):
+    queryset = Client.objects.all()
+    serializer_class = ClientSerializer
+    lookup_field = 'phone_number'
+
+    def get_object(self):
+        """Переопределяем поиск объекта по номеру телефона."""
+        phone_number = self.kwargs.get(self.lookup_field)
+        return Client.objects.get(phone_number=phone_number)
