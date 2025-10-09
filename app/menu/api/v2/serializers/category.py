@@ -7,10 +7,11 @@ from menu.models import Category
 class CategorySerializer(serializers.ModelSerializer):
     category_photo = serializers.SerializerMethodField()
     category_photo_small = serializers.SerializerMethodField()
+    sections = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Category
-        fields = ['id', 'category_name', 'slug', 'category_photo', 'category_photo_small']
+        fields = ['id', 'category_name', 'slug', 'category_photo', 'category_photo_small', 'sections']
 
     def get_category_photo(self, obj):
         # Если внешний URL
