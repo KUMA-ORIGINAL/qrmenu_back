@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from imagekit.models import ProcessedImageField, ImageSpecField
-from pilkit.processors import ResizeToFill
+from pilkit.processors import ResizeToFill, ResizeToFit
 from unidecode import unidecode
 
 from services.model import BaseModel
@@ -24,7 +24,7 @@ class Category(BaseModel):
     )
     category_photo_small = ImageSpecField(
         source='category_photo',
-        processors=[ResizeToFill(200, 200)],
+        processors=[ResizeToFit(200, 200)],
         format='JPEG',
         options={'quality': 90}
     )
