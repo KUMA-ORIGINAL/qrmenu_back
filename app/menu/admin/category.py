@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.decorators import display, action
@@ -11,6 +11,7 @@ from deep_translator import GoogleTranslator
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from ..models import Category
+from ..services import ai_improve_image, ai_generate_image
 
 
 @admin.register(Category)
@@ -25,7 +26,33 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     mptt_level_indent = 20
     mptt_show_nodedata = True
 
-    actions_detail = ["translate_action"]
+    actions_detail = ["translate_action", 'ai_improve_action', 'ai_generate_action']
+
+    @action(
+        description="Улучшить изображение AI",
+        url_path="ai-improve",
+    )
+    def ai_improve_action(self, request: HttpRequest, object_id: int):
+        """
+        Улучшает изображение конкретной категории прямо из карточки
+        """
+        obj = Category.objects.get(pk=object_id)
+        msg = ai_improve_image(obj, field_name='category_photo')
+        self.message_user(request, msg or "Готово ✅")
+        return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
+
+    @action(
+        description="Сгенерировать новое изображение AI",
+        url_path="ai-generate",
+    )
+    def ai_generate_action(self, request: HttpRequest, object_id: int):
+        """
+        Генерирует новое изображение AI для одной категории
+        """
+        obj = Category.objects.get(pk=object_id)
+        msg = ai_generate_image(obj, field_name='category_photo')
+        self.message_user(request, msg or "Готово ✅")
+        return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
 
     @action(
         description="Перевести название",

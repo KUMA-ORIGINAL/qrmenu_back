@@ -4,9 +4,9 @@ from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.core.files.storage import default_storage
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
@@ -19,9 +19,8 @@ from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from venues.models import Spot
 from .admin_filters import CategoryFilter
-from ..forms import ImportForm
 from ..models import Product, Category, Modificator
-from ..resources import ProductResource
+from ..services import ai_improve_image, ai_generate_image
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +47,33 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     list_before_template = "menu/change_list_before.html"
     list_per_page = 20
 
-    actions_detail = ['translate_product_fields']
+    actions_detail = ['translate_product_fields', 'ai_improve_action', 'ai_generate_action']
+
+    @action(
+        description="Улучшить изображение AI",
+        url_path="ai-improve",
+    )
+    def ai_improve_action(self, request: HttpRequest, object_id: int):
+        """
+        Улучшает изображение конкретной категории прямо из карточки
+        """
+        obj = Product.objects.get(pk=object_id)
+        msg = ai_improve_image(obj, field_name='product_photo')
+        self.message_user(request, msg or "Готово ✅")
+        return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
+
+    @action(
+        description="Сгенерировать новое изображение AI",
+        url_path="ai-generate",
+    )
+    def ai_generate_action(self, request: HttpRequest, object_id: int):
+        """
+        Генерирует новое изображение AI для одной категории
+        """
+        obj = Product.objects.get(pk=object_id)
+        msg = ai_generate_image(obj, field_name='product_photo')
+        self.message_user(request, msg or "Готово ✅")
+        return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
 
     @action(
         description="Перевести название и описание",

@@ -1,11 +1,12 @@
 import logging
 import random
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
 from account.models import PhoneVerification
@@ -16,6 +17,15 @@ from orders.api.v1.serializers import OrderListSerializer, OrderCreateSerializer
 from orders.services.order import is_within_schedule
 
 logger = logging.getLogger(__name__)
+
+
+class OrderPagination(LimitOffsetPagination):
+    """
+    Пагинация для заказов — по умолчанию 20 элементов на странице,
+    можно регулировать через параметры limit / offset.
+    """
+    default_limit = 20
+    max_limit = 100
 
 
 @extend_schema(
@@ -51,6 +61,18 @@ logger = logging.getLogger(__name__)
                 description='Фильтр по номеру',  # Описание параметра
                 required=False,  # Параметр необязательный
                 type=str  # Тип данных
+            ),
+            OpenApiParameter(
+                name='start_date',
+                description='Начальная дата фильтрации (формат YYYY-MM-DD)',
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name='end_date',
+                description='Конечная дата фильтрации (формат YYYY-MM-DD)',
+                required=False,
+                type=str,
             )
         ]
     )
@@ -61,6 +83,7 @@ class OrderViewSet(viewsets.GenericViewSet,
                    mixins.CreateModelMixin):
     queryset = Order.objects.all()
     filter_backends = [DjangoFilterBackend]
+    pagination_class = OrderPagination
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -82,6 +105,8 @@ class OrderViewSet(viewsets.GenericViewSet,
         spot_id = self.request.GET.get("spot_id", None)
         table_id = self.request.GET.get('table_id', None)
         phone = self.request.GET.get('phone', None)
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
 
         if venue_slug:
             queryset = queryset.filter(venue__slug=venue_slug.lower())
@@ -92,8 +117,24 @@ class OrderViewSet(viewsets.GenericViewSet,
         if phone:
             queryset = queryset.filter(phone=phone)
 
-        start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start + timezone.timedelta(days=1)
+        # --- Фильтрация по дате ---
+        # Если даты не заданы, берём текущий день
+        now_local = timezone.localtime()
+        if start_date:
+            try:
+                start = timezone.make_aware(datetime.strptime(start_date, "%Y-%m-%d"))
+            except ValueError:
+                start = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            start = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        if end_date:
+            try:
+                end = timezone.make_aware(datetime.strptime(end_date, "%Y-%m-%d")) + timedelta(days=1)
+            except ValueError:
+                end = start + timedelta(days=1)
+        else:
+            end = start + timedelta(days=1)
 
         queryset = queryset.filter(created_at__gte=start, created_at__lt=end)
 

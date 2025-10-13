@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
-from imagekit.models import ProcessedImageField, ImageSpecField
-from pilkit.processors import ResizeToFill, ResizeToFit
+from imagekit.models import ImageSpecField
+from pilkit.processors import ResizeToFit
 from unidecode import unidecode
 
 from services.model import BaseModel
