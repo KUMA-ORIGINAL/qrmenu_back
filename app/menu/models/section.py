@@ -19,7 +19,7 @@ class Section(BaseModel):
         source='photo',
         processors=[ResizeToFit(400, 400)],
         format='PNG',
-        options={'quality': 98}
+        options={'quality': 95}
     )
     venue = models.ForeignKey(
         'venues.Venue',
