@@ -1,6 +1,6 @@
 from django.db import models
 from imagekit.models import ImageSpecField
-from pilkit.processors import ResizeToFill
+from pilkit.processors import ResizeToFill, ResizeToFit
 
 from services.model import BaseModel
 
@@ -17,9 +17,9 @@ class Section(BaseModel):
     )
     photo_small = ImageSpecField(
         source='photo',
-        processors=[ResizeToFill(100, 100)],
-        format='JPEG',
-        options={'quality': 90}
+        processors=[ResizeToFit(300, 300)],
+        format='PNG',
+        options={'quality': 95}
     )
     venue = models.ForeignKey(
         'venues.Venue',
