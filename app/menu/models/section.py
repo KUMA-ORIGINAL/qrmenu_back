@@ -17,9 +17,9 @@ class Section(BaseModel):
     )
     photo_small = ImageSpecField(
         source='photo',
-        processors=[ResizeToFit(300, 300)],
+        processors=[ResizeToFit(400, 400)],
         format='PNG',
-        options={'quality': 95}
+        options={'quality': 98}
     )
     venue = models.ForeignKey(
         'venues.Venue',
