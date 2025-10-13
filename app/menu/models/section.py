@@ -17,7 +17,7 @@ class Section(BaseModel):
     )
     photo_small = ImageSpecField(
         source='photo',
-        processors=[ResizeToFit(350, 350)],
+        processors=[ResizeToFit(300, 300)],
         format='PNG',
         options={'quality': 50}
     )
