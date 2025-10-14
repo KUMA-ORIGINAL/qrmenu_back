@@ -58,7 +58,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         Улучшает изображение конкретной категории прямо из карточки
         """
         obj = Product.objects.get(pk=object_id)
-        msg = ai_improve_image(obj, field_name='product_photo')
+        msg = ai_improve_image(obj, field_name='product_photo', prompt=obj.venue.ai_improve_prompt)
         self.message_user(request, msg or "Готово ✅")
         return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
 
@@ -71,7 +71,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         Генерирует новое изображение AI для одной категории
         """
         obj = Product.objects.get(pk=object_id)
-        msg = ai_generate_image(obj, field_name='product_photo')
+        msg = ai_generate_image(obj, field_name='product_photo', prompt=obj.venue.ai_generate_prompt)
         self.message_user(request, msg or "Готово ✅")
         return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
 

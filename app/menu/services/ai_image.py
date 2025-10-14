@@ -8,9 +8,6 @@ openai.api_key = settings.OPENAI_API_KEY
 
 
 def ai_improve_image(instance, field_name='image', prompt=None):
-    """
-    Улучшает существующее изображение модели через AI.
-    """
     image_field = getattr(instance, field_name, None)
     if not image_field:
         return "❌ Нет изображения"
@@ -18,17 +15,19 @@ def ai_improve_image(instance, field_name='image', prompt=None):
     if not image_field.path:
         return "⚠️ Файл не сохранён на диске"
 
-    # путь к реальному файлу
     image_path = image_field.path
 
     base_prompt = f"Improve the image quality for {instance.__class__.__name__.lower()} '{instance}'."
-    full_prompt = prompt or base_prompt
 
-    # Передаём ОТКРЫТЫЙ файл как file-like object
+    if prompt:
+        full_prompt = f"{prompt.strip()} (for {instance.__class__.__name__.lower()} '{instance}')"
+    else:
+        full_prompt = base_prompt
+
     with open(image_path, "rb") as img_file:
         result = openai.images.edit(
             model="gpt-image-1",
-            image=img_file,                # именно файл, не bytes
+            image=img_file,
             prompt=full_prompt,
             size="1024x1024"
         )
@@ -42,11 +41,12 @@ def ai_improve_image(instance, field_name='image', prompt=None):
 
 
 def ai_generate_image(instance, field_name='image', prompt=None):
-    """
-    Генерация новой картинки по описанию экземпляра.
-    """
     base_prompt = f"Generate a professional photo for {instance.__class__.__name__.lower()} '{instance}'."
-    full_prompt = prompt or base_prompt
+
+    if prompt:
+        full_prompt = f"{prompt.strip()} (for {instance.__class__.__name__.lower()} '{instance}')"
+    else:
+        full_prompt = base_prompt
 
     result = openai.images.generate(
         model="gpt-image-1",
@@ -59,4 +59,5 @@ def ai_generate_image(instance, field_name='image', prompt=None):
     image_field = getattr(instance, field_name, None)
     image_field.save(file_name, ContentFile(img_data))
     instance.save()
+
     return f"✅ Новое изображение сгенерировано ({file_name})"

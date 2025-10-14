@@ -343,6 +343,11 @@ LOGGING = {
 UNFOLD = {
     "SITE_TITLE": 'iMenu.kg',
     "SITE_HEADER": "iMenu.kg",
+    "SITE_SUBHEADER": lambda request: (
+        f"{getattr(getattr(request.user, 'venue', None), 'company_name', 'SUPERUSER')} — "
+        f"{getattr(request.user, 'full_name', None) or getattr(request.user, 'phone_number', '')}"
+        if request.user.is_authenticated else "iMenu админка"
+    ),
     "SITE_URL": "/",
     "SITE_SYMBOL": "menu",  # symbol from icon set
     "SHOW_HISTORY": True, # show/hide "History" button, default: True

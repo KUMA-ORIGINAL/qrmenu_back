@@ -100,6 +100,19 @@ class Venue(BaseModel):
     terms = models.TextField(blank=True, null=True, verbose_name="Условия заведения")
     description = models.TextField(blank=True, null=True, verbose_name="Описание заведения")
 
+    ai_improve_prompt = models.TextField(
+        "Промпт для улучшения изображения",
+        blank=True,
+        null=True,
+        help_text="Дополнительное описание, как улучшить текущее изображение (если оставить пустым, используется стандартный текст)"
+    )
+    ai_generate_prompt = models.TextField(
+        "Промпт для генерации изображения",
+        blank=True,
+        null=True,
+        help_text="Описание изображения для AI генерации (если пусто — используется стандартный текст)"
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 

@@ -150,6 +150,14 @@ class VenueAdmin(BaseModelAdmin):
                     'bonus_accrual_percent',
                 )
             }),
+            ("AI генерация изображений", {
+                'fields': (
+                    'ai_improve_prompt',
+                    'ai_generate_prompt',
+                ),
+                'description': "Промпты для генерации и улучшения изображений через AI. "
+                               "Если оставить пустыми — будут использоваться стандартные.",
+            }),
         )
 
         if request.user.is_superuser:

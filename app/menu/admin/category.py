@@ -37,7 +37,7 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         Улучшает изображение конкретной категории прямо из карточки
         """
         obj = Category.objects.get(pk=object_id)
-        msg = ai_improve_image(obj, field_name='category_photo')
+        msg = ai_improve_image(obj, field_name='category_photo', prompt=obj.venue.ai_improve_prompt)
         self.message_user(request, msg or "Готово ✅")
         return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
 
@@ -50,7 +50,7 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         Генерирует новое изображение AI для одной категории
         """
         obj = Category.objects.get(pk=object_id)
-        msg = ai_generate_image(obj, field_name='category_photo')
+        msg = ai_generate_image(obj, field_name='category_photo', prompt=obj.venue.ai_generate_prompt)
         self.message_user(request, msg or "Готово ✅")
         return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
 
