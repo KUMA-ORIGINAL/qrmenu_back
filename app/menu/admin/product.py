@@ -4,9 +4,9 @@ from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.core.files.storage import default_storage
-from django.http import HttpRequest, HttpResponseRedirect
-from django.shortcuts import redirect
-from django.urls import reverse_lazy, reverse
+from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse_lazy, reverse, path
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
@@ -19,6 +19,7 @@ from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from venues.models import Spot
 from .admin_filters import CategoryFilter
+from ..forms.product import ProductAdminForm
 from ..models import Product, Category, Modificator
 from ..services import ai_improve_image, ai_generate_image
 
@@ -33,6 +34,7 @@ class ModificatorInline(StackedInline, TranslationTabularInline):
 
 @admin.register(Product)
 class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmin):
+    form = ProductAdminForm
     compressed_fields = True
 
     # import_form_class = ImportForm
@@ -47,33 +49,28 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     list_before_template = "menu/change_list_before.html"
     list_per_page = 20
 
-    actions_detail = ['translate_product_fields', 'ai_improve_action', 'ai_generate_action']
+    actions_detail = ['translate_product_fields',]
 
-    @action(
-        description="Улучшить изображение AI",
-        url_path="ai-improve",
-    )
-    def ai_improve_action(self, request: HttpRequest, object_id: int):
-        """
-        Улучшает изображение конкретной категории прямо из карточки
-        """
-        obj = Product.objects.get(pk=object_id)
-        msg = ai_improve_image(obj, field_name='product_photo', prompt=obj.venue.ai_improve_prompt)
-        self.message_user(request, msg or "Готово ✅")
-        return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path("ai_improve/<int:pk>/", self.admin_site.admin_view(self.ai_improve_view), name="product_ai_improve"),
+            path("ai_generate/<int:pk>/", self.admin_site.admin_view(self.ai_generate_view),
+                 name="product_ai_generate"),
+        ]
+        return my_urls + urls
 
-    @action(
-        description="Сгенерировать новое изображение AI",
-        url_path="ai-generate",
-    )
-    def ai_generate_action(self, request: HttpRequest, object_id: int):
-        """
-        Генерирует новое изображение AI для одной категории
-        """
-        obj = Product.objects.get(pk=object_id)
-        msg = ai_generate_image(obj, field_name='product_photo', prompt=obj.venue.ai_generate_prompt)
-        self.message_user(request, msg or "Готово ✅")
-        return HttpResponseRedirect(reverse("admin:menu_product_change", args=[object_id]))
+    def ai_improve_view(self, request, pk):
+        obj = get_object_or_404(Product, pk=pk)
+        msg = ai_improve_image(obj, field_name='product_photo', prompt=obj.category.venue.ai_improve_prompt)
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
+
+    def ai_generate_view(self, request, pk):
+        obj = get_object_or_404(Product, pk=pk)
+        msg = ai_generate_image(obj, field_name='product_photo', prompt=obj.category.venue.ai_generate_prompt)
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
 
     @action(
         description="Перевести название и описание",

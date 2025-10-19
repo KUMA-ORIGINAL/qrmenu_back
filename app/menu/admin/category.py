@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
-from django.http import HttpRequest, HttpResponseRedirect
-from django.shortcuts import redirect
-from django.urls import reverse_lazy, reverse
+from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
+from django.shortcuts import redirect, get_object_or_404
+from django.urls import reverse_lazy, reverse, path
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.decorators import display, action
@@ -10,12 +10,14 @@ from deep_translator import GoogleTranslator
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
+from ..forms import CategoryAdminForm
 from ..models import Category
 from ..services import ai_improve_image, ai_generate_image
 
 
 @admin.register(Category)
 class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
+    form = CategoryAdminForm
     compressed_fields = True
     list_filter = ('venue', 'category_hidden',)
     search_fields = ('category_name',)
@@ -26,33 +28,28 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     mptt_level_indent = 20
     mptt_show_nodedata = True
 
-    actions_detail = ["translate_action", 'ai_improve_action', 'ai_generate_action']
+    actions_detail = ["translate_action"]
 
-    @action(
-        description="Улучшить изображение AI",
-        url_path="ai-improve",
-    )
-    def ai_improve_action(self, request: HttpRequest, object_id: int):
-        """
-        Улучшает изображение конкретной категории прямо из карточки
-        """
-        obj = Category.objects.get(pk=object_id)
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path("ai_improve/<int:pk>/", self.admin_site.admin_view(self.ai_improve_view), name="category_ai_improve"),
+            path("ai_generate/<int:pk>/", self.admin_site.admin_view(self.ai_generate_view),
+                 name="category_ai_generate"),
+        ]
+        return my_urls + urls
+
+    def ai_improve_view(self, request, pk):
+        obj = get_object_or_404(Category, pk=pk)
         msg = ai_improve_image(obj, field_name='category_photo', prompt=obj.venue.ai_improve_prompt)
-        self.message_user(request, msg or "Готово ✅")
-        return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
 
-    @action(
-        description="Сгенерировать новое изображение AI",
-        url_path="ai-generate",
-    )
-    def ai_generate_action(self, request: HttpRequest, object_id: int):
-        """
-        Генерирует новое изображение AI для одной категории
-        """
-        obj = Category.objects.get(pk=object_id)
+    def ai_generate_view(self, request, pk):
+        obj = get_object_or_404(Category, pk=pk)
         msg = ai_generate_image(obj, field_name='category_photo', prompt=obj.venue.ai_generate_prompt)
-        self.message_user(request, msg or "Готово ✅")
-        return HttpResponseRedirect(reverse("admin:menu_category_change", args=[object_id]))
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
 
     @action(
         description="Перевести название",

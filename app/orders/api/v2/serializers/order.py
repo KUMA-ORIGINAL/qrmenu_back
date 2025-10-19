@@ -107,7 +107,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             transaction_obj = Transaction.objects.create(order=order, total_price=total_price)
             payment_account = PaymentAccount.objects.filter(venue=order.venue).first()
 
-            # Передаём в context
             self.context['transaction'] = transaction_obj
             self.context['payment_account'] = payment_account
 
