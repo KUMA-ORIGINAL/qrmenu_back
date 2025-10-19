@@ -62,13 +62,13 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
 
     def ai_improve_view(self, request, pk):
         obj = get_object_or_404(Product, pk=pk)
-        msg = ai_improve_image(obj, field_name='product_photo', prompt=obj.category.venue.ai_improve_prompt)
+        msg = ai_improve_image(obj, field_name='product_photo', prompt=obj.venue.ai_improve_prompt)
         messages.success(request, msg or "Готово ✅")
         return JsonResponse({"ok": True})
 
     def ai_generate_view(self, request, pk):
         obj = get_object_or_404(Product, pk=pk)
-        msg = ai_generate_image(obj, field_name='product_photo', prompt=obj.category.venue.ai_generate_prompt)
+        msg = ai_generate_image(obj, field_name='product_photo', prompt=obj.venue.ai_generate_prompt)
         messages.success(request, msg or "Готово ✅")
         return JsonResponse({"ok": True})
 
