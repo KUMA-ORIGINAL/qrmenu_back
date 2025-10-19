@@ -449,7 +449,7 @@ UNFOLD = {
                         "link": reverse_lazy("admin:menu_mainbutton_changelist"),
                     },
                     {
-                        "title": _("разделы"),
+                        "title": _("Разделы"),
                         "icon": "content_copy",
                         "link": reverse_lazy("admin:menu_section_changelist"),
                     },
