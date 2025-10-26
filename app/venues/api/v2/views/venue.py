@@ -26,10 +26,10 @@ class VenueViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
         summary="Получить данные о заведении (и, опционально, о столе)",
         description=(
             "Возвращает информацию о заведении по `slug`. "
-            "Если указан параметр `table_id`, дополнительно возвращает информацию о конкретном столе.\n\n"
+            "Если указан параметр `tableId`, дополнительно возвращает информацию о конкретном столе.\n\n"
             "**Примеры запросов:**\n"
             "- `/api/venues/london-bar/`\n"
-            "- `/api/venues/london-bar/?table_id=42`"
+            "- `/api/venues/london-bar/?tableId=42`"
         ),
         parameters=[
             OpenApiParameter(
