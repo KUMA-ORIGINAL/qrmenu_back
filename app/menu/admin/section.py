@@ -1,14 +1,20 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
+from ..forms import SectionAdminForm
 from ..models import Section
+from ..services import ai_generate_image, ai_improve_image
 
 
 @admin.register(Section)
 class SectionAdmin(BaseModelAdmin, TabbedTranslationAdmin):
+    form = SectionAdminForm
     compressed_fields = True
     list_filter = ('venue',)
     search_fields = ('name',)
@@ -16,6 +22,27 @@ class SectionAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     list_select_related = ('venue',)
     list_per_page = 20
     autocomplete_fields = ('categories',)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        my_urls = [
+            path("ai_improve/<int:pk>/", self.admin_site.admin_view(self.ai_improve_view), name="section_ai_improve"),
+            path("ai_generate/<int:pk>/", self.admin_site.admin_view(self.ai_generate_view),
+                 name="section_ai_generate"),
+        ]
+        return my_urls + urls
+
+    def ai_improve_view(self, request, pk):
+        obj = get_object_or_404(Section, pk=pk)
+        msg = ai_improve_image(obj, field_name='photo', prompt=obj.venue.ai_improve_prompt)
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
+
+    def ai_generate_view(self, request, pk):
+        obj = get_object_or_404(Section, pk=pk)
+        msg = ai_generate_image(obj, field_name='photo', prompt=obj.venue.ai_generate_prompt)
+        messages.success(request, msg or "Готово ✅")
+        return JsonResponse({"ok": True})
 
     # --- Фильтры для разных ролей пользователей ---
     def get_list_filter(self, request):
