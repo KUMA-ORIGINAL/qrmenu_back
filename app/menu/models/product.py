@@ -35,6 +35,11 @@ class Product(BaseModel):
 
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products',
                                  verbose_name="Категория")
+    categories = models.ManyToManyField(
+        'Category',
+        related_name='products_many',
+        verbose_name="Категории"
+    )
     spots = models.ManyToManyField('venues.Spot', related_name='products',
                                    verbose_name="Точки заведения")
     venue = models.ForeignKey('venues.Venue', on_delete=models.CASCADE, related_name='products',

@@ -45,7 +45,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     search_fields = ('product_name',)
     list_select_related = ('category', 'venue')
     inlines = [ModificatorInline]
-    autocomplete_fields = ('spots',)
+    autocomplete_fields = ('spots', 'categories')
     list_before_template = "menu/change_list_before.html"
     list_per_page = 20
 
@@ -188,7 +188,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
                     'product_description_ky',
                     'product_description_en',
                     'product_price', 'weight',
-                    'category',
+                    'category', 'categories',
                     'venue')
             }),
             ('Photo', {
