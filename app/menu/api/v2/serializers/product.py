@@ -24,7 +24,7 @@ class CategoryShortSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     modificators = ModificatorSerializer(many=True, read_only=True)
-    category = CategoryShortSerializer(read_only=True)
+    categories = CategoryShortSerializer(read_only=True, many=True)
 
     product_photo = serializers.SerializerMethodField()
     product_photo_small = serializers.SerializerMethodField()
@@ -35,7 +35,7 @@ class ProductSerializer(serializers.ModelSerializer):
             fields = [
                 'id', 'product_name', 'product_description', 'product_price', 'weight',
                 'product_photo', 'product_photo_small', 'product_photo_large',
-                'category', 'is_recommended', 'modificators'
+                'categories', 'is_recommended', 'modificators'
             ]
 
     def get_product_photo(self, obj):

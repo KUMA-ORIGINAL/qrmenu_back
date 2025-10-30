@@ -4,9 +4,9 @@ from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.core.files.storage import default_storage
-from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse_lazy, reverse, path
+from django.urls import reverse_lazy, path
 from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInline
@@ -43,7 +43,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
 
     readonly_fields = ('photo_preview',)
     search_fields = ('product_name',)
-    list_select_related = ('category', 'venue')
+    list_select_related = ('venue',)
     inlines = [ModificatorInline]
     autocomplete_fields = ('spots', 'categories')
     list_before_template = "menu/change_list_before.html"
@@ -118,7 +118,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
     def get_list_filter(self, request):
         list_filter = ()
         if request.user.is_superuser:
-            list_filter = ('venue', 'category', 'hidden', ("product_price", RangeNumericFilter), 'spots')
+            list_filter = ('venue', 'categories', 'hidden', ("product_price", RangeNumericFilter), 'spots')
         elif request.user.role == ROLE_OWNER:
             list_filter = (CategoryFilter, 'hidden', ("product_price", RangeNumericFilter))
         elif request.user.role == ROLE_ADMIN:
@@ -126,14 +126,18 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         return list_filter
 
     def get_list_display(self, request):
-        list_display = ('id', 'product_name', 'category', 'display_hidden', 'display_is_recommended', 'venue',
+        list_display = ('id', 'product_name', 'display_categories', 'display_hidden', 'display_is_recommended', 'venue',
                         'product_price', 'photo_preview', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('product_name', 'category', 'display_hidden', 'display_is_recommended',
+            list_display = ('product_name', 'display_categories', 'display_hidden', 'display_is_recommended',
                             'product_price', 'photo_preview', 'detail_link')
         return list_display
+
+    def display_categories(self, obj):
+        return ", ".join([c.category_name for c in obj.categories.all()])
+    display_categories.short_description = "Категории"  # подпись столбца
 
     @display(
         description="Рекомендован?",
@@ -188,7 +192,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
                     'product_description_ky',
                     'product_description_en',
                     'product_price', 'weight',
-                    'category', 'categories',
+                    'categories',
                     'venue')
             }),
             ('Photo', {
@@ -208,7 +212,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
                 'product_description_ru',
                 'product_description_ky',
                 'product_description_en',
-                'product_price', 'weight', 'category'
+                'product_price', 'weight', 'categories'
             )
         elif request.user.role == ROLE_ADMIN:
             fieldsets[0][1]['fields'] = (
@@ -218,7 +222,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
                 'product_description_ru',
                 'product_description_ky',
                 'product_description_en',
-                'product_price', 'weight', 'category'
+                'product_price', 'weight', 'categories'
             )
             fieldsets[2][1]['fields'] = (
                 'hidden', 'is_recommended',
@@ -238,13 +242,6 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         super().delete_model(request, obj)
 
         cache.delete_pattern(f"products:{obj.venue.slug}:*")
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and db_field.name == 'category':
-            venue = request.user.venue
-            if venue:
-                kwargs["queryset"] = Category.objects.filter(venue=venue)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if request.user.role in [ROLE_OWNER, ROLE_ADMIN] and db_field.name == 'spots':
@@ -270,13 +267,13 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
             context = {
                 'venue_id': form.cleaned_data.get('venue'),
                 'spot_id': form.cleaned_data.get('spot'),
-                'category_id': form.cleaned_data.get('category'),
+                'category_ids': [c.id for c in form.cleaned_data.get('categories', [])],
             }
         elif form:
             data = form.data
             context = {
                 'venue_id': data.get('venue'),
                 'spot_id': data.get('spot'),
-                'category_id': data.get('category'),
+                'category_ids': data.getlist('categories') if hasattr(data, 'getlist') else data.get('categories'),
             }
         return {'context': context}

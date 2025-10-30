@@ -7,7 +7,7 @@ from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 
 from menu.models import Product
-from menu.api.v1.serializers import ProductSerializer
+from menu.api.v2.serializers import ProductSerializer
 
 
 @extend_schema(
@@ -37,7 +37,7 @@ class ProductViewSet(viewsets.GenericViewSet,
                      mixins.ListModelMixin):
     serializer_class = ProductSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ('category',)
+    filterset_fields = ('categories',)
 
     def get_queryset(self):
         request = self.request
@@ -53,8 +53,7 @@ class ProductViewSet(viewsets.GenericViewSet,
         qs = (
             Product.objects
             .filter(venue__slug__iexact=venue_slug, hidden=False)
-            .select_related("category", "venue")
-            .prefetch_related("modificators")
+            .prefetch_related('categories', "modificators")
         )
 
         if spot_id:

@@ -33,8 +33,6 @@ class Product(BaseModel):
     is_recommended = models.BooleanField(default=False, verbose_name='Рекомендован?')
     hidden = models.BooleanField(default=False, verbose_name="Скрыт?")
 
-    category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products',
-                                 verbose_name="Категория")
     categories = models.ManyToManyField(
         'Category',
         related_name='products_many',
