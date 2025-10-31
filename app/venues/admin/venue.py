@@ -2,9 +2,9 @@ import logging
 
 from django import forms
 from django.contrib import admin, messages
-from django.db import models
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
+from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import WysiwygWidget
 
@@ -59,7 +59,7 @@ class VenueAdminForm(forms.ModelForm):
 
 
 @admin.register(Venue)
-class VenueAdmin(BaseModelAdmin):
+class VenueAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     form = VenueAdminForm
     inlines = (WorkScheduleInline,)
     compressed_fields = True
@@ -157,6 +157,10 @@ class VenueAdmin(BaseModelAdmin):
                 ),
                 'description': "Промпты для генерации и улучшения изображений через AI. "
                                "Если оставить пустыми — будут использоваться стандартные.",
+            }),
+            ("QR‑код", {
+                'fields': ('table_qr_text_ru', 'table_qr_text_ky'),
+                'description': "Текст, который будет использоваться при генерации QR‑кода.",
             }),
         )
 

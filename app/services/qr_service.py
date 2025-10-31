@@ -1,3 +1,5 @@
+from textwrap import wrap
+
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
@@ -28,6 +30,52 @@ def create_qr_code_in_memory(url):
     qr_buffer.seek(0)
     return qr_buffer
 
+
+def draw_wrapped_autosize_text(can, text, center_x, y, max_width,
+                                max_height,  # высота зоны, куда хотим вписать текст
+                                font_name="Inter", font_size=34,
+                                min_font_size=26,
+                                line_spacing=1.2, color="#FFFFFF"):
+    """
+    Рисует текст по центру с автоматическим уменьшением шрифта,
+    если блок выходит за пределы max_height.
+    """
+    can.setFillColor(HexColor(color))
+
+    def build_lines(size):
+        """Разбивает текст на строки по ширине с заданным шрифтом."""
+        words = text.split()
+        lines, current_line = [], ""
+        for word in words:
+            test_line = f"{current_line} {word}".strip()
+            if can.stringWidth(test_line, font_name, size) <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+        if current_line:
+            lines.append(current_line)
+        return lines
+
+    # Пробуем уменьшать текст, пока он не впишется в отведённую область
+    lines = build_lines(font_size)
+    while font_size > min_font_size:
+        total_height = (len(lines) - 1) * font_size * line_spacing
+        if total_height <= max_height:
+            break
+        font_size -= 1
+        lines = build_lines(font_size)
+
+    # После подбора размера — выставляем шрифт и центрируем блок
+    can.setFont(font_name, font_size)
+    total_height = (len(lines) - 1) * font_size * line_spacing
+    start_y = y + total_height / 2  # лёгкое выравнивание вверх
+
+    for i, line in enumerate(lines):
+        line_y = start_y - i * font_size * line_spacing
+        can.drawCentredString(center_x, line_y, line)
+
+
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
                        text_top1, text_top2, is_table):
     text_bottom1_ru = "Ваш персональный\nонлайн-официант"
@@ -45,11 +93,23 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     # --- Верхний текст (белый на розовом фоне) ---
     can.setFont('Inter', 36)
     can.setFillColor(HexColor("#FFFFFF"))
-    can.drawCentredString(center_x1, y1 + height + 20, text_top1)
+    font_name = "Inter"
+    max_text_width = 350
+    text_zone_height = 40
 
     if is_table:
-        can.drawCentredString(center_x2, y1 + height + 20, text_top2)
+        if any(ch.isdigit() for ch in text_top1):
+            can.drawCentredString(center_x1, y1 + height + 20, text_top1)
+            can.drawCentredString(center_x2, y1 + height + 20, text_top2)
+        else:
+            draw_wrapped_autosize_text(
+                can, text_top1, center_x1, y1 + height + 45, max_text_width,
+                max_height=text_zone_height, font_name=font_name)
+            draw_wrapped_autosize_text(
+                can, text_top2, center_x2, y1 + height + 45, max_text_width,
+                max_height=text_zone_height, font_name=font_name)
     else:
+        can.drawCentredString(center_x1, y1 + height + 20, text_top1)
         kg_text_top2_lines = text_top2.split('\n')
         y_offset_kg_text_top2 = y1 + height + 45
 

@@ -37,8 +37,14 @@ class TableAdmin(BaseModelAdmin):
         spot = table.spot
 
         qr_url = f"https://imenu.kg/{venue.slug}/{spot.id}/{table.id}/"
-        text_top_ru = f"{table.table_num} стол"
-        text_top_kg = f"{table.table_num} стол"
+
+        if venue.table_qr_text_ru is not None:
+            text_top_ru = venue.table_qr_text_ru
+            text_top_kg = venue.table_qr_text_ky
+        else:
+            text_top_ru = f"{table.table_num} стол"
+            text_top_kg = f"{table.table_num} стол"
+
         color = venue.color_theme
 
         output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top_ru, text_top_kg,

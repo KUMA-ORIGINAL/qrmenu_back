@@ -113,6 +113,13 @@ class Venue(BaseModel):
         help_text="Описание изображения для AI генерации (если пусто — используется стандартный текст)"
     )
 
+    table_qr_text = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Текст для QR‑кода стола",
+    )
+
     def __str__(self):
         return f'{self.company_name}'
 
