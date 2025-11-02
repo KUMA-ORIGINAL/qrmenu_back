@@ -29,7 +29,7 @@ def format_order_details(order):
     #     total_service_price = order.service_price
     #     receipt_lines.append(f"Обслуживание {service_percentage}%: {total_service_price} сом")
 
-    receipt_lines.append(f"Итог: {total_price} сом")
+    receipt_lines.append(f"Итого: {total_price} сом")
 
     if order.tips_price:
         total_tips_price = order.tips_price
@@ -44,9 +44,16 @@ def format_order_details(order):
 
     message_parts = [
         f"*{order.spot} - НОВЫЙ ЗАКАЗ #{order.id}*\n",
-        f"*{order.get_service_mode_display().upper()}*\n\n",
-        f"{items_description}\n\n"
     ]
+
+    service_line = f"*{order.get_service_mode_display().upper()}*"
+    if hasattr(order, 'table') and order.table and hasattr(order.table, 'table_num'):
+        service_line += f" • Стол №{order.table.table_num}"
+
+    message_parts.append(service_line + "\n\n")
+
+    # Добавляем список товаров
+    message_parts.append(f"{items_description}\n\n")
 
     if order.phone:
         message_parts.append(f"*Номер клиента:* {order.phone}\n")
