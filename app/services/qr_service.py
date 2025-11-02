@@ -31,7 +31,7 @@ def create_qr_code_in_memory(url):
     return qr_buffer
 
 def draw_wrapped_two_lines_text(can, text, center_x, y, max_width, max_height,
-                                font_name="Inter", font_size=32, min_font_size=22,
+                                font_name="Inter", font_size=30, min_font_size=20,
                                 line_spacing=1.2, color="#FFFFFF"):
     """
     Рисует текст по центру, разбивая ровно на 2 строки и
@@ -95,7 +95,7 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
     can.setFont('Inter', 36)
     can.setFillColor(HexColor("#FFFFFF"))
     font_name = "Inter"
-    max_text_width = 350
+    max_text_width = 320
     text_zone_height = 40
 
     if is_table:
