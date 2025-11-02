@@ -112,9 +112,8 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
 
         can.setFont('Inter', 18)
         can.setFillColor(HexColor("#000000"))
-        if table_num:
-            can.drawCentredString(center_x1, 40, f"Стол {table_num}")
-            can.drawCentredString(center_x2, 40, f"Стол {table_num}")
+        can.drawCentredString(center_x1, 40, f"Стол {table_num}")
+        can.drawCentredString(center_x2, 40, f"Стол {table_num}")
     else:
         can.drawCentredString(center_x1, y1 + height + 20, text_top1)
         kg_text_top2_lines = text_top2.split('\n')
