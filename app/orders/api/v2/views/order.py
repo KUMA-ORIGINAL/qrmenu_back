@@ -98,7 +98,7 @@ class OrderViewSet(viewsets.GenericViewSet,
                 'order_products',
                 'order_products__product',
                 'order_products__product__modificators',
-                'order_products__product__category',
+                'order_products__product__categories',
             )
 
         venue_slug = self.request.GET.get('venue_slug', None)
@@ -144,7 +144,7 @@ class OrderViewSet(viewsets.GenericViewSet,
             'order_products',
             'order_products__product',
             'order_products__product__modificators',
-            'order_products__product__category',
+            'order_products__product__categories',
         )
 
     def create(self, request, *args, **kwargs):
