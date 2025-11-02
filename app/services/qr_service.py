@@ -30,44 +30,57 @@ def create_qr_code_in_memory(url):
     qr_buffer.seek(0)
     return qr_buffer
 
+from reportlab.lib.colors import HexColor
+
 def draw_wrapped_two_lines_text(can, text, center_x, y, max_width, max_height,
-                                font_name="Inter", font_size=30, min_font_size=20,
+                                font_name="Inter", font_size=30, min_font_size=18,
                                 line_spacing=1.2, color="#FFFFFF"):
     """
-    Рисует текст по центру, разбивая ровно на 2 строки и
-    автоматически уменьшая шрифт, чтобы вписать текст в заданные размеры.
+    Рисует текст по центру, разбивая ровно на 2 строки и автоматически уменьшая шрифт,
+    чтобы обе строки вписывались в указанные размеры (по ширине и высоте).
     """
     can.setFillColor(HexColor(color))
 
-    def split_into_two_lines(size):
-        """Разбивает текст примерно пополам, стараясь чтобы обе строки влезли по ширине."""
+    def split_into_two_balanced_lines(size):
+        """Разбивает текст примерно пополам, выбирая лучший разрыв так,
+        чтобы обе строки были примерно одинаковой ширины и помещались."""
         words = text.split()
         if not words:
             return ["", ""]
-        # Наращиваем первую строку, пока она помещается
-        line1, line2 = "", ""
-        for word in words:
-            test_line = f"{line1} {word}".strip()
-            if can.stringWidth(test_line, font_name, size) <= max_width:
-                line1 = test_line
-            else:
-                # Остаток идёт во вторую строку
-                remaining = words[words.index(word):]
-                line2 = " ".join(remaining)
-                break
-        else:
-            line2 = ""  # всё влезло в одну строку
-        return [line1, line2]
+
+        best_lines = [text, ""]
+        best_diff = float("inf")
+
+        # Пробуем все возможные разрывы между словами
+        for i in range(1, len(words)):
+            line1 = " ".join(words[:i])
+            line2 = " ".join(words[i:])
+            w1 = can.stringWidth(line1, font_name, size)
+            w2 = can.stringWidth(line2, font_name, size)
+
+            if w1 <= max_width and w2 <= max_width:
+                diff = abs(w1 - w2)
+                if diff < best_diff:
+                    best_diff = diff
+                    best_lines = [line1, line2]
+
+        # Если ничего не поместилось, просто ломаем текст примерно пополам
+        if best_diff == float("inf"):
+            mid = len(words) // 2
+            best_lines = [" ".join(words[:mid]), " ".join(words[mid:])]
+
+        return best_lines
 
     while font_size >= min_font_size:
-        lines = split_into_two_lines(font_size)
-        # Проверяем ширину для обеих строк
-        if all(can.stringWidth(line, font_name, font_size) <= max_width for line in lines):
-            total_height = (len(lines) - 1) * font_size * line_spacing
-            if total_height <= max_height:
-                break
+        lines = split_into_two_balanced_lines(font_size)
+        total_height = (len(lines) - 1) * font_size * line_spacing
+
+        if all(can.stringWidth(line, font_name, font_size) <= max_width for line in lines) \
+                and total_height <= max_height:
+            break
         font_size -= 1
 
+    # Отрисовка
     can.setFont(font_name, font_size)
     total_height = (len(lines) - 1) * font_size * line_spacing
     start_y = y + total_height / 2
@@ -75,7 +88,6 @@ def draw_wrapped_two_lines_text(can, text, center_x, y, max_width, max_height,
     for i, line in enumerate(lines):
         line_y = start_y - i * font_size * line_spacing
         can.drawCentredString(center_x, line_y, line)
-
 
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
                        text_top1, text_top2, table_num, is_table):
