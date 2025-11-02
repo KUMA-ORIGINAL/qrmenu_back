@@ -15,6 +15,7 @@ class OrderStatus(models.IntegerChoices):
     READY = 2, 'Заказ готов'
     COMPLETED = 3, 'Заказ выполнен'
     WAITING_FOR_PAYMENT = 4, 'Ожидает оплату'
+    IN_DELIVERY = 5, 'В доставке'
     CANCELLED = 7, 'Отменён'
 
 
