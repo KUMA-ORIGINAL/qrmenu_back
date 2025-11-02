@@ -12,7 +12,7 @@ from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
 from ..forms import CategoryAdminForm
 from ..models import Category
-from ..services import ai_improve_image, ai_generate_image
+from ..services import ai_improve_image, ai_generate_image, ai_translate_text
 
 
 @admin.register(Category)
@@ -56,26 +56,29 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         url_path="translate",
     )
     def translate_action(self, request: HttpRequest, object_id: int):
-        category = Category.objects.get(pk=object_id)
-
-        if not category.category_name:
-            self.message_user(request, "Поле category_name пустое", messages.WARNING)
-            return redirect(
-                reverse_lazy("admin:menu_category_change", args=[category.pk])
-            )
-
         try:
-            category.category_name_en = GoogleTranslator(source='ru', target='en').translate(category.category_name)
-            category.category_name_ky = GoogleTranslator(source='ru', target='ky').translate(category.category_name)
+            category = Category.objects.get(pk=object_id)
+
+            if not category.category_name:
+                self.message_user(request, "⚠️ Поле category_name пустое", messages.WARNING)
+                return redirect(
+                    reverse_lazy("admin:menu_category_change", args=[category.pk])
+                )
+
+            category.category_name_en = ai_translate_text(category.category_name, target_language="en")
+            category.category_name_ky = ai_translate_text(category.category_name, target_language="ky")
             category.save()
 
-            self.message_user(request, "Перевод выполнен успешно", messages.SUCCESS)
+            self.message_user(request, "✅ Перевод выполнен успешно", messages.SUCCESS)
+
+        except Category.DoesNotExist:
+            self.message_user(request, "❌ Категория не найдена", messages.ERROR)
 
         except Exception as e:
-            self.message_user(request, f"Ошибка перевода: {e}", messages.ERROR)
+            self.message_user(request, f"❌ Ошибка перевода: {e}", messages.ERROR)
 
         return redirect(
-            reverse_lazy("admin:menu_category_change", args=[category.pk])
+            reverse_lazy("admin:menu_category_change", args=[object_id])
         )
 
     def get_list_filter(self, request):

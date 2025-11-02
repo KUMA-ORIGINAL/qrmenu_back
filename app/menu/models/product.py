@@ -35,7 +35,7 @@ class Product(BaseModel):
 
     categories = models.ManyToManyField(
         'Category',
-        related_name='products_many',
+        related_name='products',
         verbose_name="Категории"
     )
     spots = models.ManyToManyField('venues.Spot', related_name='products',

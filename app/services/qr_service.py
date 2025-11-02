@@ -1,9 +1,7 @@
 from textwrap import wrap
 
-from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
@@ -88,6 +86,7 @@ def draw_wrapped_two_lines_text(can, text, center_x, y, max_width, max_height,
     for i, line in enumerate(lines):
         line_y = start_y - i * font_size * line_spacing
         can.drawCentredString(center_x, line_y, line)
+
 
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
                        text_top1, text_top2, table_num, is_table):

@@ -21,7 +21,7 @@ from venues.models import Spot
 from .admin_filters import CategoryFilter
 from ..forms.product import ProductAdminForm
 from ..models import Product, Category, Modificator
-from ..services import ai_improve_image, ai_generate_image
+from ..services import ai_improve_image, ai_generate_image, ai_translate_text
 
 logger = logging.getLogger(__name__)
 
@@ -77,35 +77,37 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         url_path="translate",
     )
     def translate_product_fields(self, request: HttpRequest, object_id: int):
-        product = Product.objects.get(pk=object_id)
-
-        if not product.product_name and not product.product_description:
-            self.message_user(
-                request,
-                "Поля product_name и product_description пустые",
-                messages.WARNING
-            )
-            return redirect(reverse_lazy("admin:menu_product_change", args=[product.pk]))
-
         try:
-            if product.product_name:
-                product.product_name_en = GoogleTranslator(source='ru', target='en').translate(product.product_name)
-                product.product_name_ky = GoogleTranslator(source='ru', target='ky').translate(product.product_name)
+            product = Product.objects.get(pk=object_id)
 
+            if not product.product_name and not product.product_description:
+                self.message_user(
+                    request,
+                    "⚠️ Поля product_name и product_description пустые",
+                    messages.WARNING
+                )
+                return redirect(reverse_lazy("admin:menu_product_change", args=[product.pk]))
+
+            # --- Переводим название ---
+            if product.product_name:
+                product.product_name_en = ai_translate_text(product.product_name, target_language="en")
+                product.product_name_ky = ai_translate_text(product.product_name, target_language="ky")
+
+            # --- Переводим описание ---
             if product.product_description:
-                product.product_description_en = GoogleTranslator(source='ru', target='en').translate(
-                    product.product_description)
-                product.product_description_ky = GoogleTranslator(source='ru', target='ky').translate(
-                    product.product_description)
+                product.product_description_en = ai_translate_text(product.product_description, target_language="en")
+                product.product_description_ky = ai_translate_text(product.product_description, target_language="ky")
 
             product.save()
+            self.message_user(request, "✅ Перевод выполнен успешно", messages.SUCCESS)
 
-            self.message_user(request, "Перевод выполнен успешно", messages.SUCCESS)
+        except Product.DoesNotExist:
+            self.message_user(request, "❌ Продукт не найден", messages.ERROR)
 
         except Exception as e:
-            self.message_user(request, f"Ошибка перевода: {e}", messages.ERROR)
+            self.message_user(request, f"❌ Ошибка перевода: {e}", messages.ERROR)
 
-        return redirect(reverse_lazy("admin:menu_product_change", args=[product.pk]))
+        return redirect(reverse_lazy("admin:menu_product_change", args=[object_id]))
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
