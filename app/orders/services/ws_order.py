@@ -21,6 +21,7 @@ async def notify_order_status(order):
             'type': 'order_status_update',
             'order_id': order.id,
             'status': order.status,
-            'status_text': order.get_status_display(),  # Добавляем текст статуса
+            'status_text': order.get_status_display(),
+            'service_mode': order.service_mode,
         }
     )

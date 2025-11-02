@@ -48,6 +48,7 @@ class OrderStatusConsumer(AsyncWebsocketConsumer):
                 'order_id': event.get('order_id'),
                 'status': event.get('status', 'unknown'),
                 'status_text': event.get('status_text', 'Неизвестно'),
+                'service_mode': event.get('service_mode', 'unknown'),
             }))
         except Exception as e:
             logger.exception(f"Ошибка отправки данных через WebSocket: {e}")
