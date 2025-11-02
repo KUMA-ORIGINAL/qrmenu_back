@@ -38,17 +38,17 @@ class TableAdmin(BaseModelAdmin):
 
         qr_url = f"https://imenu.kg/{venue.slug}/{spot.id}/{table.id}/"
 
-        if venue.table_qr_text_ru is not None:
-            text_top_ru = venue.table_qr_text_ru
-            text_top_kg = venue.table_qr_text_ky
-        else:
-            text_top_ru = f"{table.table_num} стол"
-            text_top_kg = f"{table.table_num} стол"
+        text_top_ru = venue.table_qr_text_ru
+        text_top_kg = venue.table_qr_text_ky
 
         color = venue.color_theme
 
-        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(qr_url, text_top_ru, text_top_kg,
-                                                             input_pdf_color=color, is_table=True)
+        output_pdf_stream = add_qr_and_text_to_pdf_in_memory(
+            qr_url, text_top_ru, text_top_kg,
+            table_num=table.table_num,
+            input_pdf_color=color,
+            is_table=True
+        )
 
         response = HttpResponse(output_pdf_stream, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="qr_codes_table_{table.table_num}.pdf"'

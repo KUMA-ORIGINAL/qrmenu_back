@@ -12,7 +12,7 @@ def generate_payment_link(transaction, order, payment_account):
 
     redirect_url = (
         order.tg_redirect_url if order.is_tg_bot and order.tg_redirect_url
-        else f"https://imenu.kg/orders/{order.id}"
+        else f"https://imenu.kg/{order.venue.slug}/order-status/{order.id}"
     )
 
     payload = {

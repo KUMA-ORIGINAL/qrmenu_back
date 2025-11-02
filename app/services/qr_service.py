@@ -30,46 +30,47 @@ def create_qr_code_in_memory(url):
     qr_buffer.seek(0)
     return qr_buffer
 
-
-def draw_wrapped_autosize_text(can, text, center_x, y, max_width,
-                                max_height,  # высота зоны, куда хотим вписать текст
-                                font_name="Inter", font_size=34,
-                                min_font_size=26,
+def draw_wrapped_two_lines_text(can, text, center_x, y, max_width, max_height,
+                                font_name="Inter", font_size=32, min_font_size=22,
                                 line_spacing=1.2, color="#FFFFFF"):
     """
-    Рисует текст по центру с автоматическим уменьшением шрифта,
-    если блок выходит за пределы max_height.
+    Рисует текст по центру, разбивая ровно на 2 строки и
+    автоматически уменьшая шрифт, чтобы вписать текст в заданные размеры.
     """
     can.setFillColor(HexColor(color))
 
-    def build_lines(size):
-        """Разбивает текст на строки по ширине с заданным шрифтом."""
+    def split_into_two_lines(size):
+        """Разбивает текст примерно пополам, стараясь чтобы обе строки влезли по ширине."""
         words = text.split()
-        lines, current_line = [], ""
+        if not words:
+            return ["", ""]
+        # Наращиваем первую строку, пока она помещается
+        line1, line2 = "", ""
         for word in words:
-            test_line = f"{current_line} {word}".strip()
+            test_line = f"{line1} {word}".strip()
             if can.stringWidth(test_line, font_name, size) <= max_width:
-                current_line = test_line
+                line1 = test_line
             else:
-                lines.append(current_line)
-                current_line = word
-        if current_line:
-            lines.append(current_line)
-        return lines
+                # Остаток идёт во вторую строку
+                remaining = words[words.index(word):]
+                line2 = " ".join(remaining)
+                break
+        else:
+            line2 = ""  # всё влезло в одну строку
+        return [line1, line2]
 
-    # Пробуем уменьшать текст, пока он не впишется в отведённую область
-    lines = build_lines(font_size)
-    while font_size > min_font_size:
-        total_height = (len(lines) - 1) * font_size * line_spacing
-        if total_height <= max_height:
-            break
+    while font_size >= min_font_size:
+        lines = split_into_two_lines(font_size)
+        # Проверяем ширину для обеих строк
+        if all(can.stringWidth(line, font_name, font_size) <= max_width for line in lines):
+            total_height = (len(lines) - 1) * font_size * line_spacing
+            if total_height <= max_height:
+                break
         font_size -= 1
-        lines = build_lines(font_size)
 
-    # После подбора размера — выставляем шрифт и центрируем блок
     can.setFont(font_name, font_size)
     total_height = (len(lines) - 1) * font_size * line_spacing
-    start_y = y + total_height / 2  # лёгкое выравнивание вверх
+    start_y = y + total_height / 2
 
     for i, line in enumerate(lines):
         line_y = start_y - i * font_size * line_spacing
@@ -77,7 +78,7 @@ def draw_wrapped_autosize_text(can, text, center_x, y, max_width,
 
 
 def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
-                       text_top1, text_top2, is_table):
+                       text_top1, text_top2, table_num, is_table):
     text_bottom1_ru = "Ваш персональный\nонлайн-официант"
     text_bottom1_kg = "Сиздин жеке\nонлайн-официантыңыз"
 
@@ -102,12 +103,18 @@ def create_overlay_pdf(qr_image_buffer, x1, y1, x2, y2, width, height,
             can.drawCentredString(center_x1, y1 + height + 20, text_top1)
             can.drawCentredString(center_x2, y1 + height + 20, text_top2)
         else:
-            draw_wrapped_autosize_text(
+            draw_wrapped_two_lines_text(
                 can, text_top1, center_x1, y1 + height + 45, max_text_width,
                 max_height=text_zone_height, font_name=font_name)
-            draw_wrapped_autosize_text(
+            draw_wrapped_two_lines_text(
                 can, text_top2, center_x2, y1 + height + 45, max_text_width,
                 max_height=text_zone_height, font_name=font_name)
+
+        can.setFont('Inter', 18)
+        can.setFillColor(HexColor("#000000"))
+        if table_num:
+            can.drawCentredString(center_x1, 40, f"Стол {table_num}")
+            can.drawCentredString(center_x2, 40, f"Стол {table_num}")
     else:
         can.drawCentredString(center_x1, y1 + height + 20, text_top1)
         kg_text_top2_lines = text_top2.split('\n')
@@ -197,7 +204,7 @@ def merge_pdf_with_overlay(input_pdf_stream, overlay_pdf):
     return output_pdf_stream
 
 
-def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, input_pdf_color, is_table=False):
+def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, table_num, input_pdf_color, is_table=False):
     """Добавляет QR-коды и текст в PDF, используя миллиметры для координат."""
     qr_image_path = create_qr_code_in_memory(qr_url)
     input_pdf = f"static/input_pdfs/{input_pdf_color}.pdf"
@@ -211,6 +218,6 @@ def add_qr_and_text_to_pdf_in_memory(qr_url, text_top1, text_top2, input_pdf_col
 
     overlay_pdf = create_overlay_pdf(
         qr_image_path, x1, y1, x2, y2, qr_width, qr_height,
-        text_top1, text_top2, is_table
+        text_top1, text_top2, table_num, is_table
     )
     return merge_pdf_with_overlay(input_pdf, overlay_pdf)
