@@ -1,6 +1,5 @@
 import logging
 
-from deep_translator import GoogleTranslator
 from django.contrib import admin, messages
 from django.core.cache import cache
 from django.core.files.storage import default_storage
@@ -253,7 +252,7 @@ class ProductAdmin(BaseModelAdmin, TabbedTranslationAdmin, ImportExportModelAdmi
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = super().get_queryset(request).prefetch_related('categories')
         if request.user.is_superuser:
             return qs
         elif request.user.role == ROLE_OWNER:

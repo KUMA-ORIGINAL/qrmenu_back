@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from django.core.cache import cache
 
 from account.models import ROLE_ADMIN, ROLE_OWNER
 from services.admin import BaseModelAdmin
@@ -39,6 +40,7 @@ class MainButtonAdmin(BaseModelAdmin):
     list_filter = ("venue", "button_type")
     ordering = ("venue", "order")
     autocomplete_fields = ("section", "category")
+    select_related = ('venue', "section", "category")
 
     class Media:
         js = ("menu/mainbutton_visibility.js",)
@@ -86,6 +88,13 @@ class MainButtonAdmin(BaseModelAdmin):
         if not request.user.is_superuser and request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
+
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
 
     def has_add_permission(self, request):
         """Нельзя добавлять кнопки вручную"""

@@ -27,14 +27,14 @@ class ProductSerializer(serializers.ModelSerializer):
     categories = CategoryShortSerializer(read_only=True, many=True)
 
     product_photo = serializers.SerializerMethodField()
-    product_photo_small = serializers.SerializerMethodField()
-    product_photo_large = serializers.SerializerMethodField()
+    # product_photo_small = serializers.SerializerMethodField()
+    # product_photo_large = serializers.SerializerMethodField()
 
     class Meta:
             model = Product
             fields = [
                 'id', 'product_name', 'product_description', 'product_price', 'weight',
-                'product_photo', 'product_photo_small', 'product_photo_large',
+                'product_photo',
                 'categories', 'is_recommended', 'modificators'
             ]
 

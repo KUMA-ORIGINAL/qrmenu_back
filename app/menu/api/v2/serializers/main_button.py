@@ -28,10 +28,10 @@ class MainButtonSerializer(serializers.ModelSerializer):
         ]
 
     def get_categories(self, obj):
-        request = self.context.get("request")
-        if obj.button_type == 'section' and obj.section:
-            categories_qs = obj.section.categories.all()
-            return CategorySerializer(categories_qs, many=True, context={'request': request} ).data
+        if obj.button_type == 'section' and hasattr(obj.section, 'categories'):
+            return CategorySerializer(
+                obj.section.categories.all(), many=True, context=self.context
+            ).data
         return None
 
     def get_name(self, obj):

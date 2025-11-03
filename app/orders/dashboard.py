@@ -1,109 +1,196 @@
+import calendar
 import json
 import random
-from datetime import timedelta
+from datetime import timedelta, datetime
 
-from django.db.models import Count
+from django.db.models import Count, Sum, F
 from django.db.models.functions import TruncDay
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
-from orders.models import Order
-from venues.models import Venue
+from orders.models import Order, OrderStatus
 
 
-def get_last_week_orders_chart(request):
-    end_date = timezone.now()
-    start_date = end_date - timedelta(days=5)  # Берем последние 7 дней включая сегодняшний
+def get_current_month_orders_chart(request, chart_type="line"):
+    """
+    График количества заказов за весь текущий месяц (включая будущие дни).
+    """
+    now = timezone.now()
+
+    # начало месяца (00:00:00)
+    start_date = timezone.make_aware(
+        datetime(now.year, now.month, 1, 0, 0, 0), timezone.get_current_timezone()
+    )
+
+    # конец месяца (23:59:59)
+    last_day = calendar.monthrange(now.year, now.month)[1]
+    end_date = timezone.make_aware(
+        datetime(now.year, now.month, last_day, 23, 59, 59), timezone.get_current_timezone()
+    )
 
     user = request.user
-    orders_queryset = None
-    if request.user.is_superuser:
+
+    # Доступные заказы
+    if user.is_superuser:
         orders_queryset = Order.objects
     elif user.role in (ROLE_OWNER, ROLE_ADMIN):
         orders_queryset = Order.objects.filter(venue=user.venue)
+    else:
+        orders_queryset = Order.objects.none()
 
+    # Фильтруем заказы текущего месяца
     orders_per_day = (
-        orders_queryset.filter(
-            created_at__range=(start_date, end_date))
-        .annotate(day=TruncDay('created_at'))
-        .values('day')
-        .annotate(count=Count('id'))
-        .order_by('day')
+        orders_queryset.filter(created_at__range=(start_date, end_date))
+        .annotate(day=TruncDay("created_at"))
+        .values("day")
+        .annotate(count=Count("id"))
+        .order_by("day")
     )
 
-    # Переводим дни недели на русский
-    weekdays_ru = {
-        0: "Понедельник",
-        1: "Вторник",
-        2: "Среда",
-        3: "Четверг",
-        4: "Пятница",
-        5: "Суббота",
-        6: "Воскресенье"
+    orders_dict = {order["day"].date(): order["count"] for order in orders_per_day}
+
+    months_ru = {
+        1: "янв", 2: "фев", 3: "мар", 4: "апр", 5: "май",
+        6: "июн", 7: "июл", 8: "авг", 9: "сен", 10: "окт", 11: "ноя", 12: "дек",
     }
 
-    # Инициализируем списки для дней недели и количества заказов
-    labels = []
-    order_counts = []
+    labels, order_counts = [], []
+    total_days = (end_date.date() - start_date.date()).days + 1
 
-    # Создаем словарь заказов, чтобы было легче сопоставить даты
-    orders_dict = {order['day'].date(): order['count'] for order in orders_per_day}
+    for i in range(total_days):
+        current_day = start_date.date() + timedelta(days=i)
+        month_name = months_ru[current_day.month]
+        labels.append(f"{current_day.day:02d} {month_name}")
+        order_counts.append(orders_dict.get(current_day, 0))
 
-    # Проходим по последним 7 дням, начиная с сегодняшнего
-    for i in range(7):
-        current_day = (start_date + timedelta(
-            days=i)).date()  # Дни идут от старта до конца (включительно)
-        weekday_index = current_day.weekday()  # Получаем индекс дня недели
+    dataset = {
+        "label": str(_("Количество заказов")),
+        "data": order_counts,
+        "borderColor": "#9333ea",
+        "fill": False,
+        "tension": 0.3,
+    }
+    if chart_type == "bar":
+        dataset.update({"backgroundColor": "#9333ea", "borderWidth": 2})
 
-        labels.append(weekdays_ru[weekday_index])  # День недели на русском
-        order_counts.append(
-            orders_dict.get(current_day, 0))  # Количество заказов или 0, если данных нет
-
-    # Подготавливаем данные для графика
-    chart_data = {
-        "labels": labels,  # Дни недели
-        "datasets": [{
-            "data": order_counts,  # Количество заказов за каждый день
-            "borderColor": "#9333ea"
-        }]
+    options = {
+        "plugins": {
+            "datalabels": {
+                "anchor": "end",
+                "align": "top",
+                "color": "#ffffff",
+                "font": {"weight": "bold", "size": 10},
+                "formatter": "(value) => value",
+            },
+            "legend": {"display": True},
+        },
+        "scales": {
+            "y": {"beginAtZero": True, "ticks": {"stepSize": 1, "precision": 0}},
+            "x": {"ticks": {"maxRotation": 60, "minRotation": 45}},
+        },
     }
 
-    # Преобразуем данные в JSON-формат
-    chart_json = json.dumps(chart_data)
+    chart_data = {"labels": labels, "datasets": [dataset]}
 
-    # Формируем метрику и футер
     context = {
-        "title": _("Количество заказов за последнюю неделю"),  # Заголовок на русском
+        "title": str(_("Количество заказов за текущий месяц")),
         "metric": f"{sum(order_counts)} заказов",
-        # Общая метрика: общее количество заказов за неделю
         "footer": mark_safe(
-            f'<strong class="text-green-600 font-medium">0.00%</strong>&nbsp;прогресс с прошлой недели'
+            '<strong class="text-green-600 font-medium">+0.00%</strong>&nbsp;прогресс с прошлым месяцем'
         ),
-        "chart": chart_json  # График
+        "chart": json.dumps(chart_data),
+        "options": json.dumps(options),
+        "chart_type": chart_type,
     }
 
     return context
 
+def get_summary_cards(request):
+    """
+    Возвращает данные только по оплаченных заказам (COMPLETED и NEW):
+    - первые 4 карточки — за прошлый месяц
+    - последние 4 — за текущий месяц
+    """
+    now = timezone.now()
+    tz = timezone.get_current_timezone()
 
-def dashboard_callback(request, context):
-    WEEKDAYS = [
-        "Mon",
-        "Tue",
-        "Wed",
-        "Thu",
-        "Fri",
-        "Sat",
-        "Sun",
+    # Начало текущего месяца (1 число 00:00:00)
+    first_day_current_month = timezone.make_aware(
+        datetime(now.year, now.month, 1, 0, 0, 0), tz
+    )
+
+    # Конец прошлого месяца = день перед началом текущего
+    last_month_end = first_day_current_month - timedelta(seconds=1)
+
+    # Начало прошлого месяца
+    first_day_last_month = timezone.make_aware(
+        datetime(last_month_end.year, last_month_end.month, 1, 0, 0, 0), tz
+    )
+
+    user = request.user
+
+    # --- Фильтр заказов по пользователю ---
+    if user.is_superuser:
+        orders_queryset = Order.objects.all()
+    elif user.role in (ROLE_OWNER, ROLE_ADMIN):
+        orders_queryset = Order.objects.filter(venue=user.venue)
+    else:
+        orders_queryset = Order.objects.none()
+
+    # --- Только COMPLETED и NEW ---
+    completed_orders = orders_queryset.filter(
+        status__in=[OrderStatus.COMPLETED, OrderStatus.NEW]
+    )
+
+    # --- Прошлый месяц (>= 1 числа прошл. месяца, < 1 числа тек. месяца) ---
+    last_month_orders = completed_orders.filter(
+        created_at__gte=first_day_last_month,
+        created_at__lt=first_day_current_month,
+    )
+
+    last_month_orders_sum = last_month_orders.aggregate(total=Sum("total_price"))["total"] or 0
+    last_month_orders_count = last_month_orders.count()
+
+    # --- Текущий месяц ---
+    current_month_orders = completed_orders.filter(
+        created_at__gte=first_day_current_month
+    )
+    current_month_orders_sum = current_month_orders.aggregate(total=Sum("total_price"))["total"] or 0
+    current_month_orders_count = current_month_orders.count()
+
+    # --- Карточки ---
+    cards = [
+        # ---- Прошлый месяц ----
+        {
+            "title": _("Сумма оплаченных заказов за прошлый месяц"),
+            "count": f"{last_month_orders_sum:,.2f}".replace(",", " "),
+            "subtitle": _("сом"),
+        },
+        {
+            "title": _("Количество оплаченных заказов за прошлый месяц"),
+            "count": str(last_month_orders_count),
+            "subtitle": _("шт."),
+        },
+
+        # ---- Текущий месяц ----
+        {
+            "title": _("Сумма оплаченных заказов за текущий месяц"),
+            "count": f"{current_month_orders_sum:,.2f}".replace(",", " "),
+            "subtitle": _("сом"),
+        },
+        {
+            "title": _("Количество оплаченных заказов за текущий месяц"),
+            "count": str(current_month_orders_count),
+            "subtitle": _("шт."),
+        },
     ]
 
-    positive = [[1, random.randrange(8, 28)] for i in range(1, 28)]
-    negative = [[-1, -random.randrange(8, 28)] for i in range(1, 28)]
-    average = [r[1] - random.randint(3, 5) for r in positive]
-    performance_positive = [[1, random.randrange(8, 28)] for i in range(1, 28)]
-    performance_negative = [[-1, -random.randrange(8, 28)] for i in range(1, 28)]
+    return cards
 
+
+def dashboard_callback(request, context):
     context.update(
         {
             "navigation": [
@@ -112,14 +199,6 @@ def dashboard_callback(request, context):
                     "link": "#",
                     # "active": True
                 },
-                # {
-                #     "title": _("Analytics"),
-                #     "link": "#"
-                # },
-                # {
-                #     "title": _("Settings"),
-                #     "link": "#"
-                # },
             ],
             "filters": [
                 {
@@ -127,47 +206,9 @@ def dashboard_callback(request, context):
                     "link": "#",
                     "active": True
                 },
-                # {
-                #     "title": _("New"),
-                #     "link": "#",
-                # },
             ],
-            "orders_performance": get_last_week_orders_chart(request)
-            # "performance": [
-            #     {
-            #         "title": ("Last week revenue"),
-            #         "metric": "$0.00",  # Устанавливаем метрику на 0
-            #         "footer": mark_safe(
-            #             '<strong class="text-green-600 font-medium">0.00%</strong>&nbsp;progress from last week'
-            #             # Прогресс 0%
-            #         ),
-            #         "chart": json.dumps({
-            #             "labels": [WEEKDAYS[day % 7] for day in range(1, 28)],
-            #             # Оставляем дни недели
-            #             "datasets": [{
-            #                 "data": [0 for _ in range(28)],  # Устанавливаем все значения данных в 0
-            #                 "borderColor": "#9333ea"
-            #             }]
-            #         }),
-            #     }
-
-                # {
-                #     "title": _("Last week revenue"),
-                #     "metric": "$1,234.56",
-                #     "footer": mark_safe(
-                #         '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
-                #     ),
-                #     "chart": json.dumps({"labels": [WEEKDAYS[day % 7] for day in range(1, 28)], "datasets": [{"data": performance_positive, "borderColor": "#9333ea"}]}),
-                # },
-                # {
-                #     "title": _("Last week expenses"),
-                #     "metric": "$1,234.56",
-                #     "footer": mark_safe(
-                #         '<strong class="text-green-600 font-medium">+3.14%</strong>&nbsp;progress from last week'
-                #     ),
-                #     "chart": json.dumps({"labels": [WEEKDAYS[day % 7] for day in range(1, 28)], "datasets": [{"data": performance_negative, "borderColor": "#f43f5e"}]}),
-                # },
-            # ]
+            "orders_performance_bar": get_current_month_orders_chart(request, chart_type="bar"),
+            "summary_cards": get_summary_cards(request),
         },
     )
 

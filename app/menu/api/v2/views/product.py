@@ -4,6 +4,7 @@ from django.db.models.functions import Lower
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from menu.models import Product
@@ -46,7 +47,6 @@ class ProductViewSet(viewsets.GenericViewSet,
         spot_id = request.GET.get("spot_id")
 
         if not venue_slug:
-            from rest_framework.exceptions import ValidationError
             raise ValidationError({'venue_slug': 'This parameter is required.'})
 
         # фильтруем сразу только актуальные продукты конкретного venue
@@ -89,6 +89,6 @@ class ProductViewSet(viewsets.GenericViewSet,
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
             data = serializer.data
-            cache.set(cache_key, data, 60 * 30)  # кеш на 5 минут
+            cache.set(cache_key, data, 60 * 30)
 
         return Response(data, status=status.HTTP_200_OK)

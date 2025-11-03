@@ -2,6 +2,7 @@ import logging
 
 from django import forms
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
@@ -66,12 +67,20 @@ class VenueAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     actions_detail = ['pos_action_detail',]
 
     def get_list_display(self, request):
-        list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
+        list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'logo_preview', 'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role == ROLE_OWNER:
-            list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'detail_link')
+            list_display = ('id', 'company_name', 'pos_system', 'link_to_venue', 'logo_preview', 'detail_link')
         return list_display
+
+    def logo_preview(self, obj):
+        if obj.logo:
+            return format_html('<img src="{}" style="border-radius:5px;'
+                               'width: 120px; height: auto;" />',
+                               obj.logo.url)
+        return "No Image"
+    logo_preview.short_description = 'Лого'
 
     @display(
         description="Ссылка на заведение",
@@ -196,6 +205,16 @@ class VenueAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         elif request.user.role == ROLE_OWNER:
             return qs.filter(users=request.user)
         return qs
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        cache.delete_pattern(f"venue:{obj.slug.lower()}:*")
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+
+        cache.delete_pattern(f"venue:{obj.slug.lower()}:*")
 
     @action(
         description="Получить информацию из POS системы",

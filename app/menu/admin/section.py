@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import path
@@ -102,6 +103,13 @@ class SectionAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         if request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
             obj.venue = request.user.venue
         super().save_model(request, obj, form, change)
+
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
 
     # --- Фильтрация queryset по ролям ---
     def get_queryset(self, request):

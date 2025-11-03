@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.core.cache import cache
 from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse, path
@@ -169,6 +170,15 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
                 f"Категория '{obj.category_name}' снова активна. {count} товаров снова отображаются.",
                 level=messages.SUCCESS
             )
+
+        cache.delete_pattern(f"categories:{obj.venue.slug}:*")
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+
+        cache.delete_pattern(f"categories:{obj.venue.slug}:*")
+        cache.delete_pattern(f"main_buttons:{obj.venue.slug}:*")
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

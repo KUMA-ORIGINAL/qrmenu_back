@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -31,14 +32,25 @@ class MainButtonsAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        buttons = MainButton.objects.filter(
-            venue__slug__iexact=venue_slug
-        ).order_by("order")
+        cache_key = f"main_buttons:{venue_slug.lower()}"
+        data = cache.get(cache_key)
 
-        serializer = MainButtonSerializer(buttons, many=True, context={"request": request})
-        data = serializer.data
+        if not data:
+            buttons = (
+                MainButton.objects
+                .filter(venue__slug__iexact=venue_slug)
+                .select_related("section", "category", "venue")
+                .prefetch_related("section__categories")
+                .order_by("order")
+            )
 
-        # группируем (2 + 3)
-        grouped = [data[:2], data[2:5]]
+            serializer = MainButtonSerializer(buttons, many=True, context={"request": request})
+            serialized_data = serializer.data
 
-        return Response(grouped, status=status.HTTP_200_OK)
+            # группировка (2 + 3)
+            grouped = [serialized_data[:2], serialized_data[2:5]]
+
+            cache.set(cache_key, grouped, 60 * 30)  # 30 минут
+            data = grouped
+
+        return Response(data, status=status.HTTP_200_OK)
