@@ -35,22 +35,22 @@ class MainButtonsAPIView(APIView):
         cache_key = f"main_buttons:{venue_slug.lower()}"
         data = cache.get(cache_key)
 
-        if not data:
-            buttons = (
-                MainButton.objects
-                .filter(venue__slug__iexact=venue_slug)
-                .select_related("section", "category", "venue")
-                .prefetch_related("section__categories")
-                .order_by("order")
-            )
+        # if not data:
+        buttons = (
+            MainButton.objects
+            .filter(venue__slug__iexact=venue_slug)
+            .select_related("section", "category", "venue")
+            .prefetch_related("section__categories")
+            .order_by("order")
+        )
 
-            serializer = MainButtonSerializer(buttons, many=True, context={"request": request})
-            serialized_data = serializer.data
+        serializer = MainButtonSerializer(buttons, many=True, context={"request": request})
+        serialized_data = serializer.data
 
-            # группировка (2 + 3)
-            grouped = [serialized_data[:2], serialized_data[2:5]]
+        # группировка (2 + 3)
+        grouped = [serialized_data[:2], serialized_data[2:5]]
 
-            cache.set(cache_key, grouped, 60 * 30)  # 30 минут
-            data = grouped
+        cache.set(cache_key, grouped, 60 * 30)  # 30 минут
+        data = grouped
 
         return Response(data, status=status.HTTP_200_OK)

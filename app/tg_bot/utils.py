@@ -55,14 +55,11 @@ def notify_waiter(table):
 
     text = (
         f"📢 *Вызов официанта!*\n\n"
-        f"🏠 Точка: *{spot.name}*\n"
-        f"🍽 Стол: *{table.table_num}*\n"
-        f"📍 Адрес: {spot.address or '-'}"
+        f"🍽 Подойдите к столу: *{table.table_num}*\n"
     )
 
-    # можно добавить кнопку "✅ Принять" прямо здесь
-    # buttons = [
-    #     [InlineKeyboardButton("✅ Принять вызов", callback_data=f"waiter_accept_{table.id}")]
-    # ]
+    buttons = [
+        [InlineKeyboardButton("✅ Принять вызов", callback_data=f"accept_call:{table.id}")]
+    ]
 
-    return send_telegram_message(spot.telegram_chat_id, text)
+    return send_telegram_message(spot.telegram_chat_id, text, buttons)
