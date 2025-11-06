@@ -118,7 +118,7 @@ async def handle_call_waiter_callback(update: Update, context: ContextTypes.DEFA
     query = update.callback_query
     await query.answer()
 
-    data = query.data
+    data = query.data  # формата call_waiter:<table_id>
     try:
         _, table_id = data.split(":")
     except ValueError:
@@ -128,10 +128,12 @@ async def handle_call_waiter_callback(update: Update, context: ContextTypes.DEFA
     user = query.from_user  # это Telegram-пользователь
     waiter_name = user.full_name or user.username or "Официант"
 
+    # Делаем новую кнопку с именем кто принял
     new_markup = InlineKeyboardMarkup([
         [InlineKeyboardButton(f"✅ Принял: {waiter_name}", callback_data="noop")]
     ])
 
+    # Обновляем сообщение, чтобы заменить кнопку
     await query.edit_message_reply_markup(reply_markup=new_markup)
 
     logger.info(f"🧾 Официант {waiter_name} принял вызов к столу {table_id}")
@@ -143,8 +145,7 @@ def setup_bot(token: str):
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
-    app.add_handler(CallbackQueryHandler(handle_callback_query))
-    app.add_handler(CallbackQueryHandler(handle_callback_query, pattern="^(accept_|ready_|complete_|reject_)"))
     app.add_handler(CallbackQueryHandler(handle_call_waiter_callback, pattern="^call_waiter:"))
+    app.add_handler(CallbackQueryHandler(handle_callback_query))
 
     return app
