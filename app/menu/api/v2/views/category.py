@@ -44,7 +44,7 @@ class CategoryViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         queryset = queryset.filter(
             venue__slug__iexact=venue_slug,
             category_hidden=False
-        )
+        ).order_by('sort_order')
 
         if section_id:
             queryset = queryset.filter(sections__id=section_id)

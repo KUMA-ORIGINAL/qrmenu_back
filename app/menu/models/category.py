@@ -17,6 +17,11 @@ class Category(BaseModel):
         blank=True,  # ⬅ временно разрешаем
         null=True  # ⬅ чтобы миграция прошла без ошибок
     )
+    sort_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок сортировки",
+        help_text="Меньшее число → выше в списке",
+    )
     category_photo = models.ImageField(
         upload_to='menu/category/%Y/%m',
         verbose_name="Оригинальное фото категории",
@@ -42,6 +47,7 @@ class Category(BaseModel):
     class Meta:
         verbose_name = "Категория"
         verbose_name_plural = "Категории"
+        ordering = ['sort_order']
         indexes = [
             models.Index(fields=['venue',]),
         ]

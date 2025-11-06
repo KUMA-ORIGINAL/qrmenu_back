@@ -29,8 +29,9 @@ class MainButtonSerializer(serializers.ModelSerializer):
 
     def get_categories(self, obj):
         if obj.button_type == 'section' and hasattr(obj.section, 'categories'):
+            categories = obj.section.categories.all().order_by('sort_order')
             return CategorySerializer(
-                obj.section.categories.all(), many=True, context=self.context
+                categories, many=True, context=self.context
             ).data
         return None
 

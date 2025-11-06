@@ -1,13 +1,11 @@
 from django.contrib import admin, messages
 from django.core.cache import cache
-from django.http import HttpRequest, HttpResponseRedirect, JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.shortcuts import redirect, get_object_or_404
-from django.urls import reverse_lazy, reverse, path
+from django.urls import reverse_lazy, path
 from django.utils.html import format_html
 from modeltranslation.admin import TabbedTranslationAdmin
 from unfold.decorators import display, action
-
-from deep_translator import GoogleTranslator
 
 from account.models import ROLE_OWNER, ROLE_ADMIN
 from services.admin import BaseModelAdmin
@@ -20,7 +18,11 @@ from ..services import ai_improve_image, ai_generate_image, ai_translate_text
 class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
     form = CategoryAdminForm
     compressed_fields = True
+    list_display = ('id', 'category_name', 'venue', 'display_category_hidden', 'category_photo_preview', 'sort_order',
+                    'detail_link')
     list_filter = ('venue', 'category_hidden',)
+    ordering = ('sort_order',)
+    list_editable = ('sort_order',)
     search_fields = ('category_name',)
     readonly_fields = ('category_photo_preview',)
     list_select_related = ('venue',)
@@ -91,12 +93,12 @@ class CategoryAdmin(BaseModelAdmin, TabbedTranslationAdmin):
         return list_filter
 
     def get_list_display(self, request):
-        list_display = ('id', 'category_name', 'venue', 'display_category_hidden', 'category_photo_preview',
+        list_display = ('id', 'category_name', 'venue', 'display_category_hidden', 'category_photo_preview', 'sort_order',
                         'detail_link')
         if request.user.is_superuser:
             pass
         elif request.user.role in [ROLE_OWNER, ROLE_ADMIN]:
-            list_display = ('id', 'category_name', 'display_category_hidden', 'category_photo_preview',
+            list_display = ('id', 'category_name', 'display_category_hidden', 'category_photo_preview', 'sort_order',
                             'detail_link')
         return list_display
 

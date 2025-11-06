@@ -7,8 +7,8 @@ from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardR
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes, CallbackQueryHandler
 
 from account.models import User
-from orders.models import Order
-from orders.services import notify_order_status
+from orders.models import Order, ServiceMode
+from orders.services import notify_order_status, build_yandex_taxi_link
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,6 +60,34 @@ async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message, reply_markup=ReplyKeyboardRemove())
 
 
+STATUS_ACTIONS = {
+    "accept_": {
+        "status": 1,
+        "next_button": lambda order_id: [
+            InlineKeyboardButton("🍽 Готово", callback_data=f"ready_{order_id}")
+        ],
+    },
+    "ready_": {
+        "status": 2,
+        "next_button": lambda order_id: [
+            InlineKeyboardButton("✅ Выполнено", callback_data=f"complete_{order_id}")
+        ],
+    },
+    "complete_": {
+        "status": 3,
+        "next_button": lambda order_id: [
+            InlineKeyboardButton("✔ Заказ завершён", callback_data="noop")
+        ],
+    },
+    "reject_": {
+        "status": 7,
+        "next_button": lambda order_id: [
+            InlineKeyboardButton("❌ Отклонено", callback_data="noop")
+        ],
+    },
+}
+
+
 async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -71,47 +99,40 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
     logger.info(f"Callback query received: {data}")
 
-    if data.startswith("accept_"):
-        order_id = data.split("_")[1]
-        new_status = 1
-        next_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🍽 Готово", callback_data=f"ready_{order_id}")]
-        ])
-    elif data.startswith("ready_"):
-        order_id = data.split("_")[1]
-        new_status = 2
-        next_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✅ Выполнено", callback_data=f"complete_{order_id}")]
-        ])
-    elif data.startswith("complete_"):
-        order_id = data.split("_")[1]
-        new_status = 3
-        next_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("✔ Заказ завершён", callback_data="noop")]
-        ])
-    elif data.startswith("reject_"):
-        order_id = data.split("_")[1]
-        new_status = 7
-        next_button = InlineKeyboardMarkup([
-            [InlineKeyboardButton("❌ Отклонено", callback_data="noop")]
-        ])
-    else:
+    # находим ключ из STATUS_ACTIONS
+    action_key = next((key for key in STATUS_ACTIONS if data.startswith(key)), None)
+    if not action_key:
         await query.answer("Неизвестное действие.", show_alert=True)
         return
 
-    order = await sync_to_async(Order.objects.filter(id=order_id).first)()
-    if order:
-        order.status = new_status
-        await sync_to_async(order.save)()
-
-        await notify_order_status(order)
-
-        logger.info(f"Order {order_id} updated to status '{new_status}'")
-
-        # Обновляем только кнопки (reply_markup)
-        await query.edit_message_reply_markup(reply_markup=next_button)
-    else:
+    order_id = data.split("_")[1]
+    order = await sync_to_async(
+        lambda: Order.objects.select_related("spot").filter(id=order_id).first()
+    )()
+    if not order:
         await query.answer("❗ Заказ не найден.", show_alert=True)
+        return
+
+    # применяем действие
+    conf = STATUS_ACTIONS[action_key]
+    new_status = conf["status"]
+    buttons = conf["next_button"](order_id)
+
+    if action_key == "accept_" and order.service_mode == ServiceMode.DELIVERY:
+        taxi_link = build_yandex_taxi_link(order)
+        logger.info(f"[Order {order.id}] Generated taxi link: {taxi_link}")
+        if taxi_link:
+            buttons.append(InlineKeyboardButton("🚖 Вызвать такси", url=taxi_link))
+
+    order.status = new_status
+    await sync_to_async(order.save)()
+    await notify_order_status(order)
+
+    logger.info(f"Order {order_id} updated to status '{new_status}'")
+
+    # обновляем reply markup (все кнопки в один ряд)
+    markup = InlineKeyboardMarkup([buttons])
+    await query.edit_message_reply_markup(reply_markup=markup)
 
 
 async def handle_call_waiter_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,7 +151,7 @@ async def handle_call_waiter_callback(update: Update, context: ContextTypes.DEFA
 
     # Делаем новую кнопку с именем кто принял
     new_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"👨‍🍳 {waiter_name} принял заказ", callback_data="noop")]
+        [InlineKeyboardButton(f"✅ {waiter_name} принял заказ", callback_data="noop")]
     ])
 
     # Обновляем сообщение, чтобы заменить кнопку
