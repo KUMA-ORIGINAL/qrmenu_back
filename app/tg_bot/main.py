@@ -130,7 +130,7 @@ async def handle_call_waiter_callback(update: Update, context: ContextTypes.DEFA
 
     # Делаем новую кнопку с именем кто принял
     new_markup = InlineKeyboardMarkup([
-        [InlineKeyboardButton(f"✅ Принял: {waiter_name}", callback_data="noop")]
+        [InlineKeyboardButton(f"👨‍🍳 {waiter_name} принял заказ", callback_data="noop")]
     ])
 
     # Обновляем сообщение, чтобы заменить кнопку
