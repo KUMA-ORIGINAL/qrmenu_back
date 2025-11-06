@@ -59,7 +59,7 @@ def notify_waiter(table):
     )
 
     buttons = [
-        [InlineKeyboardButton("✅ Принять вызов", callback_data=f"accept_call:{table.id}")]
+        [InlineKeyboardButton("✅ Принять вызов", callback_data=f"call_waiter:{table.id}")]
     ]
 
     return send_telegram_message(spot.telegram_chat_id, text, buttons)
