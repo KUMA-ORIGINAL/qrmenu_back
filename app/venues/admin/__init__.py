@@ -4,3 +4,4 @@ from .spot import *
 from .table import *
 from .hall import *
 from .banner import *
+from .venue_analytics import *

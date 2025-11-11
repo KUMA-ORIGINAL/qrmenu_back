@@ -23,10 +23,15 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from config import views
 
+def trigger_error(request):
+    division_by_zero = 1 / 0
+
 urlpatterns = [
     path('admin/', include('account.urls')),
     path('admin/ajax/', include('config.admin_urls')),
     path('admin/', admin.site.urls),
+
+    path('api/sentry-debug/', trigger_error),
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

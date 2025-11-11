@@ -5,3 +5,4 @@ from .table import *
 from .hall import *
 from .banner import *
 from .work_schedule import *
+from .venue_analytics import *

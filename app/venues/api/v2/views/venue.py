@@ -1,11 +1,14 @@
+import hashlib
+
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 
-from venues.models import Venue, Spot
+from venues.models import Venue, Spot, VenueAnalytics
 from venues.api.v2.serializers import TableSerializer
 from venues.api.v2.serializers.venue import VenueSerializer
 
@@ -72,10 +75,18 @@ class VenueViewSet(viewsets.GenericViewSet, mixins.RetrieveModelMixin):
 
         data = VenueSerializer(venue, context={'request': request}).data
         table_id = request.query_params.get('table_id')
+        table = None
 
         if table_id:
             table = get_object_or_404(venue.tables, pk=table_id)
             data["table"] = TableSerializer(table, context={'request': request}).data
+
+        base = f"{request.META.get('REMOTE_ADDR')}|{request.META.get('HTTP_USER_AGENT')}"
+        client_id = hashlib.sha256(base.encode()).hexdigest()
+        today = timezone.now().date()
+
+        analytics, _ = VenueAnalytics.objects.get_or_create(venue=venue, table=table, date=today)
+        analytics.register_visit(client_id)
 
         return Response(data)
 

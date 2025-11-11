@@ -30,6 +30,8 @@ class VenueSerializer(serializers.ModelSerializer):
             'delivery_free_from',
             'terms',
             'description',
+            'is_bonus_system_enabled',
+            'bonus_accrual_percent',
         )
 
 
@@ -53,4 +55,6 @@ class VenueWithTableSerializer(serializers.ModelSerializer):
             'is_dinein_available',
             'terms',
             'description',
+            'is_bonus_system_enabled',
+            'bonus_accrual_percent',
         )

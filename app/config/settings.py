@@ -2,10 +2,11 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+import sentry_sdk
 from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-
+from sentry_sdk.integrations.django import DjangoIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -169,6 +170,15 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+if not DEBUG:
+    sentry_sdk.init(
+        dsn=env('SENTRY_DSN'),
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=0.5,  # Для мониторинга производительности. Можно уменьшить
+        send_default_pii=True,
+        environment="production",
+    )
 
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
@@ -435,6 +445,12 @@ UNFOLD = {
                         "title": _("Рекламные баннеры"),
                         "icon": "photo_library",
                         "link": reverse_lazy("admin:venues_banner_changelist"),
+                    },
+                    {
+                        "title": _("Аналитика заведений"),
+                        "icon": "bar_chart",  # можно выбрать другой, например "insights"
+                        "link": reverse_lazy("admin:venues_venueanalytics_changelist"),
+                        "permission": lambda request: request.user.is_superuser,
                     },
                 ],
             },

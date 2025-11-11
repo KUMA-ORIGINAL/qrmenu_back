@@ -39,7 +39,6 @@ def build_yandex_taxi_link(order):
     start_lat, start_lon = geocode_osm(from_address)
     end_lat, end_lon = geocode_osm(to_address)
 
-    # если координаты получены — используем маршрут по координатам
     if all([start_lat, start_lon, end_lat, end_lon]):
         link = (
             "https://3.redirect.appmetrica.yandex.com/route"
